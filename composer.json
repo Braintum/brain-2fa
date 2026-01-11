@@ -1,0 +1,14 @@
+{
+  "name": "braintum/brain-2fa",
+  "description": "Brain 2FA plugin for WordPress — TOTP + email based two factor authentication.",
+  "type": "wordpress-plugin",
+  "require": {
+    "spomky-labs/otphp": "^10.0",
+    "endroid/qr-code": "^5.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "Brain_2FA\\": "includes/"
+    }
+  }
+}
