@@ -1,0 +1,141 @@
+/**
+ * Components
+ *
+ * @package Brain_2FA
+ */
+
+@use 'variables' as *;
+
+// Card Styling
+.brain2fa-card {
+	background: $white;
+	border: 1px solid $gray-200;
+	border-radius: $border-radius;
+	padding: $spacing-lg;
+	margin-bottom: $spacing-lg;
+	box-shadow: $shadow-sm;
+
+	h3 {
+		margin-top: 0;
+		margin-bottom: $spacing-base;
+		font-size: $font-size-md;
+		font-weight: 600;
+		color: $gray-900;
+	}
+
+	p {
+		margin-bottom: $spacing-md;
+		font-size: $font-size-base;
+		line-height: $line-height-base;
+	}
+
+	ol {
+		margin: $spacing-md 0;
+		padding-left: $spacing-lg;
+		font-size: $font-size-base;
+	}
+
+	li {
+		margin-bottom: $spacing-sm;
+		line-height: 1.5;
+	}
+}
+
+// Status Badges
+.brain2fa-status {
+	display: inline-flex;
+	align-items: center;
+	padding: 4px $spacing-md;
+	border-radius: $border-radius-sm;
+	font-size: $font-size-sm;
+	font-weight: 600;
+	line-height: 1;
+
+	.dashicons {
+		margin-right: $spacing-xs;
+		font-size: $font-size-lg;
+	}
+}
+
+.brain2fa-status-enabled {
+	background: $success-bg;
+	color: $success-text;
+}
+
+.brain2fa-status-disabled {
+	background: $error-bg;
+	color: $error-text;
+}
+
+// QR Code Container
+.brain2fa-qr-container {
+	background: $white;
+	padding: $spacing-lg;
+	border: 1px solid $gray-200;
+	border-radius: $border-radius;
+	display: inline-block;
+	margin: $spacing-base 0;
+
+	img {
+		display: block;
+		margin: 0 auto;
+	}
+}
+
+.brain2fa-secret-code {
+	background: $gray-50;
+	padding: $spacing-base;
+	border: 1px solid $gray-200;
+	border-radius: $border-radius;
+	margin: $spacing-base 0;
+	font-family: $font-family-mono;
+	font-size: $font-size-lg;
+	letter-spacing: 2px;
+	text-align: center;
+
+	code {
+		background: none;
+		padding: 0;
+		color: $primary-color;
+		font-weight: 600;
+	}
+}
+
+// Instructions
+.brain2fa-instructions {
+	background: $info-bg;
+	border-left: 4px solid $info-border;
+	padding: $spacing-base $spacing-lg;
+	margin: $spacing-base 0;
+	border-radius: $border-radius;
+
+	h4 {
+		margin-top: 0;
+		margin-bottom: $spacing-md;
+		color: $gray-900;
+	}
+
+	ol {
+		margin: $spacing-md 0 0 $spacing-lg;
+		padding: 0;
+	}
+
+	li {
+		margin-bottom: $spacing-sm;
+		line-height: $line-height-base;
+	}
+}
+
+// Warning Messages
+.brain2fa-warning {
+	background: $warning-bg;
+	border-left: 4px solid $warning-color;
+	padding: 12px $spacing-base;
+	margin: $spacing-base 0;
+	border-radius: $border-radius;
+
+	.dashicons {
+		color: $warning-color;
+		margin-right: $spacing-xs;
+	}
+}

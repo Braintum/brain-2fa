@@ -1,0 +1,15 @@
+/**
+ * Brain 2FA Admin Styles
+ *
+ * @package Brain_2FA
+ * @since 1.0.0
+ */
+
+// Import partials using @use (modern syntax)
+@use 'variables' as *;
+@use 'layout';
+@use 'components';
+@use 'forms';
+@use 'buttons';
+@use 'utilities';
+@use 'responsive';

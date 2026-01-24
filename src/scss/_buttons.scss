@@ -1,0 +1,37 @@
+/**
+ * Buttons
+ *
+ * @package Brain_2FA
+ */
+
+@use 'variables' as *;
+
+.button {
+	&.brain2fa-button-primary {
+		background: $primary-color;
+		border-color: $primary-color;
+		color: $white;
+		transition: background $transition-base, border-color $transition-base;
+
+		&:hover,
+		&:focus {
+			background: $primary-hover;
+			border-color: $primary-hover;
+			color: $white;
+		}
+	}
+
+	&.brain2fa-button-danger {
+		background: $danger-color;
+		border-color: $danger-color;
+		color: $white;
+		transition: background $transition-base, border-color $transition-base;
+
+		&:hover,
+		&:focus {
+			background: $danger-hover;
+			border-color: $danger-hover;
+			color: $white;
+		}
+	}
+}

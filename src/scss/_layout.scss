@@ -1,0 +1,27 @@
+/**
+ * Layout
+ *
+ * @package Brain_2FA
+ */
+
+@use 'variables' as *;
+
+.brain2fa-settings-wrap {
+	max-width: 1400px;
+}
+
+.brain2fa-settings-container {
+	display: flex;
+	gap: $spacing-xl;
+	margin-top: $spacing-lg;
+}
+
+.brain2fa-settings-main {
+	flex: 1;
+	min-width: 0;
+}
+
+.brain2fa-settings-sidebar {
+	width: 300px;
+	flex-shrink: 0;
+}

@@ -1,0 +1,25 @@
+/**
+ * Responsive Design
+ *
+ * @package Brain_2FA
+ */
+
+@use 'variables' as *;
+
+@media screen and (max-width: $breakpoint-tablet) {
+	.brain2fa-settings-container {
+		flex-direction: column;
+	}
+
+	.brain2fa-settings-sidebar {
+		width: 100%;
+	}
+}
+
+@media screen and (max-width: $breakpoint-mobile) {
+	.brain2fa-users-container table {
+		display: block;
+		overflow-x: auto;
+		white-space: nowrap;
+	}
+}

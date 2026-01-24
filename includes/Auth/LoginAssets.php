@@ -27,13 +27,25 @@ class LoginAssets {
 	 * Enqueue login page assets.
 	 */
 	public static function enqueue(): void {
+		$asset_file = BRAIN_2FA_PLUGIN_DIR . 'assets/js/login.asset.php';
+		$asset_data = file_exists( $asset_file ) ? require $asset_file : array(
+			'dependencies' => array(),
+			'version'      => BRAIN_2FA_VERSION,
+		);
 
 		wp_enqueue_script(
 			'brain2fa-login',
 			BRAIN_2FA_PLUGIN_URL . 'assets/js/login.js',
-			array( 'jquery' ),
-			BRAIN_2FA_VERSION,
+			$asset_data['dependencies'],
+			$asset_data['version'],
 			true
+		);
+
+		// Set script translations.
+		wp_set_script_translations(
+			'brain2fa-login',
+			'brain2fa',
+			BRAIN_2FA_PLUGIN_DIR . 'languages'
 		);
 
 		wp_localize_script(

@@ -17,6 +17,13 @@ yarn.lock
 *.min.css
 *.map
 
+# Webpack build output (keep source only)
+assets/js/*.js
+assets/js/*.asset.php
+assets/js/*.js.map
+assets/css/*.css
+assets/css/*.css.map
+
 # IDE & Editor files
 .vscode/
 .idea/
