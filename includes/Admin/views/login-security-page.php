@@ -32,6 +32,74 @@ defined( 'ABSPATH' ) || exit;
 					
 					<hr style="margin: 20px 0;">
 					
+					<!-- Recovery Codes Section -->
+					<div class="brain2fa-recovery-codes-section">
+						<h3><?php esc_html_e( 'Recovery Codes', 'brain2fa' ); ?></h3>
+						<p class="description">
+							<?php
+							printf(
+								/* translators: %d: number of remaining recovery codes */
+								esc_html__( 'You have %d recovery code(s) remaining. Recovery codes can be used to access your account if you lose access to your authenticator app.', 'brain2fa' ),
+								esc_html( $recovery_codes_count )
+							);
+							?>
+						</p>
+						
+						<?php if ( ! empty( $fresh_recovery_codes ) ) : ?>
+							<!-- Display Fresh Recovery Codes -->
+							<div class="brain2fa-recovery-codes-display" style="background: #f0f0f1; padding: 20px; border-radius: 4px; margin: 15px 0;">
+								<p style="margin: 0 0 10px 0; color: #d63638; font-weight: 600;">
+									<span class="dashicons dashicons-warning" style="vertical-align: middle;"></span>
+									<?php esc_html_e( 'Save these codes now! They will not be shown again.', 'brain2fa' ); ?>
+								</p>
+								<div style="background: white; padding: 15px; border: 1px solid #dcdcde; border-radius: 4px; margin-top: 10px;">
+									<div style="font-family: monospace; column-count: 2; column-gap: 20px;">
+										<?php foreach ( $fresh_recovery_codes as $code ) : ?>
+											<div style="margin-bottom: 8px; break-inside: avoid;"><?php echo esc_html( $code ); ?></div>
+										<?php endforeach; ?>
+									</div>
+								</div>
+								<button type="button" class="button button-secondary" onclick="downloadRecoveryCodes()" style="margin-top: 10px;">
+									<span class="dashicons dashicons-download" style="margin-top: 3px;"></span>
+									<?php esc_html_e( 'Download Recovery Codes', 'brain2fa' ); ?>
+								</button>
+								<script>
+									function downloadRecoveryCodes() {
+										const codes = <?php echo wp_json_encode( $fresh_recovery_codes ); ?>;
+										const content = '<?php echo esc_js( get_bloginfo( 'name' ) ); ?> - Two-Factor Authentication Recovery Codes\n\n' +
+											'Generated: ' + new Date().toLocaleString() + '\n\n' +
+											'IMPORTANT: Store these codes in a safe place.\n' +
+											'Each code can only be used once.\n\n' +
+											codes.join('\n') + '\n\n' +
+											'User: <?php echo esc_js( $current_user->user_login ); ?>\n' +
+											'Email: <?php echo esc_js( $current_user->user_email ); ?>';
+										
+										const blob = new Blob([content], { type: 'text/plain' });
+										const url = window.URL.createObjectURL(blob);
+										const a = document.createElement('a');
+										a.href = url;
+										a.download = 'brain2fa-recovery-codes-' + Date.now() + '.txt';
+										document.body.appendChild(a);
+										a.click();
+										window.URL.revokeObjectURL(url);
+										document.body.removeChild(a);
+									}
+								</script>
+							</div>
+						<?php endif; ?>
+						
+						<form method="post" action="" style="margin-top: 15px;">
+							<?php wp_nonce_field( 'brain2fa_setup_action', 'brain2fa_setup_nonce' ); ?>
+							<input type="hidden" name="brain2fa_action" value="regenerate_recovery_codes">
+							<button type="submit" class="button button-secondary" onclick="return confirm('<?php esc_attr_e( 'Are you sure you want to regenerate recovery codes? This will invalidate all previous recovery codes.', 'brain2fa' ); ?>');">
+								<span class="dashicons dashicons-update" style="margin-top: 3px;"></span>
+								<?php esc_html_e( 'Regenerate Recovery Codes', 'brain2fa' ); ?>
+							</button>
+						</form>
+					</div>
+					
+					<hr style="margin: 20px 0;">
+					
 					<form method="post" action="">
 						<?php wp_nonce_field( 'brain2fa_setup_action', 'brain2fa_setup_nonce' ); ?>
 						<input type="hidden" name="brain2fa_action" value="deactivate">

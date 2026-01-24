@@ -60,9 +60,9 @@ class EmailMethod implements TwoFactorMethodInterface {
 	 * @param WP_User $user The WordPress user object to save the setup for.
 	 * @param array   $data Array containing setup data with 'brain2fa_backup_email' key.
 	 *
-	 * @return bool|WP_Error Returns true on successful save, WP_Error on validation failure
-	 *                       - 'missing' error if email is empty
-	 *                       - 'invalid' error if email format is invalid
+	 * @return bool|array|WP_Error Returns true on successful deactivation,
+	 *                    array with 'success' and 'recovery_codes' keys on activation,
+	 *                    WP_Error on invalid code
 	 */
 	public function save_setup( WP_User $user, array $data ) {
 		return true;
@@ -140,5 +140,25 @@ class EmailMethod implements TwoFactorMethodInterface {
 			return true;
 		}
 		return false;
+	}
+
+	/**
+	 * Generates recovery codes for the email method.
+	 *
+	 * @param WP_User $user The WordPress user object.
+	 * @return array Array of generated recovery codes.
+	 */
+	public function generate_recovery_codes( WP_User $user ): array {
+		return array();
+	}
+
+	/**
+	 * Gets the count of recovery codes for the email method.
+	 *
+	 * @param WP_User $user The WordPress user object.
+	 * @return int The number of recovery codes.
+	 */
+	public function get_recovery_codes_count( WP_User $user ): int {
+		return 0;
 	}
 }

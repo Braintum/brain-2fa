@@ -37,7 +37,9 @@ interface TwoFactorMethodInterface {
 	 *
 	 * @param WP_User $user The user object.
 	 * @param array   $data The form data.
-	 * @return bool|WP_Error True on success, WP_Error on failure.
+	 * @return bool|array|WP_Error Returns true on successful deactivation,
+	 *                    array with 'success' and 'recovery_codes' keys on activation,
+	 *                    WP_Error on invalid code
 	 */
 	public function save_setup( WP_User $user, array $data );
 
@@ -67,4 +69,20 @@ interface TwoFactorMethodInterface {
 	 * @return bool True if valid, false otherwise.
 	 */
 	public function verify( WP_User $user, string $token, array $context = array() ): bool;
+
+	/**
+	 * Generate recovery codes for the user.
+	 *
+	 * @param WP_User $user The user object.
+	 * @return array Array of recovery codes.
+	 */
+	public function generate_recovery_codes( WP_User $user ): array;
+
+	/**
+	 * Get the count of remaining recovery codes for the user.
+	 *
+	 * @param WP_User $user The user object.
+	 * @return int Count of remaining recovery codes.
+	 */
+	public function get_recovery_codes_count( WP_User $user ): int;
 }

@@ -397,6 +397,9 @@ class Settings {
 		// Get TOTP method instance.
 		$totp_method = brain_2fa()->manager->get_method( 'totp' );
 
+		// Get fresh recovery codes after regeneration.
+		$fresh_recovery_codes = array();
+
 		// Handle form submission.
 		if ( isset( $_POST['brain2fa_action'] ) && check_admin_referer( 'brain2fa_setup_action', 'brain2fa_setup_nonce' ) ) {
 			$action = sanitize_text_field( wp_unslash( $_POST['brain2fa_action'] ) );
@@ -409,13 +412,20 @@ class Settings {
 
 				$result = $totp_method->save_setup( $current_user, $data );
 
-				if ( true === $result ) {
+				if ( true === $result || ( is_array( $result ) && ! empty( $result['success'] ) ) ) {
 					update_user_meta( $current_user->ID, 'brain2fa_method', 'totp' );
-					echo '<div class="notice notice-success"><p>' . esc_html__( 'Two-Factor Authentication has been activated successfully!', 'brain2fa' ) . '</p></div>';
 					$is_2fa_enabled = true;
 					$current_method = 'totp';
+
+					// Capture fresh recovery codes if they were generated.
+					if ( is_array( $result ) && ! empty( $result['recovery_codes'] ) ) {
+						$fresh_recovery_codes = $result['recovery_codes'];
+						echo '<div class="notice notice-success"><p>' . esc_html__( 'Two-Factor Authentication has been activated successfully! Please save your recovery codes below.', 'brain2fa' ) . '</p></div>';
+					} else {
+						echo '<div class="notice notice-success"><p>' . esc_html__( 'Two-Factor Authentication has been activated successfully!', 'brain2fa' ) . '</p></div>';
+					}
 				} elseif ( is_wp_error( $result ) ) {
-					echo '<div class="notice notice-error"><p>' . esc_html( $result->get_error_message() ) . '</p></div>';
+					echo '<div class="notice notice-error"><p>' . esc_html( $result->get_error_message() ) . '</p></div>'; // phpcs:ignore
 				}
 			} elseif ( 'deactivate' === $action && $totp_method ) {
 				$deactivate_data = array( 'brain2fa_deactivate' => '1' );
@@ -424,6 +434,9 @@ class Settings {
 				echo '<div class="notice notice-success"><p>' . esc_html__( 'Two-Factor Authentication has been deactivated.', 'brain2fa' ) . '</p></div>';
 				$is_2fa_enabled = false;
 				$current_method = '';
+			} elseif ( 'regenerate_recovery_codes' === $action && $totp_method && $is_2fa_enabled ) {
+				$fresh_recovery_codes = $totp_method->generate_recovery_codes( $current_user );
+				echo '<div class="notice notice-success"><p>' . esc_html__( 'Recovery codes have been regenerated. Please save them securely.', 'brain2fa' ) . '</p></div>';
 			}
 		}
 
@@ -432,6 +445,9 @@ class Settings {
 		if ( ! $is_2fa_enabled && $totp_method ) {
 			$setup_data = $totp_method->get_setup_data( $current_user );
 		}
+
+		// Get recovery codes count.
+		$recovery_codes_count = $is_2fa_enabled && $totp_method ? $totp_method->get_recovery_codes_count( $current_user ) : 0;
 
 		include BRAIN_2FA_PLUGIN_DIR . 'includes/Admin/views/login-security-page.php';
 	}
