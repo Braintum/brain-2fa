@@ -1,6 +1,6 @@
 <?php // phpcs:ignore WordPress.Files.FileName.InvalidClassFileName
 /**
- * AJAX Login Controller
+ * Login Controller
  *
  * @package Brain_2FA\Auth
  * @since 1.0.0
@@ -10,23 +10,36 @@ namespace Brain_2FA\Auth;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * AJAX Login Controller
+ * Login Controller
  *
- * Handles AJAX login requests with 2FA.
+ * Handles login requests with 2FA.
  *
  * @since 1.0.0
  */
-class AjaxLoginController {
+class LoginController {
 
 	/**
-	 * Initialize AJAX handlers.
+	 * Initializes the Brain 2FA plugin by setting up necessary actions and filters.
+	 *
+	 * This method hooks the 'brain2fa_login' action for unauthenticated users and
+	 * adds a filter to the authentication process to verify the two-factor authentication.
+	 *
+	 * @return void
 	 */
 	public static function init(): void {
 		add_action( 'wp_ajax_nopriv_brain2fa_login', array( __CLASS__, 'handle_login' ) );
+		add_filter( 'authenticate', array( __CLASS__, 'verify_2fa' ), 40, 3 );
 	}
 
 	/**
-	 * Handle AJAX login request.
+	 * LoginController initialization or method definition
+	 *
+	 * Handles user authentication and login operations for the 2FA brain plugin.
+	 * This class manages the login flow and validation processes.
+	 *
+	 * @package Brain_2FA\Auth
+	 * @subpackage Auth
+	 * @since 1.0.0
 	 */
 	public static function handle_login(): void {
 
@@ -36,6 +49,7 @@ class AjaxLoginController {
 			'log'      => 'pwd',
 			'username' => 'password',
 		);
+
 		$username = null;
 		$password = null;
 		foreach ( $credential_keys as $username_key => $password_key ) {
@@ -67,6 +81,7 @@ class AjaxLoginController {
 			);
 		}
 
+		// Trigger the authentication process.
 		do_action_ref_array( 'wp_authenticate', array( &$username, &$password ) );
 
 		// Prevents our auth filter from recursing.
@@ -164,5 +179,47 @@ class AjaxLoginController {
 				),
 			)
 		);
+	}
+
+	/**
+	 * Verify 2FA code during authentication.
+	 *
+	 * @param \WP_User|\WP_Error|null $user     The authenticated user or WP_Error on failure.
+	 * @param string                  $username The username.
+	 * @param string                  $password The password.
+	 * @return \WP_User|\WP_Error The authenticated user or WP_Error on failure.
+	 */
+	public static function verify_2fa( $user, $username, $password ) { //phpcs:ignore
+
+		if ( defined( 'BRAIN_2FA_AUTHENTICATION_CHECK' ) ) {
+			return $user;
+		}
+
+		if ( $user instanceof \WP_User ) {
+
+			// Check if user has 2FA enabled.
+			$is_2fa_enabled = get_user_meta( $user->ID, 'brain2fa_enabled', true );
+			if ( ! $is_2fa_enabled ) {
+				return $user;
+			}
+
+			// Ensure 2FA code is provided.
+			if ( ! isset( $_POST['brain2fa_code'] ) || empty( $_POST['brain2fa_code'] ) ) { //phpcs:ignore
+				return new \WP_Error(
+					'brain2fa_required',
+					__( 'Two-factor authentication required.', 'brain2fa' )
+				);
+			}
+
+			$code      = sanitize_text_field( wp_unslash( $_POST['brain2fa_code'] ) ); //phpcs:ignore
+			$method_id = get_user_meta( $user->ID, 'brain2fa_method', true );
+			$method    = brain_2fa()->manager->get_method( $method_id );
+
+			if ( ! $method || ! $method->verify( $user, $code ) ) {
+				return new \WP_Error( 'invalid_code', __( 'Invalid verification code.', 'brain2fa' ) );
+			}
+		}
+
+		return $user;
 	}
 }

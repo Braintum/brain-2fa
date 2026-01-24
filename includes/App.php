@@ -12,7 +12,7 @@ use Brain_2FA\Admin\UserListColumns;
 use Brain_2FA\Admin\Settings;
 use Brain_2FA\Admin\UserProfile;
 use Brain_2FA\Admin\Assets;
-use Brain_2FA\Auth\AjaxLoginController;
+use Brain_2FA\Auth\LoginController;
 use Brain_2FA\TwoFactor\Manager;
 use Brain_2FA\TwoFactor\Methods\EmailMethod;
 use Brain_2FA\TwoFactor\Methods\TotpMethod;
@@ -170,8 +170,7 @@ final class App {
 		$this->manager->register_method( new EmailMethod() );
 
 		// Initialize login handler.
-		// $this->login_handler = LoginHandler::instance();
-		AjaxLoginController::init();
+		LoginController::init();
 		LoginAssets::init();
 
 		// Initialize admin classes.

@@ -55,61 +55,7 @@ class TotpMethod implements TwoFactorMethodInterface {
 	 * @since 1.0.0
 	 */
 	public function setup_form( WP_User $user ): string {
-		$is_enabled = get_user_meta( $user->ID, 'brain2fa_enabled', true );
-
-		// If already enabled, show deactivate option.
-		if ( $is_enabled ) {
-			ob_start();
-			?>
-			<p><strong><?php esc_html_e( 'Two-Factor Authentication is currently enabled.', 'loop-2fa' ); ?></strong></p>
-			<p><?php esc_html_e( 'To disable 2FA, click the button below:', 'loop-2fa' ); ?></p>
-			<p>
-				<button type="submit" name="brain2fa_deactivate" value="1" class="button button-secondary">
-					<?php esc_html_e( 'Deactivate 2FA', 'loop-2fa' ); ?>
-				</button>
-			</p>
-			<?php
-			return ob_get_clean();
-		}
-
-		// Show setup form for new users.
-		$secret = get_user_meta( $user->ID, 'brain2fa_secret', true );
-		if ( ! $secret ) {
-			if ( class_exists( '\OTPHP\\TOTP' ) ) {
-				$t      = \OTPHP\TOTP::create();
-				$secret = $t->getSecret();
-			} else {
-				$secret = $this->random_base32( 16 );
-			}
-		}
-
-		$issuer = get_bloginfo( 'name' );
-		if ( ! empty( $user->user_email ) ) {
-			$account = $user->user_email;
-		} else {
-			$account = $user->user_login;
-		}
-		$uri = sprintf(
-			'otpauth://totp/%s:%s?secret=%s&issuer=%s&algorithm=SHA1&digits=6&period=30',
-			rawurlencode( $issuer ),
-			rawurlencode( $account ),
-			rawurlencode( $secret ),
-			rawurlencode( $issuer )
-		);
-
-		// Generate QR code using endroid/qr-code.
-		$qr_data_uri = $this->generate_qr_code( $uri );
-
-		ob_start();
-		?>
-		<p><?php esc_html_e( 'Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.).', 'loop-2fa' ); ?></p>
-		<img src="<?php echo esc_attr( $qr_data_uri ); ?>" alt="<?php esc_attr_e( 'TOTP QR Code', 'loop-2fa' ); ?>" />
-		<p><?php esc_html_e( 'Manual secret:', 'loop-2fa' ); ?> <code><?php echo esc_html( $secret ); ?></code></p>
-		<p><?php esc_html_e( 'Enter an OTP below to verify and enable TOTP:', 'loop-2fa' ); ?></p>
-		<p><label><?php esc_html_e( 'Code:', 'loop-2fa' ); ?> <input type="text" name="brain2fa_code" /></label></p>
-		<input type="hidden" name="brain2fa_secret" value="<?php echo esc_attr( $secret ); ?>" />
-		<?php
-		return ob_get_clean();
+		return '';
 	}
 
 	/**
@@ -284,9 +230,20 @@ class TotpMethod implements TwoFactorMethodInterface {
 			if ( class_exists( '\Endroid\QrCode\Writer\PngWriter' ) && class_exists( '\Endroid\QrCode\QrCode' ) ) {
 				$writer  = new \Endroid\QrCode\Writer\PngWriter();
 				$qr_code = \Endroid\QrCode\QrCode::create( $data )
-					->setSize( 200 )
-					->setMargin( 10 );
-				$result  = $writer->write( $qr_code );
+					->setSize( 300 )
+					->setMargin( 5 );
+
+				// Add logo to the center of the QR code.
+				$logo_path = BRAIN_2FA_PLUGIN_DIR . 'assets/images/logo.png';
+				if ( file_exists( $logo_path ) && class_exists( '\Endroid\QrCode\Logo\Logo' ) ) {
+					$logo = \Endroid\QrCode\Logo\Logo::create( $logo_path )
+						->setResizeToWidth( 60 ) // Logo width (20% of QR code size).
+						->setPunchoutBackground( true ); // Add white background behind logo for better contrast.
+				} else {
+					$logo = null;
+				}
+
+				$result = $writer->write( $qr_code, $logo );
 				return $result->getDataUri();
 			}
 		} catch ( \Exception $e ) {
