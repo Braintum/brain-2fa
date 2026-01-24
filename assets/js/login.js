@@ -1,4 +1,5 @@
 jQuery(function ($) {
+	'use strict';
 
 	const form = $('#loginform');
 
@@ -50,7 +51,6 @@ jQuery(function ($) {
 			});
 		}
 
-		
 	});
 
 	function show2FA(method) {

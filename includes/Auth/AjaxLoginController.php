@@ -45,6 +45,7 @@ class AjaxLoginController {
 				break;
 			}
 		}
+
 		if ( empty( $username ) || empty( $password ) ) {
 			wp_send_json_error(
 				array(
