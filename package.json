@@ -9,7 +9,8 @@
     "build": "webpack --mode production",
     "build:dev": "webpack --mode development",
     "lint": "eslint src/js",
-    "lint:fix": "eslint src/js --fix"
+    "lint:fix": "eslint src/js --fix",
+    "make-pot": "wp i18n make-pot . languages/brain2fa.pot --slug=brain-2fa --domain=brain2fa --exclude=node_modules,vendor,assets,languages,src/js/examples.js"
   },
   "devDependencies": {
     "@babel/core": "^7.23.7",
