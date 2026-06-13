@@ -48,7 +48,7 @@ defined( 'ABSPATH' ) || exit;
 		<h3><?php esc_html_e( 'Support', 'brain2fa' ); ?></h3>
 		<p><?php esc_html_e( 'Need help? Check out our documentation or contact support.', 'brain2fa' ); ?></p>
 		<p>
-			<a href="https://www.braintum.com/" class="button button-secondary" target="_blank">
+			<a href="https://www.braintum.com/" class="button button-secondary" target="_blank" rel="noopener noreferrer">
 				<?php esc_html_e( 'Documentation', 'brain2fa' ); ?>
 			</a>
 		</p>

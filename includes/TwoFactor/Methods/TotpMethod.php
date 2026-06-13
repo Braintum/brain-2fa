@@ -80,7 +80,7 @@ class TotpMethod implements TwoFactorMethodInterface {
 				$t      = \OTPHP\TOTP::create();
 				$secret = $t->getSecret();
 			} else {
-				$secret = $this->random_base32( 16 );
+				$secret = $this->random_base32( 26 );
 			}
 		}
 
@@ -149,8 +149,11 @@ class TotpMethod implements TwoFactorMethodInterface {
 					'recovery_codes' => $recovery_codes,
 				);
 			}
+
+			// Re-activation with existing recovery codes — still a success.
+			return array( 'success' => true );
 		}
-		return new \WP_Error( 'invalid', 'Invalid code' );
+		return new \WP_Error( 'invalid', __( 'Invalid verification code.', 'brain2fa' ) );
 	}
 
 	/**
@@ -195,9 +198,10 @@ class TotpMethod implements TwoFactorMethodInterface {
 		$is_valid = false;
 		if ( class_exists( '\OTPHP\\TOTP' ) ) {
 			$t = \OTPHP\TOTP::create( $secret );
-			$is_valid = hash_equals( $t->now(), $token );
+			// verify() handles ±1 period clock-drift tolerance and built-in replay protection.
+			$is_valid = $t->verify( $token, null, 1 );
 		} else {
-			$is_valid = $this->fallback_verify( $secret, $token );
+			$is_valid = $this->fallback_verify( $secret, $token, $user );
 		}
 
 		// If TOTP fails, try recovery code.
@@ -223,10 +227,19 @@ class TotpMethod implements TwoFactorMethodInterface {
 	 *
 	 * @since 1.0.0
 	 */
-	protected function fallback_verify( $secret, $token ) {
-		$time_slice = floor( time() / 30 );
+	protected function fallback_verify( $secret, $token, WP_User $user = null ) {
+		$time_slice = (int) floor( time() / 30 );
 		for ( $i = -1; $i <= 1; $i++ ) {
-			if ( $this->hotp( $secret, $time_slice + $i ) === $token ) {
+			$slice = $time_slice + $i;
+			if ( $this->hotp( $secret, $slice ) === $token ) {
+				// Replay protection: reject if this time-slice was already used for this user.
+				if ( $user ) {
+					$replay_key = 'brain2fa_used_slice_' . $user->ID;
+					if ( (int) get_transient( $replay_key ) === $slice ) {
+						return false;
+					}
+					set_transient( $replay_key, $slice, 90 ); // 3× the period to cover ±1 window.
+				}
 				return true;
 			}
 		}
@@ -271,8 +284,10 @@ class TotpMethod implements TwoFactorMethodInterface {
 			error_log( 'Brain 2FA QR Code generation failed: ' . $e->getMessage() );
 		}
 
-		// Fallback to Google Charts API (legacy, but still works).
-		return 'https://quickchart.io/qr?size=200x200&text=' . rawurlencode( $data );
+		// No external fallback — leaking the otpauth URI (which contains the TOTP secret) to a
+		// third-party service would be a security issue. Return empty string; the view will show
+		// the manual secret key entry field instead.
+		return '';
 	}
 
 	/**

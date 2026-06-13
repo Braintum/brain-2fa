@@ -59,32 +59,17 @@ defined( 'ABSPATH' ) || exit;
 										<?php endforeach; ?>
 									</div>
 								</div>
-								<button type="button" class="button button-secondary" onclick="downloadRecoveryCodes()" style="margin-top: 10px;">
+								<button type="button"
+									id="brain2fa-download-codes"
+									class="button button-secondary"
+									data-codes="<?php echo esc_attr( wp_json_encode( $fresh_recovery_codes ) ); ?>"
+									data-site="<?php echo esc_attr( get_bloginfo( 'name' ) ); ?>"
+									data-user="<?php echo esc_attr( $current_user->user_login ); ?>"
+									data-email="<?php echo esc_attr( $current_user->user_email ); ?>"
+									style="margin-top: 10px;">
 									<span class="dashicons dashicons-download" style="margin-top: 3px;"></span>
 									<?php esc_html_e( 'Download Recovery Codes', 'brain2fa' ); ?>
 								</button>
-								<script>
-									function downloadRecoveryCodes() {
-										const codes = <?php echo wp_json_encode( $fresh_recovery_codes ); ?>;
-										const content = '<?php echo esc_js( get_bloginfo( 'name' ) ); ?> - Two-Factor Authentication Recovery Codes\n\n' +
-											'Generated: ' + new Date().toLocaleString() + '\n\n' +
-											'IMPORTANT: Store these codes in a safe place.\n' +
-											'Each code can only be used once.\n\n' +
-											codes.join('\n') + '\n\n' +
-											'User: <?php echo esc_js( $current_user->user_login ); ?>\n' +
-											'Email: <?php echo esc_js( $current_user->user_email ); ?>';
-										
-										const blob = new Blob([content], { type: 'text/plain' });
-										const url = window.URL.createObjectURL(blob);
-										const a = document.createElement('a');
-										a.href = url;
-										a.download = 'brain2fa-recovery-codes-' + Date.now() + '.txt';
-										document.body.appendChild(a);
-										a.click();
-										window.URL.revokeObjectURL(url);
-										document.body.removeChild(a);
-									}
-								</script>
 							</div>
 						<?php endif; ?>
 						

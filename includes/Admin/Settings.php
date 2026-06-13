@@ -183,7 +183,9 @@ class Settings {
 		$sanitized = array();
 
 		$sanitized['enable_2fa']        = ! empty( $input['enable_2fa'] );
-		$sanitized['force_2fa_roles']   = isset( $input['force_2fa_roles'] ) && is_array( $input['force_2fa_roles'] ) ? $input['force_2fa_roles'] : array();
+		$valid_roles                     = array_keys( wp_roles()->roles );
+		$raw_roles                       = isset( $input['force_2fa_roles'] ) && is_array( $input['force_2fa_roles'] ) ? $input['force_2fa_roles'] : array();
+		$sanitized['force_2fa_roles']   = array_values( array_filter( $raw_roles, fn( $r ) => in_array( $r, $valid_roles, true ) ) );
 		$sanitized['default_method']    = in_array( $input['default_method'] ?? 'totp', array( 'totp', 'email_backup' ), true ) ? $input['default_method'] : 'totp';
 		$sanitized['enable_totp']       = ! empty( $input['enable_totp'] );
 		$sanitized['enable_email']      = ! empty( $input['enable_email'] );

@@ -45,6 +45,15 @@ class LoginController {
 
 		check_ajax_referer( 'brain2fa_login', 'nonce' );
 
+		// Rate limiting: max 5 attempts per minute per IP.
+		$ip_hash     = wp_hash( $_SERVER['REMOTE_ADDR'] ?? '' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		$rate_key    = 'brain2fa_rate_' . $ip_hash;
+		$attempts    = (int) get_transient( $rate_key );
+		if ( $attempts >= 5 ) {
+			wp_send_json_error( array( 'error' => esc_html__( 'Too many attempts. Please try again in a minute.', 'brain2fa' ) ), 429 );
+		}
+		set_transient( $rate_key, $attempts + 1, MINUTE_IN_SECONDS );
+
 		$credential_keys = array(
 			'log'      => 'pwd',
 			'username' => 'password',
@@ -55,7 +64,8 @@ class LoginController {
 		foreach ( $credential_keys as $username_key => $password_key ) {
 			if ( array_key_exists( $username_key, $_POST ) && array_key_exists( $password_key, $_POST ) && is_string( $_POST[ $username_key ] ) && is_string( $_POST[ $password_key ] ) ) {
 				$username = sanitize_text_field( wp_unslash( $_POST[ $username_key ] ) );
-				$password = sanitize_text_field( wp_unslash( $_POST[ $password_key ] ) );
+				// Passwords must not be sanitized — sanitize_text_field strips tags and breaks some passwords.
+				$password = wp_unslash( $_POST[ $password_key ] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
 				break;
 			}
 		}
@@ -85,7 +95,9 @@ class LoginController {
 		do_action_ref_array( 'wp_authenticate', array( &$username, &$password ) );
 
 		// Prevents our auth filter from recursing.
-		define( 'BRAIN_2FA_AUTHENTICATION_CHECK', true );
+		if ( ! defined( 'BRAIN_2FA_AUTHENTICATION_CHECK' ) ) {
+			define( 'BRAIN_2FA_AUTHENTICATION_CHECK', true );
+		}
 
 		$user = wp_authenticate( $username, $password );
 		if ( is_object( $user ) && ( $user instanceof \WP_User ) ) {
@@ -128,11 +140,15 @@ class LoginController {
 					);
 				} else {
 					$severity = $user->get_error_data( $code );
+					$allowed  = array(
+						'strong' => array(),
+						'a'      => array( 'href' => array() ),
+					);
 					foreach ( $user->get_error_messages( $code ) as $error_message ) {
 						if ( 'message' === $severity ) {
-							$messages[] = $error_message;
+							$messages[] = wp_kses( $error_message, $allowed );
 						} else {
-							$errors[] = $error_message;
+							$errors[] = wp_kses( $error_message, $allowed );
 						}
 					}
 				}
@@ -151,7 +167,6 @@ class LoginController {
 
 			if ( ! empty( $messages ) ) {
 				$messages = implode( '<br>', $messages );
-				$messages = apply_filters( 'login_errors', $messages );
 				wp_send_json_error(
 					array(
 						'message' => $messages,

@@ -107,14 +107,43 @@ class EmailMethod implements TwoFactorMethodInterface {
 
 		$code = str_pad( (string) random_int( 0, 999999 ), 6, '0', STR_PAD_LEFT );
 
-		// Allow themes/plugins to handle email sending.
+		// Read expiry from plugin settings (falls back to 10 minutes).
+		$settings   = get_option( 'brain2fa_settings', array() );
+		$expiry_min = isset( $settings['code_expiry'] ) ? absint( $settings['code_expiry'] ) : 10;
+		if ( $expiry_min < 1 ) {
+			$expiry_min = 10;
+		}
+		$expiry_seconds = $expiry_min * MINUTE_IN_SECONDS;
+
+		// Allow themes/plugins to handle sending. If they return true, skip the default wp_mail().
 		$email_sent = apply_filters( 'brain2fa_send_backup_code', false, $user, $code );
 
-		if ( $email_sent ) {
-			set_transient( 'brain2fa_backup_code_' . $user->ID, $code, 10 * MINUTE_IN_SECONDS );
+		if ( ! $email_sent ) {
+			$site_name = get_bloginfo( 'name' );
+			$subject   = sprintf(
+				/* translators: %s: site name */
+				__( '[%s] Your two-factor authentication code', 'brain2fa' ),
+				$site_name
+			);
+			$message = sprintf(
+				/* translators: 1: user display name, 2: 6-digit code, 3: expiry in minutes, 4: site name */
+				__(
+					"Hi %1\$s,\n\nYour two-factor authentication code is:\n\n%2\$s\n\nThis code expires in %3\$d minute(s).\n\nIf you did not request this code, please ignore this email.\n\n-- %4\$s",
+					'brain2fa'
+				),
+				$user->display_name,
+				$code,
+				$expiry_min,
+				$site_name
+			);
+			$email_sent = wp_mail( $email, $subject, $message );
 		}
 
-		return true;
+		if ( $email_sent ) {
+			set_transient( 'brain2fa_backup_code_' . $user->ID, $code, $expiry_seconds );
+		}
+
+		return $email_sent;
 	}
 
 	/**
