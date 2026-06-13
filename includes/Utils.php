@@ -21,23 +21,24 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Utils {
 
 	/**
-	 * Set an ephemeral token cookie for 2FA session.
+	 * Check whether 2FA is enabled for a specific user.
 	 *
-	 * @param string $token       The ephemeral token to set in the cookie.
-	 * @param int    $ttl_seconds Time to live for the cookie in seconds. Default is 300 seconds (5 minutes).
-	 * @return void
+	 * @param int|string $user_id User ID.
+	 * @return bool True when user 2FA is enabled, false otherwise.
 	 */
-	public static function set_ephemeral_token_cookie( string $token, int $ttl_seconds = 300 ) {
-		// COOKIEPATH and COOKIE_DOMAIN are WP constants.
-		setcookie( 'brain2fa_session', $token, time() + $ttl_seconds, COOKIEPATH, COOKIE_DOMAIN, is_ssl(), true );
+	public static function is_2fa_enabled_for_user( $user_id ): bool {
+		$user_2fa_enabled = get_user_meta( $user_id, 'brain2fa_enabled', true );
+		return ! empty( $user_2fa_enabled );
 	}
 
 	/**
-	 * Clear the ephemeral token cookie.
+	 * Check whether 2FA is enabled globally in plugin settings.
 	 *
-	 * @return void
+	 * @return bool True when sitewide 2FA is enabled, false otherwise.
 	 */
-	public static function clear_ephemeral_token_cookie() {
-		setcookie( 'brain2fa_session', '', time() - 3600, COOKIEPATH, COOKIE_DOMAIN, is_ssl(), true );
+	public static function is_2fa_enabled_sitewide(): bool {
+		$plugin_settings = get_option( 'brain2fa_settings', array() );
+		return ! empty( $plugin_settings['enable_2fa'] );
 	}
+
 }

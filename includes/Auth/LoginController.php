@@ -7,6 +7,8 @@
  */
 namespace Brain_2FA\Auth;
 
+use Brain_2FA\Utils;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -101,6 +103,11 @@ class LoginController {
 
 		$user = wp_authenticate( $username, $password );
 		if ( is_object( $user ) && ( $user instanceof \WP_User ) ) {
+
+			if ( ! Utils::is_2fa_enabled_sitewide() ) {
+				// 2FA is not enabled site-wide, pass the credentials on to the normal login flow.
+				wp_send_json_success( array( 'login' => 1 ) );
+			}
 
 			// Check if user has 2FA enabled.
 			$is_2fa_enabled = get_user_meta( $user->ID, 'brain2fa_enabled', true );
