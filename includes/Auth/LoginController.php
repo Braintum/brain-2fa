@@ -8,6 +8,8 @@
 namespace Brain_2FA\Auth;
 
 use Brain_2FA\Utils;
+use WP_Error;
+use WP_User;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -44,8 +46,6 @@ class LoginController {
 	 * @since 1.0.0
 	 */
 	public static function handle_login(): void {
-
-		check_ajax_referer( 'brain2fa_login', 'nonce' );
 
 		// Rate limiting: max 5 attempts per minute per IP.
 		$ip_hash     = wp_hash( $_SERVER['REMOTE_ADDR'] ?? '' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
@@ -102,7 +102,7 @@ class LoginController {
 		}
 
 		$user = wp_authenticate( $username, $password );
-		if ( is_object( $user ) && ( $user instanceof \WP_User ) ) {
+		if ( is_object( $user ) && ( $user instanceof WP_User ) ) {
 
 			if ( ! Utils::is_2fa_enabled_sitewide() ) {
 				// 2FA is not enabled site-wide, pass the credentials on to the normal login flow.
@@ -113,6 +113,15 @@ class LoginController {
 			$is_2fa_enabled = get_user_meta( $user->ID, 'brain2fa_enabled', true );
 
 			if ( ! $is_2fa_enabled ) {
+				if ( Utils::is_grace_period_expired( $user ) ) {
+					wp_send_json_error(
+						array(
+							'error' => __( 'Your grace period to set up two-factor authentication has expired. Please contact an administrator.', 'brain2fa' ),
+							'reset' => true,
+						)
+					);
+				}
+
 				// Not enabled for this user, is whitelisted, has a valid remembered cookie, or has already provided a 2FA code via the password field pass the credentials on to the normal login flow.
 				wp_send_json_success( array( 'login' => 1 ) );
 			}
@@ -206,10 +215,10 @@ class LoginController {
 	/**
 	 * Verify 2FA code during authentication.
 	 *
-	 * @param \WP_User|\WP_Error|null $user     The authenticated user or WP_Error on failure.
+	 * @param WP_User|WP_Error|null $user     The authenticated user or WP_Error on failure.
 	 * @param string                  $username The username.
 	 * @param string                  $password The password.
-	 * @return \WP_User|\WP_Error The authenticated user or WP_Error on failure.
+	 * @return WP_User|WP_Error The authenticated user or WP_Error on failure.
 	 */
 	public static function verify_2fa( $user, $username, $password ) { //phpcs:ignore
 
@@ -217,17 +226,28 @@ class LoginController {
 			return $user;
 		}
 
-		if ( $user instanceof \WP_User ) {
+		if ( ! Utils::is_2fa_enabled_sitewide() ) {
+			return $user;
+		}
+
+		if ( $user instanceof WP_User ) {
 
 			// Check if user has 2FA enabled.
 			$is_2fa_enabled = get_user_meta( $user->ID, 'brain2fa_enabled', true );
 			if ( ! $is_2fa_enabled ) {
+				if ( Utils::is_grace_period_expired( $user ) ) {
+					return new WP_Error(
+						'brain2fa_setup_required',
+						__( 'Your grace period to set up two-factor authentication has expired. Please contact an administrator.', 'brain2fa' )
+					);
+				}
+
 				return $user;
 			}
 
 			// Ensure 2FA code is provided.
 			if ( ! isset( $_POST['brain2fa_code'] ) || empty( $_POST['brain2fa_code'] ) ) { //phpcs:ignore
-				return new \WP_Error(
+				return new WP_Error(
 					'brain2fa_required',
 					__( 'Two-factor authentication required.', 'brain2fa' )
 				);
@@ -238,7 +258,7 @@ class LoginController {
 			$method    = brain_2fa()->manager->get_method( $method_id );
 
 			if ( ! $method || ! $method->verify( $user, $code ) ) {
-				return new \WP_Error( 'invalid_code', __( 'Invalid verification code.', 'brain2fa' ) );
+				return new WP_Error( 'invalid_code', __( 'Invalid verification code.', 'brain2fa' ) );
 			}
 		}
 

@@ -10,6 +10,8 @@
 
 namespace Brain_2FA\Admin;
 
+use Brain_2FA\Utils;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -79,6 +81,29 @@ class UserListColumns {
 			return sprintf(
 				'<span class="brain2fa-status brain2fa-status-enabled"><span class="dashicons dashicons-shield-alt"></span> %s</span>',
 				esc_html__( 'Enabled', 'brain2fa' ),
+			);
+		}
+
+		$user = get_userdata( $user_id );
+		if ( $user instanceof \WP_User && Utils::is_2fa_required_for_user( $user ) ) {
+			$grace_period_expires_at = Utils::get_grace_period_expiry( $user );
+
+			if ( Utils::is_grace_period_expired( $user ) ) {
+				return sprintf(
+					'<span class="brain2fa-status brain2fa-status-disabled"><span class="dashicons dashicons-warning"></span> %s</span>',
+					esc_html__( 'Grace Period Expired', 'brain2fa' )
+				);
+			}
+
+			return sprintf(
+				'<span class="brain2fa-status brain2fa-status-disabled"><span class="dashicons dashicons-clock"></span> %s</span>',
+				esc_html(
+					sprintf(
+						/* translators: %s: grace period expiry date */
+						__( 'Setup due %s', 'brain2fa' ),
+						date_i18n( get_option( 'date_format' ), $grace_period_expires_at )
+					)
+				)
 			);
 		}
 

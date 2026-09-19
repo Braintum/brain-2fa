@@ -117,6 +117,14 @@ class Settings {
 		);
 
 		add_settings_field(
+			'grace_period',
+			__( '2FA Setup Grace Period', 'brain2fa' ),
+			array( $this, 'grace_period_callback' ),
+			'brain-2fa-settings',
+			'brain2fa_general_section'
+		);
+
+		add_settings_field(
 			'default_method',
 			__( 'Default Authentication Method', 'brain2fa' ),
 			array( $this, 'default_method_callback' ),
@@ -186,6 +194,7 @@ class Settings {
 		$valid_roles                     = array_keys( wp_roles()->roles );
 		$raw_roles                       = isset( $input['force_2fa_roles'] ) && is_array( $input['force_2fa_roles'] ) ? $input['force_2fa_roles'] : array();
 		$sanitized['force_2fa_roles']   = array_values( array_filter( $raw_roles, fn( $r ) => in_array( $r, $valid_roles, true ) ) );
+		$sanitized['grace_period_days'] = min( 365, absint( $input['grace_period_days'] ?? 14 ) );
 		$sanitized['default_method']    = in_array( $input['default_method'] ?? 'totp', array( 'totp', 'email_backup' ), true ) ? $input['default_method'] : 'totp';
 		$sanitized['enable_totp']       = ! empty( $input['enable_totp'] );
 		$sanitized['enable_email']      = ! empty( $input['enable_email'] );
@@ -255,6 +264,25 @@ class Settings {
 		</fieldset>
 		<p class="description">
 			<?php esc_html_e( 'Select user roles that are required to use 2FA.', 'brain2fa' ); ?>
+		</p>
+		<?php
+	}
+
+	/**
+	 * Field callbacks.
+	 */
+	public function grace_period_callback(): void {
+		$options = get_option( 'brain2fa_settings', array() );
+		$days    = isset( $options['grace_period_days'] ) ? min( 365, absint( $options['grace_period_days'] ) ) : 14;
+		?>
+		<input type="number"
+			name="brain2fa_settings[grace_period_days]"
+			value="<?php echo esc_attr( $days ); ?>"
+			min="0"
+			max="365"
+			step="1">
+		<p class="description">
+			<?php esc_html_e( 'Allow users in required roles this many days to set up 2FA. Set to 0 to require setup immediately.', 'brain2fa' ); ?>
 		</p>
 		<?php
 	}
