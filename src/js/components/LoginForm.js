@@ -73,6 +73,7 @@ async function validateCredentials() {
 		nonce: window.Brain2FA?.nonce || '',
 		username,
 		password,
+		rememberme: document.getElementById('rememberme')?.checked ? 'forever' : '',
 	};
 
 	try {

@@ -66,8 +66,6 @@ export function show2FAField(form, method = 'email', showRememberDevice = false)
 	labelText.textContent = __('Verification Code', 'brain2fa');
 	label.appendChild(labelText);
 
-	// Line break
-	label.appendChild(document.createElement('br'));
 
 	// Create input field
 	const input = document.createElement('input');
@@ -87,6 +85,7 @@ export function show2FAField(form, method = 'email', showRememberDevice = false)
 	if (method === 'email') {
 		const description = document.createElement('div');
 		description.className = 'description';
+		description.style.marginBottom = '8px';
 		description.textContent = __('A verification code has been sent to your email address.', 'brain2fa');
 		wrapper.appendChild(description);
 	}
