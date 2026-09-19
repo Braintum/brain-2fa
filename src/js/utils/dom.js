@@ -7,29 +7,29 @@
 import { __ } from '@wordpress/i18n';
 
 /**
- * Hide login form fields (username, password, remember me)
+ * @param {HTMLFormElement} form - The login form
  */
-export function hideFormFields() {
-	const usernameField = document.getElementById('user_login');
-	const passwordField = document.getElementById('user_pass');
-	const rememberField = document.getElementById('rememberme');
+export function hideFormFields(form) {
+	const usernameField = form.querySelector('#user_login, #username, [name="log"], [name="username"]');
+	const passwordField = form.querySelector('#user_pass, #password, [name="pwd"], [name="password"]');
+	const rememberField = form.querySelector('#rememberme, [name="rememberme"]');
 
 	if (usernameField) {
-		const usernamePara = usernameField.closest('p');
+		const usernamePara = usernameField.closest('p, .form-row');
 		if (usernamePara) {
 			usernamePara.style.display = 'none';
 		}
 	}
 
 	if (passwordField) {
-		const passwordWrap = passwordField.closest('.user-pass-wrap');
+		const passwordWrap = passwordField.closest('.user-pass-wrap, .form-row');
 		if (passwordWrap) {
 			passwordWrap.style.display = 'none';
 		}
 	}
 
 	if (rememberField) {
-		const rememberWrap = rememberField.closest('.forgetmenot');
+		const rememberWrap = rememberField.closest('.forgetmenot, .woocommerce-form__label-for-checkbox');
 		if (rememberWrap) {
 			rememberWrap.style.display = 'none';
 		}
@@ -49,8 +49,12 @@ export function show2FAField(form, method = 'email', showRememberDevice = false)
 		return;
 	}
 
-	const submitButton = form.querySelector('p.submit');
+	const submitButton = form.querySelector('p.submit, button[type="submit"]');
 	if (!submitButton) {
+		return;
+	}
+	const submitRow = submitButton.closest('p');
+	if (!submitRow || !submitRow.parentNode) {
 		return;
 	}
 
@@ -101,8 +105,8 @@ export function show2FAField(form, method = 'email', showRememberDevice = false)
 		wrapper.appendChild(rememberLabel);
 	}
 
-	// Insert before submit button
-	submitButton.parentNode.insertBefore(wrapper, submitButton);
+	// Keep the code field outside WooCommerce's submit row.
+	submitRow.parentNode.insertBefore(wrapper, submitRow);
 
 	// Focus the input
 	input.focus();

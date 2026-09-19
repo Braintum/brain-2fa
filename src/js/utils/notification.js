@@ -13,21 +13,19 @@
 export function showError(message, allowMarkup = false) {
 	removeError();
 
-	const form = document.getElementById('loginform');
+	const form = getLoginForm();
 	if (!form) {
 		return;
 	}
 
-	const errorDiv = document.createElement('div');
-	errorDiv.id = 'login_error';
-	errorDiv.className = 'notice notice-error';
+	const errorDiv = createNotification('error');
 	if (allowMarkup) {
 		appendApprovedMarkup(errorDiv, message);
 	} else {
 		errorDiv.textContent = message;
 	}
 
-	form.parentNode.insertBefore(errorDiv, form);
+	insertNotification(errorDiv, form);
 }
 
 /**
@@ -88,17 +86,15 @@ function appendApprovedMarkup(container, markup) {
 export function showSuccess(message) {
 	removeNotifications();
 
-	const form = document.getElementById('loginform');
+	const form = getLoginForm();
 	if (!form) {
 		return;
 	}
 
-	const successDiv = document.createElement('div');
-	successDiv.id = 'login_success';
-	successDiv.className = 'notice notice-success';
+	const successDiv = createNotification('success');
 	successDiv.textContent = message;
 
-	form.parentNode.insertBefore(successDiv, form);
+	insertNotification(successDiv, form);
 }
 
 /**
@@ -109,17 +105,61 @@ export function showSuccess(message) {
 export function showInfo(message) {
 	removeNotifications();
 
-	const form = document.getElementById('loginform');
+	const form = getLoginForm();
 	if (!form) {
 		return;
 	}
 
-	const infoDiv = document.createElement('div');
-	infoDiv.id = 'login_info';
-	infoDiv.className = 'notice notice-info';
+	const infoDiv = createNotification('info');
 	infoDiv.textContent = message;
 
-	form.parentNode.insertBefore(infoDiv, form);
+	insertNotification(infoDiv, form);
+}
+
+/**
+ * Find either supported login form.
+ *
+ * @return {HTMLFormElement|null} Login form.
+ */
+function getLoginForm() {
+	return document.getElementById('loginform') || document.querySelector('.woocommerce-form-login');
+}
+
+/**
+ * Create a WordPress or WooCommerce notification element.
+ *
+ * @param {string} type Notification type.
+ * @return {HTMLDivElement} Notification element.
+ */
+function createNotification(type) {
+	const notification = document.createElement('div');
+	const isWooCommerce = Boolean(document.querySelector('.woocommerce-form-login'));
+	notification.id = `login_${type}`;
+	notification.className = isWooCommerce
+		? `woocommerce-${type === 'error' ? 'error' : 'message'}`
+		: `notice notice-${type}`;
+
+	if (isWooCommerce && type === 'error') {
+		notification.setAttribute('role', 'alert');
+	}
+
+	return notification;
+}
+
+/**
+ * Place a notification in the appropriate login-page notices area.
+ *
+ * @param {HTMLElement} notification Notification element.
+ * @param {HTMLFormElement} form Login form.
+ */
+function insertNotification(notification, form) {
+	const notices = form.closest('.woocommerce')?.querySelector('.woocommerce-notices-wrapper');
+	if (notices) {
+		notices.appendChild(notification);
+		return;
+	}
+
+	form.parentNode.insertBefore(notification, form);
 }
 
 /**

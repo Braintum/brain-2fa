@@ -57,8 +57,9 @@ async function handleSubmit(event) {
  * Validate user credentials via AJAX
  */
 async function validateCredentials() {
-	const username = document.getElementById('user_login')?.value;
-	const password = document.getElementById('user_pass')?.value;
+	const username = loginForm.querySelector('#user_login, #username, [name="log"], [name="username"]')?.value;
+	const password = loginForm.querySelector('#user_pass, #password, [name="pwd"], [name="password"]')?.value;
+	const rememberMe = loginForm.querySelector('#rememberme, [name="rememberme"]');
 
 	if (!username || !password) {
 		showError(__('Please enter your username and password.', 'brain2fa'));
@@ -73,7 +74,7 @@ async function validateCredentials() {
 		nonce: window.Brain2FA?.nonce || '',
 		username,
 		password,
-		rememberme: document.getElementById('rememberme')?.checked ? 'forever' : '',
+		rememberme: rememberMe?.checked ? 'forever' : '',
 	};
 
 	try {
@@ -122,7 +123,7 @@ function handleError(data) {
  * @param {string} method - 2FA method (e.g., 'email', 'app')
  */
 function handle2FA(method) {
-	hideFormFields();
+	hideFormFields(loginForm);
 	show2FAField(loginForm, method, window.Brain2FA?.rememberDevice);
 }
 
@@ -133,6 +134,22 @@ function submitForm() {
 	// Remove event listener to avoid recursion
 	if (loginForm && submitHandler) {
 		loginForm.removeEventListener('submit', submitHandler);
+
+		const submitButton = loginForm.querySelector('button[type="submit"], input[type="submit"]');
+		if (submitButton && typeof loginForm.requestSubmit === 'function') {
+			loginForm.requestSubmit(submitButton);
+			return;
+		}
+
+		// WooCommerce requires the login submit button's name/value in the request.
+		if (loginForm.classList.contains('woocommerce-form-login') && !loginForm.querySelector('input[name="login"]')) {
+			const loginAction = document.createElement('input');
+			loginAction.type = 'hidden';
+			loginAction.name = 'login';
+			loginAction.value = submitButton?.value || 'Log in';
+			loginForm.appendChild(loginAction);
+		}
+
 		loginForm.submit();
 	}
 }
@@ -141,9 +158,9 @@ function submitForm() {
  * Reset form fields
  */
 function resetForm() {
-	const userLogin = document.getElementById('user_login');
-	const userPass = document.getElementById('user_pass');
-	const rememberMe = document.getElementById('rememberme');
+	const userLogin = loginForm?.querySelector('#user_login, #username, [name="log"], [name="username"]');
+	const userPass = loginForm?.querySelector('#user_pass, #password, [name="pwd"], [name="password"]');
+	const rememberMe = loginForm?.querySelector('#rememberme, [name="rememberme"]');
 
 	if (userPass) {
 		userPass.value = '';

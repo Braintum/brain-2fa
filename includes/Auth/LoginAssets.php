@@ -23,6 +23,20 @@ class LoginAssets {
 	 */
 	public static function init(): void {
 		add_action( 'login_enqueue_scripts', array( __CLASS__, 'enqueue' ) );
+		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue_woocommerce_login' ) );
+	}
+
+	/**
+	 * Enqueue login assets on the WooCommerce My Account login form.
+	 *
+	 * @return void
+	 */
+	public static function enqueue_woocommerce_login(): void {
+		if ( ! function_exists( 'is_account_page' ) || ! is_account_page() || is_user_logged_in() ) {
+			return;
+		}
+
+		self::enqueue();
 	}
 
 	/**
