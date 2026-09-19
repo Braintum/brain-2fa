@@ -108,7 +108,7 @@ function handleError(data) {
 		data.error || 
 		__('An unknown error occurred. Please try again.', 'brain2fa');
 
-	showError(message);
+	showError(message, Boolean(data.message || data.error));
 
 	if (data.reset) {
 		resetForm();

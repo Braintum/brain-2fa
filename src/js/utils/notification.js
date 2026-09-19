@@ -8,8 +8,9 @@
  * Show error message
  *
  * @param {string} message - Error message to display
+ * @param {boolean} allowMarkup - Whether to render the server-approved markup
  */
-export function showError(message) {
+export function showError(message, allowMarkup = false) {
 	removeError();
 
 	const form = document.getElementById('loginform');
@@ -20,9 +21,63 @@ export function showError(message) {
 	const errorDiv = document.createElement('div');
 	errorDiv.id = 'login_error';
 	errorDiv.className = 'notice notice-error';
-	errorDiv.textContent = message;
+	if (allowMarkup) {
+		appendApprovedMarkup(errorDiv, message);
+	} else {
+		errorDiv.textContent = message;
+	}
 
 	form.parentNode.insertBefore(errorDiv, form);
+}
+
+/**
+ * Append the limited markup returned by the login endpoint.
+ *
+ * @param {HTMLElement} container - Element receiving the sanitized markup.
+ * @param {string} markup - Server-approved markup.
+ */
+function appendApprovedMarkup(container, markup) {
+	const template = document.createElement('template');
+	template.innerHTML = markup;
+
+	const appendNode = (parent, node) => {
+		if (node.nodeType === Node.TEXT_NODE) {
+			parent.appendChild(document.createTextNode(node.textContent));
+			return;
+		}
+
+		if (node.nodeType !== Node.ELEMENT_NODE) {
+			return;
+		}
+
+		const tagName = node.tagName.toLowerCase();
+		if (!['strong', 'a'].includes(tagName)) {
+			node.childNodes.forEach((child) => appendNode(parent, child));
+			return;
+		}
+
+		const element = document.createElement(tagName);
+		if (tagName === 'a') {
+			const href = node.getAttribute('href');
+			if (href) {
+				const link = document.createElement('a');
+				link.href = href;
+				if (['http:', 'https:'].includes(link.protocol)) {
+					element.href = link.href;
+				}
+			}
+
+			const title = node.getAttribute('title');
+			if (title) {
+				element.title = title;
+			}
+		}
+
+		node.childNodes.forEach((child) => appendNode(element, child));
+		parent.appendChild(element);
+	};
+
+	template.content.childNodes.forEach((node) => appendNode(container, node));
 }
 
 /**
