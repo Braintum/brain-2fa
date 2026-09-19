@@ -207,7 +207,7 @@ class Settings {
 		$sanitized['default_method']    = $default_method;
 		$sanitized['code_expiry']       = absint( $input['code_expiry'] ?? 10 );
 		$sanitized['remember_device']   = ! empty( $input['remember_device'] );
-		$sanitized['remember_duration'] = absint( $input['remember_duration'] ?? 30 );
+		$sanitized['remember_duration'] = min( 365, max( 1, absint( $input['remember_duration'] ?? 30 ) ) );
 
 		return $sanitized;
 	}

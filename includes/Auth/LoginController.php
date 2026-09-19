@@ -126,6 +126,10 @@ class LoginController {
 				wp_send_json_success( array( 'login' => 1 ) );
 			}
 
+			if ( Utils::is_remembered_device( $user ) ) {
+				wp_send_json_success( array( 'login' => 1 ) );
+			}
+
 			$method_id = get_user_meta( $user->ID, 'brain2fa_method', true );
 			$method    = brain_2fa()->manager->get_method( $method_id );
 			if ( ! Utils::is_method_enabled( $method_id ) || ! $method ) {
@@ -267,6 +271,10 @@ class LoginController {
 				return $user;
 			}
 
+			if ( Utils::is_remembered_device( $user ) ) {
+				return $user;
+			}
+
 			$method_id = get_user_meta( $user->ID, 'brain2fa_method', true );
 			$method    = brain_2fa()->manager->get_method( $method_id );
 
@@ -289,6 +297,10 @@ class LoginController {
 
 			if ( ! Utils::is_method_enabled( $method_id ) || ! $method || ! $method->verify( $user, $code ) ) {
 				return new WP_Error( 'invalid_code', __( 'Invalid verification code.', 'brain2fa' ) );
+			}
+
+			if ( isset( $_POST['brain2fa_remember_device'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+				Utils::remember_device( $user );
 			}
 		}
 

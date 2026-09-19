@@ -27,6 +27,13 @@ class Utils {
 	private const GRACE_PERIOD_EXPIRY_META_KEY = 'brain2fa_grace_expires_at';
 
 	/**
+	 * User meta key storing trusted-device token hashes and expiration timestamps.
+	 *
+	 * @var string
+	 */
+	private const REMEMBERED_DEVICES_META_KEY = 'brain2fa_remembered_devices';
+
+	/**
 	 * Check whether 2FA is enabled for a specific user.
 	 *
 	 * @param int|string $user_id User ID.
@@ -85,6 +92,125 @@ class Utils {
 		}
 
 		return self::is_method_enabled( 'totp' ) ? 'totp' : 'email';
+	}
+
+	/**
+	 * Check whether trusted devices are enabled site-wide.
+	 *
+	 * @return bool True when users may remember their devices.
+	 */
+	public static function is_remember_device_enabled(): bool {
+		$plugin_settings = get_option( 'brain2fa_settings', array() );
+		return ! empty( $plugin_settings['remember_device'] );
+	}
+
+	/**
+	 * Get the number of days a trusted device remains valid.
+	 *
+	 * @return int Number of days, between 1 and 365.
+	 */
+	public static function get_remember_device_duration(): int {
+		$plugin_settings = get_option( 'brain2fa_settings', array() );
+		return min( 365, max( 1, absint( $plugin_settings['remember_duration'] ?? 30 ) ) );
+	}
+
+	/**
+	 * Check whether the browser has a valid trusted-device token for a user.
+	 *
+	 * @param \WP_User $user User to evaluate.
+	 * @return bool True when the device is trusted.
+	 */
+	public static function is_remembered_device( \WP_User $user ): bool {
+		if ( ! self::is_remember_device_enabled() ) {
+			return false;
+		}
+
+		$cookie_name = self::get_remembered_device_cookie_name( $user->ID );
+		$token       = isset( $_COOKIE[ $cookie_name ] ) && is_string( $_COOKIE[ $cookie_name ] ) ? sanitize_text_field( wp_unslash( $_COOKIE[ $cookie_name ] ) ) : '';
+		$devices     = get_user_meta( $user->ID, self::REMEMBERED_DEVICES_META_KEY, true );
+		$devices     = is_array( $devices ) ? $devices : array();
+		$valid       = false;
+		$now         = time();
+		$active      = array();
+
+		foreach ( $devices as $device ) {
+			if ( ! is_array( $device ) || empty( $device['token'] ) || empty( $device['expires_at'] ) || $device['expires_at'] <= $now ) {
+				continue;
+			}
+
+			$active[] = $device;
+			if ( $token && wp_check_password( $token, $device['token'] ) ) {
+				$valid = true;
+			}
+		}
+
+		if ( $active !== $devices ) {
+			update_user_meta( $user->ID, self::REMEMBERED_DEVICES_META_KEY, $active );
+		}
+
+		return $valid;
+	}
+
+	/**
+	 * Remember the current browser after successful two-factor verification.
+	 *
+	 * @param \WP_User $user User whose device is being remembered.
+	 * @return void
+	 */
+	public static function remember_device( \WP_User $user ): void {
+		if ( ! self::is_remember_device_enabled() ) {
+			return;
+		}
+
+		$expires_at = time() + ( self::get_remember_device_duration() * DAY_IN_SECONDS );
+		$devices    = get_user_meta( $user->ID, self::REMEMBERED_DEVICES_META_KEY, true );
+		$devices    = is_array( $devices ) ? $devices : array();
+		$devices    = array_values(
+			array_filter(
+				$devices,
+				static fn( $device ) => is_array( $device ) && ! empty( $device['token'] ) && ! empty( $device['expires_at'] ) && $device['expires_at'] > time()
+			)
+		);
+		$token      = wp_generate_password( 64, false, false );
+		$devices[]  = array(
+			'token'      => wp_hash_password( $token ),
+			'expires_at' => $expires_at,
+		);
+		$devices    = array_slice( $devices, -10 );
+
+		update_user_meta( $user->ID, self::REMEMBERED_DEVICES_META_KEY, $devices );
+		setcookie(
+			self::get_remembered_device_cookie_name( $user->ID ),
+			$token,
+			array(
+				'expires'  => $expires_at,
+				'path'     => defined( 'COOKIEPATH' ) ? COOKIEPATH : '/',
+				'domain'   => defined( 'COOKIE_DOMAIN' ) ? COOKIE_DOMAIN : '',
+				'secure'   => is_ssl(),
+				'httponly' => true,
+				'samesite' => 'Lax',
+			)
+		);
+	}
+
+	/**
+	 * Invalidate all remembered devices for a user.
+	 *
+	 * @param int $user_id User ID.
+	 * @return void
+	 */
+	public static function forget_remembered_devices( int $user_id ): void {
+		delete_user_meta( $user_id, self::REMEMBERED_DEVICES_META_KEY );
+	}
+
+	/**
+	 * Get the trusted-device cookie name for a user.
+	 *
+	 * @param int $user_id User ID.
+	 * @return string Cookie name.
+	 */
+	private static function get_remembered_device_cookie_name( int $user_id ): string {
+		return 'brain2fa_remember_' . $user_id;
 	}
 
 	/**

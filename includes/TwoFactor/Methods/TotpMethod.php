@@ -4,6 +4,7 @@ declare( strict_types=1 );
 
 namespace Brain_2FA\TwoFactor\Methods;
 
+use Brain_2FA\Utils;
 use Brain_2FA\TwoFactor\Interfaces\TwoFactorMethodInterface;
 use WP_User;
 
@@ -131,6 +132,7 @@ class TotpMethod implements TwoFactorMethodInterface {
 			delete_user_meta( $user->ID, 'brain2fa_secret' );
 			delete_user_meta( $user->ID, 'brain2fa_enabled' );
 			delete_user_meta( $user->ID, 'brain2fa_recovery_codes' );
+			Utils::forget_remembered_devices( $user->ID );
 			return true;
 		}
 

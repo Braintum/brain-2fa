@@ -4,6 +4,7 @@ declare( strict_types=1 );
 
 namespace Brain_2FA\TwoFactor\Methods;
 
+use Brain_2FA\Utils;
 use Brain_2FA\TwoFactor\Interfaces\TwoFactorMethodInterface;
 use WP_User;
 use WP_Error;
@@ -67,6 +68,7 @@ class EmailMethod implements TwoFactorMethodInterface {
 	public function save_setup( WP_User $user, array $data ) {
 		if ( ! empty( $data['brain2fa_deactivate'] ) ) {
 			delete_user_meta( $user->ID, 'brain2fa_enabled' );
+			Utils::forget_remembered_devices( $user->ID );
 			return true;
 		}
 

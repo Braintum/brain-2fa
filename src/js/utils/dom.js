@@ -41,8 +41,9 @@ export function hideFormFields() {
  *
  * @param {HTMLFormElement} form - The login form
  * @param {string} method - 2FA method
+ * @param {boolean} showRememberDevice - Whether to show the trusted-device option
  */
-export function show2FAField(form, method = 'email') {
+export function show2FAField(form, method = 'email', showRememberDevice = false) {
 	// Check if field already exists
 	if (document.getElementById('brain2fa_code')) {
 		return;
@@ -88,6 +89,17 @@ export function show2FAField(form, method = 'email') {
 		description.className = 'description';
 		description.textContent = __('A verification code has been sent to your email address.', 'brain2fa');
 		wrapper.appendChild(description);
+	}
+
+	if (showRememberDevice) {
+		const rememberLabel = document.createElement('label');
+		const rememberInput = document.createElement('input');
+		rememberInput.type = 'checkbox';
+		rememberInput.name = 'brain2fa_remember_device';
+		rememberInput.value = '1';
+		rememberLabel.appendChild(rememberInput);
+		rememberLabel.appendChild(document.createTextNode(` ${__('Remember this device', 'brain2fa')}`));
+		wrapper.appendChild(rememberLabel);
 	}
 
 	// Insert before submit button

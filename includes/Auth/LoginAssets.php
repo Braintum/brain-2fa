@@ -7,6 +7,8 @@
  */
 namespace Brain_2FA\Auth;
 
+use Brain_2FA\Utils;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -54,6 +56,7 @@ class LoginAssets {
 			array(
 				'ajax'  => admin_url( 'admin-ajax.php' ),
 				'nonce' => wp_create_nonce( 'brain2fa_login' ),
+				'rememberDevice' => Utils::is_remember_device_enabled(),
 			)
 		);
 	}

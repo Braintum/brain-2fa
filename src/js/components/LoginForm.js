@@ -122,7 +122,7 @@ function handleError(data) {
  */
 function handle2FA(method) {
 	hideFormFields();
-	show2FAField(loginForm, method);
+	show2FAField(loginForm, method, window.Brain2FA?.rememberDevice);
 }
 
 /**
