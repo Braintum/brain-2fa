@@ -136,22 +136,24 @@ function submitForm() {
 	if ( loginForm && submitHandler ) {
 		loginForm.removeEventListener( 'submit', submitHandler );
 
-		const submitButton = loginForm.querySelector( 'button[type="submit"], input[type="submit"]' );
-		if ( submitButton && 'function' === typeof loginForm.requestSubmit ) {
-			loginForm.requestSubmit( submitButton );
-			return;
-		}
+		setTimeout( () => {
+			const submitButton = loginForm.querySelector( 'button[type="submit"], input[type="submit"]' );
+			if ( submitButton && 'function' === typeof loginForm.requestSubmit ) {
+				loginForm.requestSubmit( submitButton );
+				return;
+			}
 
-		// WooCommerce requires the login submit button's name/value in the request.
-		if ( loginForm.classList.contains( 'woocommerce-form-login' ) && ! loginForm.querySelector( 'input[name="login"]' ) ) {
-			const loginAction = document.createElement( 'input' );
-			loginAction.type = 'hidden';
-			loginAction.name = 'login';
-			loginAction.value = submitButton?.value || 'Log in';
-			loginForm.appendChild( loginAction );
-		}
+			// WooCommerce requires the login submit button's name/value in the request.
+			if ( loginForm.classList.contains( 'woocommerce-form-login' ) && ! loginForm.querySelector( 'input[name="login"]' ) ) {
+				const loginAction = document.createElement( 'input' );
+				loginAction.type = 'hidden';
+				loginAction.name = 'login';
+				loginAction.value = submitButton?.value || 'Log in';
+				loginForm.appendChild( loginAction );
+			}
 
-		loginForm.submit();
+			loginForm.submit();
+		}, 0 );
 	}
 }
 
