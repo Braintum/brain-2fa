@@ -83,6 +83,13 @@ export function show2FAField(form, method = 'email') {
 	label.appendChild(input);
 	wrapper.appendChild(label);
 
+	if (method === 'email') {
+		const description = document.createElement('div');
+		description.className = 'description';
+		description.textContent = __('A verification code has been sent to your email address.', 'brain2fa');
+		wrapper.appendChild(description);
+	}
+
 	// Insert before submit button
 	submitButton.parentNode.insertBefore(wrapper, submitButton);
 

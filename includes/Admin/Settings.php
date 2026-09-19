@@ -10,6 +10,8 @@
 
 namespace Brain_2FA\Admin;
 
+use Brain_2FA\Utils;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -195,9 +197,14 @@ class Settings {
 		$raw_roles                       = isset( $input['force_2fa_roles'] ) && is_array( $input['force_2fa_roles'] ) ? $input['force_2fa_roles'] : array();
 		$sanitized['force_2fa_roles']   = array_values( array_filter( $raw_roles, fn( $r ) => in_array( $r, $valid_roles, true ) ) );
 		$sanitized['grace_period_days'] = min( 365, absint( $input['grace_period_days'] ?? 14 ) );
-		$sanitized['default_method']    = in_array( $input['default_method'] ?? 'totp', array( 'totp', 'email_backup' ), true ) ? $input['default_method'] : 'totp';
 		$sanitized['enable_totp']       = ! empty( $input['enable_totp'] );
 		$sanitized['enable_email']      = ! empty( $input['enable_email'] );
+		$default_method                  = $input['default_method'] ?? 'totp';
+		$default_method                  = 'email_backup' === $default_method ? 'email' : $default_method;
+		if ( ! in_array( $default_method, array( 'totp', 'email' ), true ) || ( 'totp' === $default_method && ! $sanitized['enable_totp'] ) || ( 'email' === $default_method && ! $sanitized['enable_email'] ) ) {
+			$default_method = $sanitized['enable_totp'] ? 'totp' : 'email';
+		}
+		$sanitized['default_method']    = $default_method;
 		$sanitized['code_expiry']       = absint( $input['code_expiry'] ?? 10 );
 		$sanitized['remember_device']   = ! empty( $input['remember_device'] );
 		$sanitized['remember_duration'] = absint( $input['remember_duration'] ?? 30 );
@@ -293,13 +300,14 @@ class Settings {
 	public function default_method_callback(): void {
 		$options = get_option( 'brain2fa_settings', array() );
 		$method  = $options['default_method'] ?? 'totp';
+		$method  = 'email_backup' === $method ? 'email' : $method;
 		?>
 		<select name="brain2fa_settings[default_method]">
 			<option value="totp" <?php selected( $method, 'totp' ); ?>>
 				<?php esc_html_e( 'TOTP (Authenticator App)', 'brain2fa' ); ?>
 			</option>
-			<option value="email_backup" <?php selected( $method, 'email_backup' ); ?>>
-				<?php esc_html_e( 'Email Backup', 'brain2fa' ); ?>
+			<option value="email" <?php selected( $method, 'email' ); ?>>
+				<?php esc_html_e( 'Email Authentication', 'brain2fa' ); ?>
 			</option>
 		</select>
 		<p class="description">
@@ -424,8 +432,10 @@ class Settings {
 		$is_2fa_enabled = get_user_meta( $current_user->ID, 'brain2fa_enabled', true );
 		$current_method = get_user_meta( $current_user->ID, 'brain2fa_method', true );
 
-		// Get TOTP method instance.
+		// Get authentication method instances.
 		$totp_method = brain_2fa()->manager->get_method( 'totp' );
+		$setup_method_id = Utils::get_default_method();
+		$setup_method    = brain_2fa()->manager->get_method( $setup_method_id );
 
 		// Get fresh recovery codes after regeneration.
 		$fresh_recovery_codes = array();
@@ -434,18 +444,18 @@ class Settings {
 		if ( isset( $_POST['brain2fa_action'] ) && check_admin_referer( 'brain2fa_setup_action', 'brain2fa_setup_nonce' ) ) {
 			$action = sanitize_text_field( wp_unslash( $_POST['brain2fa_action'] ) );
 
-			if ( 'activate' === $action && $totp_method ) {
-				$data = array(
+			if ( 'activate' === $action && $setup_method && Utils::is_method_enabled( $setup_method_id ) ) {
+				$data = 'totp' === $setup_method_id ? array(
 					'secret' => isset( $_POST['brain2fa_secret'] ) ? sanitize_text_field( wp_unslash( $_POST['brain2fa_secret'] ) ) : '',
 					'code'   => isset( $_POST['brain2fa_code'] ) ? sanitize_text_field( wp_unslash( $_POST['brain2fa_code'] ) ) : '',
-				);
+				) : array();
 
-				$result = $totp_method->save_setup( $current_user, $data );
+				$result = $setup_method->save_setup( $current_user, $data );
 
 				if ( true === $result || ( is_array( $result ) && ! empty( $result['success'] ) ) ) {
-					update_user_meta( $current_user->ID, 'brain2fa_method', 'totp' );
+					update_user_meta( $current_user->ID, 'brain2fa_method', $setup_method_id );
 					$is_2fa_enabled = true;
-					$current_method = 'totp';
+					$current_method = $setup_method_id;
 
 					// Capture fresh recovery codes if they were generated.
 					if ( is_array( $result ) && ! empty( $result['recovery_codes'] ) ) {
@@ -457,9 +467,12 @@ class Settings {
 				} elseif ( is_wp_error( $result ) ) {
 					echo '<div class="notice notice-error"><p>' . esc_html( $result->get_error_message() ) . '</p></div>'; // phpcs:ignore
 				}
-			} elseif ( 'deactivate' === $action && $totp_method ) {
+			} elseif ( 'deactivate' === $action ) {
+				$current_method_instance = brain_2fa()->manager->get_method( $current_method );
 				$deactivate_data = array( 'brain2fa_deactivate' => '1' );
-				$totp_method->save_setup( $current_user, $deactivate_data );
+				if ( $current_method_instance ) {
+					$current_method_instance->save_setup( $current_user, $deactivate_data );
+				}
 				delete_user_meta( $current_user->ID, 'brain2fa_method' );
 				echo '<div class="notice notice-success"><p>' . esc_html__( 'Two-Factor Authentication has been deactivated.', 'brain2fa' ) . '</p></div>';
 				$is_2fa_enabled = false;
@@ -472,8 +485,8 @@ class Settings {
 
 		// Get setup data if not enabled.
 		$setup_data = array();
-		if ( ! $is_2fa_enabled && $totp_method ) {
-			$setup_data = $totp_method->get_setup_data( $current_user );
+		if ( ! $is_2fa_enabled && $setup_method && Utils::is_method_enabled( $setup_method_id ) ) {
+			$setup_data = $setup_method->get_setup_data( $current_user );
 		}
 
 		// Get recovery codes count.

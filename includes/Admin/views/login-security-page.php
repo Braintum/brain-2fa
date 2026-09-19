@@ -103,6 +103,47 @@ defined( 'ABSPATH' ) || exit;
 						</button>
 					</form>
 				</div>
+			<?php elseif ( $is_2fa_enabled && 'email' === $current_method ) : ?>
+				<div class="brain2fa-card">
+					<h2><?php esc_html_e( 'Two-Factor Authentication Status', 'brain2fa' ); ?></h2>
+					<p>
+						<span class="brain2fa-status brain2fa-status-enabled">
+							<span class="dashicons dashicons-shield-alt"></span>
+							<?php esc_html_e( 'Two-Factor Authentication is Active', 'brain2fa' ); ?>
+						</span>
+					</p>
+					<p><?php esc_html_e( 'Your account is protected with email authentication.', 'brain2fa' ); ?></p>
+					<p class="description">
+						<?php esc_html_e( 'A verification code will be sent to your account email address when you log in.', 'brain2fa' ); ?>
+					</p>
+					<form method="post" action="">
+						<?php wp_nonce_field( 'brain2fa_setup_action', 'brain2fa_setup_nonce' ); ?>
+						<input type="hidden" name="brain2fa_action" value="deactivate">
+						<button type="submit" class="button button-secondary brain2fa-button-danger" onclick="return confirm('<?php esc_attr_e( 'Are you sure you want to deactivate Two-Factor Authentication?', 'brain2fa' ); ?>');">
+							<span class="dashicons dashicons-shield" style="margin-top: 3px;"></span>
+							<?php esc_html_e( 'Deactivate 2FA', 'brain2fa' ); ?>
+						</button>
+					</form>
+				</div>
+			<?php elseif ( 'email' === $setup_method_id ) : ?>
+				<div class="brain2fa-card">
+					<h2><?php esc_html_e( 'Set Up Email Authentication', 'brain2fa' ); ?></h2>
+					<p><?php esc_html_e( 'Receive a verification code at your account email address whenever you log in.', 'brain2fa' ); ?></p>
+					<p>
+						<strong><?php esc_html_e( 'Email address:', 'brain2fa' ); ?></strong>
+						<?php echo esc_html( $setup_data['email'] ?? $current_user->user_email ); ?>
+					</p>
+					<form method="post" action="">
+						<?php wp_nonce_field( 'brain2fa_setup_action', 'brain2fa_setup_nonce' ); ?>
+						<input type="hidden" name="brain2fa_action" value="activate">
+						<p class="submit">
+							<button type="submit" class="button button-primary brain2fa-button-primary">
+								<span class="dashicons dashicons-shield-alt" style="margin-top: 3px;"></span>
+								<?php esc_html_e( 'Activate Email Authentication', 'brain2fa' ); ?>
+							</button>
+						</p>
+					</form>
+				</div>
 			<?php else : ?>
 				<!-- 2FA is Not Active - Show Setup Form -->
 				<div class="brain2fa-card">

@@ -65,6 +65,17 @@ class EmailMethod implements TwoFactorMethodInterface {
 	 *                    WP_Error on invalid code
 	 */
 	public function save_setup( WP_User $user, array $data ) {
+		if ( ! empty( $data['brain2fa_deactivate'] ) ) {
+			delete_user_meta( $user->ID, 'brain2fa_enabled' );
+			return true;
+		}
+
+		if ( ! is_email( $user->user_email ) ) {
+			return new WP_Error( 'invalid_email', __( 'A valid account email address is required for email authentication.', 'brain2fa' ) );
+		}
+
+		update_user_meta( $user->ID, 'brain2fa_enabled', 1 );
+
 		return true;
 	}
 
@@ -78,7 +89,9 @@ class EmailMethod implements TwoFactorMethodInterface {
 	 * @return array Array containing the setup data including backup email and enabled status.
 	 */
 	public function get_setup_data( WP_User $user ): array {
-		return array();
+		return array(
+			'email' => $user->user_email,
+		);
 	}
 
 	/**

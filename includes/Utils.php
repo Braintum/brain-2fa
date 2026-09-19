@@ -48,6 +48,46 @@ class Utils {
 	}
 
 	/**
+	 * Check whether an authentication method is enabled site-wide.
+	 *
+	 * @param string $method_id Authentication method ID.
+	 * @return bool True when the method is enabled.
+	 */
+	public static function is_method_enabled( string $method_id ): bool {
+		$plugin_settings = get_option( 'brain2fa_settings', array() );
+
+		if ( 'totp' === $method_id ) {
+			return ! isset( $plugin_settings['enable_totp'] ) || ! empty( $plugin_settings['enable_totp'] );
+		}
+
+		if ( 'email' === $method_id ) {
+			return ! isset( $plugin_settings['enable_email'] ) || ! empty( $plugin_settings['enable_email'] );
+		}
+
+		return false;
+	}
+
+	/**
+	 * Get the active default authentication method.
+	 *
+	 * @return string Authentication method ID.
+	 */
+	public static function get_default_method(): string {
+		$plugin_settings = get_option( 'brain2fa_settings', array() );
+		$method          = $plugin_settings['default_method'] ?? 'totp';
+
+		if ( 'email_backup' === $method ) {
+			$method = 'email';
+		}
+
+		if ( self::is_method_enabled( $method ) ) {
+			return $method;
+		}
+
+		return self::is_method_enabled( 'totp' ) ? 'totp' : 'email';
+	}
+
+	/**
 	 * Check whether 2FA is required for a user because of their role.
 	 *
 	 * @param \WP_User $user User to evaluate.

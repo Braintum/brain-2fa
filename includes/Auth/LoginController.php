@@ -125,10 +125,32 @@ class LoginController {
 				// Not enabled for this user, is whitelisted, has a valid remembered cookie, or has already provided a 2FA code via the password field pass the credentials on to the normal login flow.
 				wp_send_json_success( array( 'login' => 1 ) );
 			}
+
+			$method_id = get_user_meta( $user->ID, 'brain2fa_method', true );
+			$method    = brain_2fa()->manager->get_method( $method_id );
+			if ( ! Utils::is_method_enabled( $method_id ) || ! $method ) {
+				wp_send_json_error(
+					array(
+						'error' => __( 'Your configured two-factor authentication method is unavailable. Please contact an administrator.', 'brain2fa' ),
+						'reset' => true,
+					)
+				);
+			}
+
+			if ( 'email' === $method_id && ! $method->send_challenge( $user ) ) {
+				wp_send_json_error(
+					array(
+						'error' => __( 'Unable to send your email authentication code. Please try again or contact an administrator.', 'brain2fa' ),
+						'reset' => true,
+					)
+				);
+			}
+
 			wp_send_json_success(
 				array(
 					'login'        => 1,
 					'requires_2fa' => true,
+					'method'       => $method_id,
 				)
 			);
 		}
@@ -245,8 +267,18 @@ class LoginController {
 				return $user;
 			}
 
+			$method_id = get_user_meta( $user->ID, 'brain2fa_method', true );
+			$method    = brain_2fa()->manager->get_method( $method_id );
+
 			// Ensure 2FA code is provided.
 			if ( ! isset( $_POST['brain2fa_code'] ) || empty( $_POST['brain2fa_code'] ) ) { //phpcs:ignore
+				if ( 'email' === $method_id && Utils::is_method_enabled( $method_id ) && $method && $method->send_challenge( $user ) ) {
+					return new WP_Error(
+						'brain2fa_required',
+						__( 'An email authentication code has been sent. Enter it to continue.', 'brain2fa' )
+					);
+				}
+
 				return new WP_Error(
 					'brain2fa_required',
 					__( 'Two-factor authentication required.', 'brain2fa' )
@@ -254,10 +286,8 @@ class LoginController {
 			}
 
 			$code      = sanitize_text_field( wp_unslash( $_POST['brain2fa_code'] ) ); //phpcs:ignore
-			$method_id = get_user_meta( $user->ID, 'brain2fa_method', true );
-			$method    = brain_2fa()->manager->get_method( $method_id );
 
-			if ( ! $method || ! $method->verify( $user, $code ) ) {
+			if ( ! Utils::is_method_enabled( $method_id ) || ! $method || ! $method->verify( $user, $code ) ) {
 				return new WP_Error( 'invalid_code', __( 'Invalid verification code.', 'brain2fa' ) );
 			}
 		}
