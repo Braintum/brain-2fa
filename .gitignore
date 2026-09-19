@@ -3,11 +3,9 @@
 /node_modules/
 
 # Composer
-composer.lock
 composer.phar
 
 # NPM
-package-lock.json
 yarn.lock
 
 # Build files

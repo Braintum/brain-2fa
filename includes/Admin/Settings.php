@@ -193,14 +193,14 @@ class Settings {
 		$sanitized = array();
 
 		$sanitized['enable_2fa']        = ! empty( $input['enable_2fa'] );
-		$valid_roles                     = array_keys( wp_roles()->roles );
-		$raw_roles                       = isset( $input['force_2fa_roles'] ) && is_array( $input['force_2fa_roles'] ) ? $input['force_2fa_roles'] : array();
+		$valid_roles                    = array_keys( wp_roles()->roles );
+		$raw_roles                      = isset( $input['force_2fa_roles'] ) && is_array( $input['force_2fa_roles'] ) ? $input['force_2fa_roles'] : array();
 		$sanitized['force_2fa_roles']   = array_values( array_filter( $raw_roles, fn( $r ) => in_array( $r, $valid_roles, true ) ) );
 		$sanitized['grace_period_days'] = min( 365, absint( $input['grace_period_days'] ?? 14 ) );
 		$sanitized['enable_totp']       = ! empty( $input['enable_totp'] );
 		$sanitized['enable_email']      = ! empty( $input['enable_email'] );
-		$default_method                  = $input['default_method'] ?? 'totp';
-		$default_method                  = 'email_backup' === $default_method ? 'email' : $default_method;
+		$default_method                 = $input['default_method'] ?? 'totp';
+		$default_method                 = 'email_backup' === $default_method ? 'email' : $default_method;
 		if ( ! in_array( $default_method, array( 'totp', 'email' ), true ) || ( 'totp' === $default_method && ! $sanitized['enable_totp'] ) || ( 'email' === $default_method && ! $sanitized['enable_email'] ) ) {
 			$default_method = $sanitized['enable_totp'] ? 'totp' : 'email';
 		}
@@ -403,7 +403,7 @@ class Settings {
 		}
 
 		// Check if settings were saved.
-		if ( isset( $_GET['settings-updated'] ) ) {
+		if ( isset( $_GET['settings-updated'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- This query parameter only controls an administrative notice.
 			add_settings_error(
 				'brain2fa_messages',
 				'brain2fa_message',
@@ -433,7 +433,7 @@ class Settings {
 		$current_method = get_user_meta( $current_user->ID, 'brain2fa_method', true );
 
 		// Get authentication method instances.
-		$totp_method = brain_2fa()->manager->get_method( 'totp' );
+		$totp_method     = brain_2fa()->manager->get_method( 'totp' );
 		$setup_method_id = Utils::get_default_method();
 		$setup_method    = brain_2fa()->manager->get_method( $setup_method_id );
 
@@ -469,7 +469,7 @@ class Settings {
 				}
 			} elseif ( 'deactivate' === $action ) {
 				$current_method_instance = brain_2fa()->manager->get_method( $current_method );
-				$deactivate_data = array( 'brain2fa_deactivate' => '1' );
+				$deactivate_data         = array( 'brain2fa_deactivate' => '1' );
 				if ( $current_method_instance ) {
 					$current_method_instance->save_setup( $current_user, $deactivate_data );
 				}

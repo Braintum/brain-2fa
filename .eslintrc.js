@@ -1,5 +1,6 @@
 module.exports = {
 	extends: ['wordpress'],
+	ignorePatterns: ['src/js/examples.js'],
 	env: {
 		browser: true,
 		es2021: true,
@@ -10,7 +11,6 @@ module.exports = {
 		sourceType: 'module',
 	},
 	rules: {
-		'no-console': 'warn',
 		'camelcase': 'off',
 	},
 	globals: {

@@ -1,14 +1,31 @@
 {
   "name": "braintum/brain-2fa",
   "description": "Brain 2FA plugin for WordPress — TOTP + email based two factor authentication.",
+  "license": "GPL-2.0-or-later",
   "type": "wordpress-plugin",
   "require": {
-    "spomky-labs/otphp": "^10.0",
+    "php": "^8.1",
+    "spomky-labs/otphp": "^11.4.3",
     "endroid/qr-code": "^5.0"
+  },
+  "require-dev": {
+    "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
+    "squizlabs/php_codesniffer": "^3.13",
+    "wp-coding-standards/wpcs": "^3.2"
   },
   "autoload": {
     "psr-4": {
       "Brain_2FA\\": "includes/"
     }
+  },
+  "scripts": {
+    "phpcs": "phpcs --standard=phpcs.xml.dist",
+    "phpcbf": "phpcbf --standard=phpcs.xml.dist"
+  },
+  "config": {
+    "allow-plugins": {
+      "dealerdirect/phpcodesniffer-composer-installer": true
+    },
+    "sort-packages": true
   }
 }

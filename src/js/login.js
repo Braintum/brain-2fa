@@ -9,10 +9,10 @@ import initLoginForm from './components/LoginForm';
 /**
  * Initialize login form when DOM is ready
  */
-document.addEventListener('DOMContentLoaded', () => {
-	const loginFormElement = document.getElementById('loginform') || document.querySelector('.woocommerce-form-login');
-	
-	if (loginFormElement) {
-		initLoginForm(loginFormElement);
+document.addEventListener( 'DOMContentLoaded', () => {
+	const loginFormElement = document.getElementById( 'loginform' ) || document.querySelector( '.woocommerce-form-login' );
+
+	if ( loginFormElement ) {
+		initLoginForm( loginFormElement );
 	}
 });

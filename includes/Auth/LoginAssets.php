@@ -68,8 +68,8 @@ class LoginAssets {
 			'brain2fa-login',
 			'Brain2FA',
 			array(
-				'ajax'  => admin_url( 'admin-ajax.php' ),
-				'nonce' => wp_create_nonce( 'brain2fa_login' ),
+				'ajax'           => admin_url( 'admin-ajax.php' ),
+				'nonce'          => wp_create_nonce( 'brain2fa_login' ),
 				'rememberDevice' => Utils::is_remember_device_enabled(),
 			)
 		);

@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-19T22:24:46+00:00\n"
+"POT-Creation-Date: 2026-09-19T23:30:53+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.10.0\n"
 "X-Domain: brain2fa\n"
@@ -306,7 +306,7 @@ msgid "Regenerate Recovery Codes"
 msgstr ""
 
 #: includes/Admin/views/login-security-page.php:95
-#: src/js/admin.js:139
+#: src/js/admin.js:152
 msgid "Warning:"
 msgstr ""
 
@@ -393,7 +393,7 @@ msgid "If you cannot scan the QR code, manually enter this secret key into your 
 msgstr ""
 
 #: includes/Admin/views/login-security-page.php:197
-#: src/js/utils/dom.js:66
+#: src/js/utils/dom.js:71
 msgid "Verification Code"
 msgstr ""
 
@@ -478,38 +478,38 @@ msgid "Too many attempts. Please try again in a minute."
 msgstr ""
 
 #. translators: %s is the lost password URL
-#: includes/Auth/LoginController.php:81
+#: includes/Auth/LoginController.php:84
 msgid "<strong>ERROR</strong>: A username and password must be provided. <a href=\"%s\" title=\"Password Lost and Found\">Lost your password</a>?"
 msgstr ""
 
-#: includes/Auth/LoginController.php:119
-#: includes/Auth/LoginController.php:267
+#: includes/Auth/LoginController.php:122
+#: includes/Auth/LoginController.php:270
 msgid "Your grace period to set up two-factor authentication has expired. Please contact an administrator."
 msgstr ""
 
-#: includes/Auth/LoginController.php:138
+#: includes/Auth/LoginController.php:141
 msgid "Your configured two-factor authentication method is unavailable. Please contact an administrator."
 msgstr ""
 
-#: includes/Auth/LoginController.php:147
+#: includes/Auth/LoginController.php:150
 msgid "Unable to send your email authentication code. Please try again or contact an administrator."
 msgstr ""
 
 #. translators: %s is the lost password URL
-#: includes/Auth/LoginController.php:172
-#: includes/Auth/LoginController.php:226
+#: includes/Auth/LoginController.php:175
+#: includes/Auth/LoginController.php:229
 msgid "<strong>ERROR</strong>: The username or password you entered is incorrect. <a href=\"%s\" title=\"Password Lost and Found\">Lost your password</a>?"
 msgstr ""
 
-#: includes/Auth/LoginController.php:286
+#: includes/Auth/LoginController.php:289
 msgid "An email authentication code has been sent. Enter it to continue."
 msgstr ""
 
-#: includes/Auth/LoginController.php:292
+#: includes/Auth/LoginController.php:295
 msgid "Two-factor authentication required."
 msgstr ""
 
-#: includes/Auth/LoginController.php:299
+#: includes/Auth/LoginController.php:302
 #: includes/TwoFactor/Methods/TotpMethod.php:158
 msgid "Invalid verification code."
 msgstr ""
@@ -539,35 +539,35 @@ msgid ""
 "-- %4$s"
 msgstr ""
 
-#: src/js/admin.js:94
+#: src/js/admin.js:99
 msgid "You are about to require 2FA for selected user roles. Make sure administrators have set up 2FA before proceeding. Continue?"
 msgstr ""
 
-#: src/js/admin.js:140
+#: src/js/admin.js:153
 msgid "Users in selected roles will be required to set up 2FA on their next login."
 msgstr ""
 
-#: src/js/admin.js:254
+#: src/js/admin.js:275
 msgid "Two-Factor Authentication Recovery Codes"
 msgstr ""
 
-#: src/js/admin.js:256
+#: src/js/admin.js:277
 msgid "Generated:"
 msgstr ""
 
-#: src/js/admin.js:258
+#: src/js/admin.js:279
 msgid "IMPORTANT: Store these codes in a safe place."
 msgstr ""
 
-#: src/js/admin.js:259
+#: src/js/admin.js:280
 msgid "Each code can only be used once."
 msgstr ""
 
-#: src/js/admin.js:263
+#: src/js/admin.js:284
 msgid "User:"
 msgstr ""
 
-#: src/js/admin.js:264
+#: src/js/admin.js:285
 msgid "Email:"
 msgstr ""
 
@@ -583,18 +583,18 @@ msgstr ""
 msgid "An unknown error occurred. Please try again."
 msgstr ""
 
-#: src/js/utils/dom.js:79
+#: src/js/utils/dom.js:84
 msgid "Enter your verification code"
 msgstr ""
 
-#: src/js/utils/dom.js:80
+#: src/js/utils/dom.js:85
 msgid "Enter code"
 msgstr ""
 
-#: src/js/utils/dom.js:89
+#: src/js/utils/dom.js:94
 msgid "A verification code has been sent to your email address."
 msgstr ""
 
-#: src/js/utils/dom.js:100
+#: src/js/utils/dom.js:105
 msgid "Remember this device"
 msgstr ""

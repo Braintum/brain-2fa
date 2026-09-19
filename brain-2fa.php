@@ -8,6 +8,10 @@
  * Text Domain: brain2fa
  * Domain Path: /languages
  * License: GPLv2+
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
+ * Requires at least: 6.4
+ * Requires PHP: 8.1
+ * Tested up to: 7.1
  *
  * @package Brain2FA
  */
@@ -16,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-// Composer autoload (preferred).
+// Composer autoload.
 if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
 	require_once __DIR__ . '/vendor/autoload.php';
 }

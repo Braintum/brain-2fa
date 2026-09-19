@@ -10,22 +10,22 @@
  * @param {string} message - Error message to display
  * @param {boolean} allowMarkup - Whether to render the server-approved markup
  */
-export function showError(message, allowMarkup = false) {
+export function showError( message, allowMarkup = false ) {
 	removeError();
 
 	const form = getLoginForm();
-	if (!form) {
+	if ( ! form ) {
 		return;
 	}
 
-	const errorDiv = createNotification('error');
-	if (allowMarkup) {
-		appendApprovedMarkup(errorDiv, message);
+	const errorDiv = createNotification( 'error' );
+	if ( allowMarkup ) {
+		appendApprovedMarkup( errorDiv, message );
 	} else {
 		errorDiv.textContent = message;
 	}
 
-	insertNotification(errorDiv, form);
+	insertNotification( errorDiv, form );
 }
 
 /**
@@ -34,48 +34,48 @@ export function showError(message, allowMarkup = false) {
  * @param {HTMLElement} container - Element receiving the sanitized markup.
  * @param {string} markup - Server-approved markup.
  */
-function appendApprovedMarkup(container, markup) {
-	const template = document.createElement('template');
+function appendApprovedMarkup( container, markup ) {
+	const template = document.createElement( 'template' );
 	template.innerHTML = markup;
 
-	const appendNode = (parent, node) => {
-		if (node.nodeType === Node.TEXT_NODE) {
-			parent.appendChild(document.createTextNode(node.textContent));
+	const appendNode = ( parent, node ) => {
+		if ( node.nodeType === Node.TEXT_NODE ) {
+			parent.appendChild( document.createTextNode( node.textContent ) );
 			return;
 		}
 
-		if (node.nodeType !== Node.ELEMENT_NODE) {
+		if ( node.nodeType !== Node.ELEMENT_NODE ) {
 			return;
 		}
 
 		const tagName = node.tagName.toLowerCase();
-		if (!['strong', 'a'].includes(tagName)) {
-			node.childNodes.forEach((child) => appendNode(parent, child));
+		if ( ! [ 'strong', 'a' ].includes( tagName ) ) {
+			node.childNodes.forEach( ( child ) => appendNode( parent, child ) );
 			return;
 		}
 
-		const element = document.createElement(tagName);
-		if (tagName === 'a') {
-			const href = node.getAttribute('href');
-			if (href) {
-				const link = document.createElement('a');
+		const element = document.createElement( tagName );
+		if ( 'a' === tagName ) {
+			const href = node.getAttribute( 'href' );
+			if ( href ) {
+				const link = document.createElement( 'a' );
 				link.href = href;
-				if (['http:', 'https:'].includes(link.protocol)) {
+				if ([ 'http:', 'https:' ].includes( link.protocol ) ) {
 					element.href = link.href;
 				}
 			}
 
-			const title = node.getAttribute('title');
-			if (title) {
+			const title = node.getAttribute( 'title' );
+			if ( title ) {
 				element.title = title;
 			}
 		}
 
-		node.childNodes.forEach((child) => appendNode(element, child));
-		parent.appendChild(element);
+		node.childNodes.forEach( ( child ) => appendNode( element, child ) );
+		parent.appendChild( element );
 	};
 
-	template.content.childNodes.forEach((node) => appendNode(container, node));
+	template.content.childNodes.forEach( ( node ) => appendNode( container, node ) );
 }
 
 /**
@@ -83,18 +83,18 @@ function appendApprovedMarkup(container, markup) {
  *
  * @param {string} message - Success message to display
  */
-export function showSuccess(message) {
+export function showSuccess( message ) {
 	removeNotifications();
 
 	const form = getLoginForm();
-	if (!form) {
+	if ( ! form ) {
 		return;
 	}
 
-	const successDiv = createNotification('success');
+	const successDiv = createNotification( 'success' );
 	successDiv.textContent = message;
 
-	insertNotification(successDiv, form);
+	insertNotification( successDiv, form );
 }
 
 /**
@@ -102,18 +102,18 @@ export function showSuccess(message) {
  *
  * @param {string} message - Info message to display
  */
-export function showInfo(message) {
+export function showInfo( message ) {
 	removeNotifications();
 
 	const form = getLoginForm();
-	if (!form) {
+	if ( ! form ) {
 		return;
 	}
 
-	const infoDiv = createNotification('info');
+	const infoDiv = createNotification( 'info' );
 	infoDiv.textContent = message;
 
-	insertNotification(infoDiv, form);
+	insertNotification( infoDiv, form );
 }
 
 /**
@@ -122,7 +122,7 @@ export function showInfo(message) {
  * @return {HTMLFormElement|null} Login form.
  */
 function getLoginForm() {
-	return document.getElementById('loginform') || document.querySelector('.woocommerce-form-login');
+	return document.getElementById( 'loginform' ) || document.querySelector( '.woocommerce-form-login' );
 }
 
 /**
@@ -131,16 +131,16 @@ function getLoginForm() {
  * @param {string} type Notification type.
  * @return {HTMLDivElement} Notification element.
  */
-function createNotification(type) {
-	const notification = document.createElement('div');
-	const isWooCommerce = Boolean(document.querySelector('.woocommerce-form-login'));
+function createNotification( type ) {
+	const notification = document.createElement( 'div' );
+	const isWooCommerce = Boolean( document.querySelector( '.woocommerce-form-login' ) );
 	notification.id = `login_${type}`;
-	notification.className = isWooCommerce
-		? `woocommerce-${type === 'error' ? 'error' : 'message'}`
-		: `notice notice-${type}`;
+	notification.className = isWooCommerce ?
+		`woocommerce-${'error' === type ? 'error' : 'message'}` :
+		`notice notice-${type}`;
 
-	if (isWooCommerce && type === 'error') {
-		notification.setAttribute('role', 'alert');
+	if ( isWooCommerce && 'error' === type ) {
+		notification.setAttribute( 'role', 'alert' );
 	}
 
 	return notification;
@@ -152,22 +152,22 @@ function createNotification(type) {
  * @param {HTMLElement} notification Notification element.
  * @param {HTMLFormElement} form Login form.
  */
-function insertNotification(notification, form) {
-	const notices = form.closest('.woocommerce')?.querySelector('.woocommerce-notices-wrapper');
-	if (notices) {
-		notices.appendChild(notification);
+function insertNotification( notification, form ) {
+	const notices = form.closest( '.woocommerce' )?.querySelector( '.woocommerce-notices-wrapper' );
+	if ( notices ) {
+		notices.appendChild( notification );
 		return;
 	}
 
-	form.parentNode.insertBefore(notification, form);
+	form.parentNode.insertBefore( notification, form );
 }
 
 /**
  * Remove error message
  */
 export function removeError() {
-	const errorDiv = document.getElementById('login_error');
-	if (errorDiv) {
+	const errorDiv = document.getElementById( 'login_error' );
+	if ( errorDiv ) {
 		errorDiv.remove();
 	}
 }
@@ -176,6 +176,6 @@ export function removeError() {
  * Remove all notification messages
  */
 export function removeNotifications() {
-	const notifications = document.querySelectorAll('#login_error, #login_success, #login_info');
-	notifications.forEach((notification) => notification.remove());
+	const notifications = document.querySelectorAll( '#login_error, #login_success, #login_info' );
+	notifications.forEach( ( notification ) => notification.remove() );
 }

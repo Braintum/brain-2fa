@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<ruleset name="Brain 2FA">
+	<description>WordPress Coding Standards for Brain 2FA.</description>
+
+	<config name="minimum_supported_wp_version" value="6.4"/>
+	<config name="testVersion" value="8.1-"/>
+
+	<file>brain-2fa.php</file>
+	<file>includes</file>
+
+	<exclude-pattern>vendor/*</exclude-pattern>
+	<exclude-pattern>node_modules/*</exclude-pattern>
+	<exclude-pattern>assets/*</exclude-pattern>
+
+	<rule ref="WordPress-Extra"/>
+	<rule ref="WordPress-Docs"/>
+</ruleset>

@@ -225,7 +225,7 @@ class Utils {
 		}
 
 		$plugin_settings = get_option( 'brain2fa_settings', array() );
-		$required_roles   = $plugin_settings['force_2fa_roles'] ?? array();
+		$required_roles  = $plugin_settings['force_2fa_roles'] ?? array();
 
 		if ( empty( $required_roles ) || ! is_array( $required_roles ) ) {
 			return false;
@@ -297,5 +297,4 @@ class Utils {
 
 		return $expires_at;
 	}
-
 }

@@ -48,9 +48,9 @@ class LoginController {
 	public static function handle_login(): void {
 
 		// Rate limiting: max 5 attempts per minute per IP.
-		$ip_hash     = wp_hash( $_SERVER['REMOTE_ADDR'] ?? '' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
-		$rate_key    = 'brain2fa_rate_' . $ip_hash;
-		$attempts    = (int) get_transient( $rate_key );
+		$ip_hash  = wp_hash( $_SERVER['REMOTE_ADDR'] ?? '' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		$rate_key = 'brain2fa_rate_' . $ip_hash;
+		$attempts = (int) get_transient( $rate_key );
 		if ( $attempts >= 5 ) {
 			wp_send_json_error( array( 'error' => esc_html__( 'Too many attempts. Please try again in a minute.', 'brain2fa' ) ), 429 );
 		}
@@ -63,14 +63,17 @@ class LoginController {
 
 		$username = null;
 		$password = null;
+		// Cached wp-login.php pages can contain expired nonces, so credential preflight must not reject on nonce failure.
+		// phpcs:disable WordPress.Security.NonceVerification.Missing
 		foreach ( $credential_keys as $username_key => $password_key ) {
 			if ( array_key_exists( $username_key, $_POST ) && array_key_exists( $password_key, $_POST ) && is_string( $_POST[ $username_key ] ) && is_string( $_POST[ $password_key ] ) ) {
 				$username = sanitize_text_field( wp_unslash( $_POST[ $username_key ] ) );
 				// Passwords must not be sanitized — sanitize_text_field strips tags and breaks some passwords.
-				$password = wp_unslash( $_POST[ $password_key ] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+				$password = wp_unslash( $_POST[ $password_key ] );
 				break;
 			}
 		}
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
 
 		if ( empty( $username ) || empty( $password ) ) {
 			wp_send_json_error(
@@ -242,8 +245,8 @@ class LoginController {
 	 * Verify 2FA code during authentication.
 	 *
 	 * @param WP_User|WP_Error|null $user     The authenticated user or WP_Error on failure.
-	 * @param string                  $username The username.
-	 * @param string                  $password The password.
+	 * @param string                $username The username.
+	 * @param string                $password The password.
 	 * @return WP_User|WP_Error The authenticated user or WP_Error on failure.
 	 */
 	public static function verify_2fa( $user, $username, $password ) { //phpcs:ignore

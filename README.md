@@ -21,7 +21,7 @@ A modern, secure Two-Factor Authentication (2FA) plugin for WordPress with suppo
 ## Requirements
 
 - **WordPress**: 5.0 or higher
-- **PHP**: 7.4 or higher
+- **PHP**: 8.1 or higher
 - **Node.js**: 18.0 or higher (for development)
 - **npm**: 9.0 or higher (for development)
 
@@ -173,7 +173,7 @@ If you discover a security vulnerability, please email security@braintum.com. Al
 
 - Secure TOTP implementation using industry-standard algorithms
 - Rate limiting on login attempts
-- Encrypted storage of secret keys
+- Password-hashed storage of recovery codes and trusted-device tokens
 - Secure random generation for backup codes
 - CSRF protection on all forms
 

@@ -63,7 +63,7 @@ class UserProfile {
 			return;
 		}
 
-		$is_enabled               = get_user_meta( $user->ID, 'brain2fa_enabled', true );
+		$is_enabled              = get_user_meta( $user->ID, 'brain2fa_enabled', true );
 		$grace_period_expires_at = ! $is_enabled && Utils::is_2fa_required_for_user( $user ) ? Utils::get_grace_period_expiry( $user ) : 0;
 
 		if ( $grace_period_expires_at > 0 && current_user_can( 'manage_options' ) ) {
@@ -227,7 +227,7 @@ class UserProfile {
 				printf(
 					/* translators: %d: number of grace-period days remaining */
 					esc_html( _n( 'You have %d day left to set up two-factor authentication.', 'You have %d days left to set up two-factor authentication.', $days_remaining, 'brain2fa' ) ),
-					$days_remaining
+					absint( $days_remaining )
 				);
 				?>
 				<a href="<?php echo esc_url( $setup_url ); ?>"><?php esc_html_e( 'Set up 2FA now.', 'brain2fa' ); ?></a>

@@ -222,8 +222,9 @@ class TotpMethod implements TwoFactorMethodInterface {
 	 * Allows for a 30-second window tolerance (±1 time slice) to account for
 	 * clock drift between client and server.
 	 *
-	 * @param string $secret The base32-encoded TOTP secret key.
-	 * @param string $token  The TOTP token to verify.
+	 * @param string       $secret The base32-encoded TOTP secret key.
+	 * @param string       $token  The TOTP token to verify.
+	 * @param WP_User|null $user User receiving the replay-protection check.
 	 *
 	 * @return bool True if the token is valid within the time window, false otherwise.
 	 *
@@ -252,7 +253,7 @@ class TotpMethod implements TwoFactorMethodInterface {
 	 * Generates a QR code data URI for TOTP setup.
 	 *
 	 * Attempts to use the Endroid QR Code library to generate a QR code image.
-	 * Falls back to Google Charts API if the library is unavailable or fails.
+	 * Returns an empty string if the library is unavailable or fails.
 	 *
 	 * @param string $data The data to encode in the QR code (typically otpauth URI).
 	 *
@@ -282,8 +283,7 @@ class TotpMethod implements TwoFactorMethodInterface {
 				return $result->getDataUri();
 			}
 		} catch ( \Exception $e ) {
-			// Log error for debugging if needed.
-			error_log( 'Brain 2FA QR Code generation failed: ' . $e->getMessage() );
+			do_action( 'brain2fa_qr_code_generation_failed', $e );
 		}
 
 		// No external fallback — leaking the otpauth URI (which contains the TOTP secret) to a
@@ -334,7 +334,7 @@ class TotpMethod implements TwoFactorMethodInterface {
 		$j        = 0;
 		$binary   = '';
 		for ( $i = 0; $i < $l; $i++ ) {
-			$n = ( $n << 5 ) + strpos( $alphabet, $b32[ $i ] );
+			$n  = ( $n << 5 ) + strpos( $alphabet, $b32[ $i ] );
 			$j += 5;
 			if ( $j >= 8 ) {
 				$j      -= 8;

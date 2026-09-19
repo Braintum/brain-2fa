@@ -22,27 +22,28 @@ function initAdmin() {
  * Bind events
  */
 function bindEvents() {
+
 	// Toggle remember device duration field
-	const rememberCheckbox = getElement('input[name="brain2fa_settings[remember_device]"]');
-	if (rememberCheckbox) {
-		rememberCheckbox.addEventListener('change', (e) => {
-			toggleRememberDuration(e.target);
+	const rememberCheckbox = getElement( 'input[name="brain2fa_settings[remember_device]"]' );
+	if ( rememberCheckbox ) {
+		rememberCheckbox.addEventListener( 'change', ( e ) => {
+			toggleRememberDuration( e.target );
 		});
 	}
 
 	// Force 2FA warning
-	const forceCheckboxes = getAllElements('input[name="brain2fa_settings[force_2fa_roles][]"]');
-	forceCheckboxes.forEach((checkbox) => {
-		checkbox.addEventListener('change', () => {
+	const forceCheckboxes = getAllElements( 'input[name="brain2fa_settings[force_2fa_roles][]"]' );
+	forceCheckboxes.forEach( ( checkbox ) => {
+		checkbox.addEventListener( 'change', () => {
 			handleForceWarning();
 		});
 	});
 
 	// Confirm settings save if force 2FA is enabled
-	const form = getElement('form');
-	if (form) {
-		form.addEventListener('submit', (e) => {
-			handleFormSubmit(e);
+	const form = getElement( 'form' );
+	if ( form ) {
+		form.addEventListener( 'submit', ( e ) => {
+			handleFormSubmit( e );
 		});
 	}
 }
@@ -52,19 +53,23 @@ function bindEvents() {
  *
  * @param {HTMLInputElement} checkbox - The checkbox element
  */
-function toggleRememberDuration(checkbox) {
-	const td = checkbox.closest('td');
-	if (!td) return;
+function toggleRememberDuration( checkbox ) {
+	const td = checkbox.closest( 'td' );
+	if ( ! td ) {
+return;
+}
 
-	const durationField = td.querySelector('input[name="brain2fa_settings[remember_duration]"]');
-	if (!durationField) return;
+	const durationField = td.querySelector( 'input[name="brain2fa_settings[remember_duration]"]' );
+	if ( ! durationField ) {
+return;
+}
 
-	const durationDiv = durationField.closest('div');
-	if (durationDiv) {
-		if (checkbox.checked) {
-			slideDown(durationDiv, 200);
+	const durationDiv = durationField.closest( 'div' );
+	if ( durationDiv ) {
+		if ( checkbox.checked ) {
+			slideDown( durationDiv, 200 );
 		} else {
-			slideUp(durationDiv, 200);
+			slideUp( durationDiv, 200 );
 		}
 	}
 }
@@ -73,9 +78,9 @@ function toggleRememberDuration(checkbox) {
  * Handle force 2FA warning display
  */
 function handleForceWarning() {
-	const checkedBoxes = getAllElements('input[name="brain2fa_settings[force_2fa_roles][]"]:checked');
-	
-	if (checkedBoxes.length > 0) {
+	const checkedBoxes = getAllElements( 'input[name="brain2fa_settings[force_2fa_roles][]"]:checked' );
+
+	if ( 0 < checkedBoxes.length ) {
 		showForceWarning();
 	} else {
 		hideForceWarning();
@@ -87,16 +92,16 @@ function handleForceWarning() {
  *
  * @param {Event} e - Submit event
  */
-function handleFormSubmit(e) {
-	const forceCheckboxes = getAllElements('input[name="brain2fa_settings[force_2fa_roles][]"]:checked');
-	
-	if (forceCheckboxes.length > 0) {
+function handleFormSubmit( e ) {
+	const forceCheckboxes = getAllElements( 'input[name="brain2fa_settings[force_2fa_roles][]"]:checked' );
+
+	if ( 0 < forceCheckboxes.length ) {
 		const message = __(
 			'You are about to require 2FA for selected user roles. Make sure administrators have set up 2FA before proceeding. Continue?',
 			'brain2fa'
 		);
-		
-		if (!confirm(message)) {
+
+		if ( ! confirm( message ) ) {
 			e.preventDefault();
 			return false;
 		}
@@ -107,18 +112,25 @@ function handleFormSubmit(e) {
  * Handle conditional field visibility
  */
 function conditionalFields() {
+
 	// Show/hide remember device duration on page load
-	const rememberCheckbox = getElement('input[name="brain2fa_settings[remember_device]"]');
-	if (!rememberCheckbox) return;
+	const rememberCheckbox = getElement( 'input[name="brain2fa_settings[remember_device]"]' );
+	if ( ! rememberCheckbox ) {
+return;
+}
 
-	const td = rememberCheckbox.closest('td');
-	if (!td) return;
+	const td = rememberCheckbox.closest( 'td' );
+	if ( ! td ) {
+return;
+}
 
-	const durationField = td.querySelector('input[name="brain2fa_settings[remember_duration]"]');
-	if (!durationField) return;
+	const durationField = td.querySelector( 'input[name="brain2fa_settings[remember_duration]"]' );
+	if ( ! durationField ) {
+return;
+}
 
-	const durationDiv = durationField.closest('div');
-	if (durationDiv) {
+	const durationDiv = durationField.closest( 'div' );
+	if ( durationDiv ) {
 		durationDiv.style.display = rememberCheckbox.checked ? 'block' : 'none';
 	}
 }
@@ -127,8 +139,9 @@ function conditionalFields() {
  * Show force 2FA warning
  */
 function showForceWarning() {
+
 	// Check if warning already exists
-	if (getElement('.brain2fa-force-warning')) {
+	if ( getElement( '.brain2fa-force-warning' ) ) {
 		return;
 	}
 
@@ -136,31 +149,35 @@ function showForceWarning() {
 		<div class="brain2fa-warning notice notice-warning inline" style="margin-top: 10px;">
 			<p>
 				<span class="dashicons dashicons-warning"></span>
-				<strong>${__('Warning:', 'brain2fa')}</strong>
-				${__('Users in selected roles will be required to set up 2FA on their next login.', 'brain2fa')}
+				<strong>${__( 'Warning:', 'brain2fa' )}</strong>
+				${__( 'Users in selected roles will be required to set up 2FA on their next login.', 'brain2fa' )}
 			</p>
 		</div>
 	`;
 
-	const firstCheckbox = getElement('input[name="brain2fa_settings[force_2fa_roles][]"]');
-	if (!firstCheckbox) return;
+	const firstCheckbox = getElement( 'input[name="brain2fa_settings[force_2fa_roles][]"]' );
+	if ( ! firstCheckbox ) {
+return;
+}
 
-	const fieldset = firstCheckbox.closest('fieldset');
-	if (!fieldset) return;
+	const fieldset = firstCheckbox.closest( 'fieldset' );
+	if ( ! fieldset ) {
+return;
+}
 
-	const wrapper = document.createElement('div');
+	const wrapper = document.createElement( 'div' );
 	wrapper.className = 'brain2fa-force-warning';
 	wrapper.innerHTML = warningHtml;
 
-	fieldset.parentNode.insertBefore(wrapper, fieldset.nextSibling);
+	fieldset.parentNode.insertBefore( wrapper, fieldset.nextSibling );
 }
 
 /**
  * Hide force 2FA warning
  */
 function hideForceWarning() {
-	const warning = getElement('.brain2fa-force-warning');
-	if (warning) {
+	const warning = getElement( '.brain2fa-force-warning' );
+	if ( warning ) {
 		warning.remove();
 	}
 }
@@ -171,10 +188,12 @@ function hideForceWarning() {
  * @param {HTMLElement} element - Element to slide down
  * @param {number} duration - Animation duration in ms
  */
-function slideDown(element, duration = 200) {
-	element.style.removeProperty('display');
-	let display = window.getComputedStyle(element).display;
-	if (display === 'none') display = 'block';
+function slideDown( element, duration = 200 ) {
+	element.style.removeProperty( 'display' );
+	let display = window.getComputedStyle( element ).display;
+	if ( 'none' === display ) {
+display = 'block';
+}
 	element.style.display = display;
 
 	const height = element.offsetHeight;
@@ -188,16 +207,16 @@ function slideDown(element, duration = 200) {
 
 	element.style.transition = `all ${duration}ms ease-in-out`;
 	element.style.height = height + 'px';
-	element.style.removeProperty('padding-top');
-	element.style.removeProperty('padding-bottom');
-	element.style.removeProperty('margin-top');
-	element.style.removeProperty('margin-bottom');
+	element.style.removeProperty( 'padding-top' );
+	element.style.removeProperty( 'padding-bottom' );
+	element.style.removeProperty( 'margin-top' );
+	element.style.removeProperty( 'margin-bottom' );
 
-	setTimeout(() => {
-		element.style.removeProperty('height');
-		element.style.removeProperty('overflow');
-		element.style.removeProperty('transition');
-	}, duration);
+	setTimeout( () => {
+		element.style.removeProperty( 'height' );
+		element.style.removeProperty( 'overflow' );
+		element.style.removeProperty( 'transition' );
+	}, duration );
 }
 
 /**
@@ -206,7 +225,7 @@ function slideDown(element, duration = 200) {
  * @param {HTMLElement} element - Element to slide up
  * @param {number} duration - Animation duration in ms
  */
-function slideUp(element, duration = 200) {
+function slideUp( element, duration = 200 ) {
 	element.style.height = element.offsetHeight + 'px';
 	element.offsetHeight; // Force reflow
 
@@ -218,16 +237,16 @@ function slideUp(element, duration = 200) {
 	element.style.marginTop = '0';
 	element.style.marginBottom = '0';
 
-	setTimeout(() => {
+	setTimeout( () => {
 		element.style.display = 'none';
-		element.style.removeProperty('height');
-		element.style.removeProperty('padding-top');
-		element.style.removeProperty('padding-bottom');
-		element.style.removeProperty('margin-top');
-		element.style.removeProperty('margin-bottom');
-		element.style.removeProperty('overflow');
-		element.style.removeProperty('transition');
-	}, duration);
+		element.style.removeProperty( 'height' );
+		element.style.removeProperty( 'padding-top' );
+		element.style.removeProperty( 'padding-bottom' );
+		element.style.removeProperty( 'margin-top' );
+		element.style.removeProperty( 'margin-bottom' );
+		element.style.removeProperty( 'overflow' );
+		element.style.removeProperty( 'transition' );
+	}, duration );
 }
 
 /**
@@ -235,14 +254,16 @@ function slideUp(element, duration = 200) {
  * Expected data attributes: data-codes (JSON array), data-site, data-user, data-email.
  */
 function initRecoveryCodeDownload() {
-	const btn = document.getElementById('brain2fa-download-codes');
-	if (!btn) return;
+	const btn = document.getElementById( 'brain2fa-download-codes' );
+	if ( ! btn ) {
+return;
+}
 
-	btn.addEventListener('click', () => {
+	btn.addEventListener( 'click', () => {
 		let codes = [];
 		try {
-			codes = JSON.parse(btn.dataset.codes || '[]');
-		} catch (e) {
+			codes = JSON.parse( btn.dataset.codes || '[]' );
+		} catch ( e ) {
 			return;
 		}
 
@@ -251,37 +272,38 @@ function initRecoveryCodeDownload() {
 		const email = btn.dataset.email || '';
 
 		const content = [
-			site + ' - ' + __('Two-Factor Authentication Recovery Codes', 'brain2fa'),
+			site + ' - ' + __( 'Two-Factor Authentication Recovery Codes', 'brain2fa' ),
 			'',
-			__('Generated:', 'brain2fa') + ' ' + new Date().toLocaleString(),
+			__( 'Generated:', 'brain2fa' ) + ' ' + new Date().toLocaleString(),
 			'',
-			__('IMPORTANT: Store these codes in a safe place.', 'brain2fa'),
-			__('Each code can only be used once.', 'brain2fa'),
+			__( 'IMPORTANT: Store these codes in a safe place.', 'brain2fa' ),
+			__( 'Each code can only be used once.', 'brain2fa' ),
 			'',
 			...codes,
 			'',
-			__('User:', 'brain2fa')  + ' ' + user,
-			__('Email:', 'brain2fa') + ' ' + email,
-		].join('\n');
+			__( 'User:', 'brain2fa' )  + ' ' + user,
+			__( 'Email:', 'brain2fa' ) + ' ' + email
+		].join( '\n' );
 
-		const blob = new Blob([content], { type: 'text/plain' });
-		const url  = window.URL.createObjectURL(blob);
-		const a    = document.createElement('a');
+		const blob = new Blob([ content ], { type: 'text/plain' });
+		const url  = window.URL.createObjectURL( blob );
+		const a    = document.createElement( 'a' );
 		a.href     = url;
 		a.download = 'brain2fa-recovery-codes.txt';
-		document.body.appendChild(a);
+		document.body.appendChild( a );
 		a.click();
-		window.URL.revokeObjectURL(url);
-		document.body.removeChild(a);
+		window.URL.revokeObjectURL( url );
+		document.body.removeChild( a );
 	});
 }
 
 /**
  * Initialize on DOM ready
  */
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener( 'DOMContentLoaded', () => {
+
 	// Initialize based on current page
-	if (getElement('.brain2fa-settings-wrap')) {
+	if ( getElement( '.brain2fa-settings-wrap' ) ) {
 		initAdmin();
 		initRecoveryCodeDownload();
 	}

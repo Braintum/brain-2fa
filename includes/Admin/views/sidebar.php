@@ -30,13 +30,13 @@ defined( 'ABSPATH' ) || exit;
 		<?php
 		$users_with_2fa = get_users(
 			array(
-				'meta_key'   => 'brain2fa_enabled',
-				'meta_value' => '1',
+				'meta_key'    => 'brain2fa_enabled',
+				'meta_value'  => '1',
 				'count_total' => true,
 				'fields'      => 'ID',
 			)
 		);
-		$total_users = count_users();
+		$total_users    = count_users();
 		?>
 		<p>
 			<strong><?php esc_html_e( 'Users with 2FA:', 'brain2fa' ); ?></strong> 
