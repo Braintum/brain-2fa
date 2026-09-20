@@ -11,18 +11,18 @@
 import { __, _x, _n, sprintf } from '@wordpress/i18n';
 
 // Basic translation
-const message = __('Verification Code', 'brain2fa');
+const message = __('Verification Code', 'brain-2fa');
 
 // Translation with context
-const label = _x('Code', 'verification code label', 'brain2fa');
+const label = _x('Code', 'verification code label', 'brain-2fa');
 
 // Plural translation
 const count = 5;
-const codes = sprintf(_n('1 backup code', '%d backup codes', count, 'brain2fa'), count);
+const codes = sprintf(_n('1 backup code', '%d backup codes', count, 'brain-2fa'), count);
 
 // Formatted translation
 const userName = 'John';
-const greeting = sprintf(__('Welcome, %s!', 'brain2fa'), userName);
+const greeting = sprintf(__('Welcome, %s!', 'brain-2fa'), userName);
 
 
 // ============================================
@@ -91,13 +91,13 @@ checkboxes.forEach((checkbox) => {
 import { showError, showSuccess, showInfo, removeNotifications } from '@/utils/notification';
 
 // Show error message
-showError(__('Invalid credentials. Please try again.', 'brain2fa'));
+showError(__('Invalid credentials. Please try again.', 'brain-2fa'));
 
 // Show success message
-showSuccess(__('2FA has been enabled successfully!', 'brain2fa'));
+showSuccess(__('2FA has been enabled successfully!', 'brain-2fa'));
 
 // Show info message
-showInfo(__('Please check your email for the verification code.', 'brain2fa'));
+showInfo(__('Please check your email for the verification code.', 'brain-2fa'));
 
 // Remove all notifications
 removeNotifications();
@@ -174,7 +174,7 @@ class FormValidator {
         }
 
         // Show confirmation for critical actions
-        const message = __('Are you sure you want to proceed?', 'brain2fa');
+        const message = __('Are you sure you want to proceed?', 'brain-2fa');
         if (!confirm(message)) {
             return;
         }
@@ -195,12 +195,12 @@ class FormValidator {
             const response = await sendAjaxRequest(data);
             
             if (response.success) {
-                showSuccess(__('Settings saved successfully!', 'brain2fa'));
+                showSuccess(__('Settings saved successfully!', 'brain-2fa'));
             } else {
-                showError(response.data.message || __('Failed to save settings', 'brain2fa'));
+                showError(response.data.message || __('Failed to save settings', 'brain-2fa'));
             }
         } catch (error) {
-            showError(__('An error occurred while saving', 'brain2fa'));
+            showError(__('An error occurred while saving', 'brain-2fa'));
         }
     }
 
@@ -210,7 +210,7 @@ class FormValidator {
         // Example validation
         const requiredField = this.form.querySelector('[required]');
         if (requiredField && !requiredField.value) {
-            errors.push(__('Please fill in all required fields', 'brain2fa'));
+            errors.push(__('Please fill in all required fields', 'brain-2fa'));
         }
         
         return errors;
@@ -280,7 +280,7 @@ async function fetchData() {
 // Arrow functions for event handlers
 const handleClick = (event) => {
     event.preventDefault();
-    showInfo(__('Button clicked', 'brain2fa'));
+    showInfo(__('Button clicked', 'brain-2fa'));
 };
 
 // Destructuring
@@ -298,8 +298,8 @@ const ajaxUrl = window.Brain2FA?.ajax ?? '/wp-admin/admin-ajax.php';
 const html = `
     <div class="notice notice-warning">
         <p>
-            <strong>${__('Warning:', 'brain2fa')}</strong>
-            ${__('This action cannot be undone.', 'brain2fa')}
+            <strong>${__('Warning:', 'brain-2fa')}</strong>
+            ${__('This action cannot be undone.', 'brain-2fa')}
         </p>
     </div>
 `;

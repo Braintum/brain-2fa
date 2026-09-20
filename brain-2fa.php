@@ -5,7 +5,7 @@
  * Version: 1.0.0
  * Author: Braintum
  * Author URI: https://www.braintum.com/
- * Text Domain: brain2fa
+ * Text Domain: brain-2fa
  * Domain Path: /languages
  * License: GPLv2+
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html

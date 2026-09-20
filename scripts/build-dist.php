@@ -13,7 +13,7 @@ $dist_dir    = $root . '/dist';
 $staging_dir = $dist_dir . '/' . $plugin_slug;
 $archive     = $dist_dir . '/' . $plugin_slug . '.zip';
 $directories = array( 'assets', 'includes', 'languages', 'vendor' );
-$files       = array( 'brain-2fa.php', 'readme.txt' );
+$files       = array( 'brain-2fa.php', 'composer.json', 'composer.lock', 'readme.txt' );
 $excluded_vendor_path = $root . '/vendor/endroid/qr-code/assets/';
 
 /**

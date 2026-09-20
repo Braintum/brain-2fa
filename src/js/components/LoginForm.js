@@ -62,7 +62,7 @@ async function validateCredentials() {
 	const rememberMe = loginForm.querySelector( '#rememberme, [name="rememberme"]' );
 
 	if ( ! username || ! password ) {
-		showError( __( 'Please enter your username and password.', 'brain2fa' ) );
+		showError( __( 'Please enter your username and password.', 'brain-2fa' ) );
 		return;
 	}
 
@@ -93,7 +93,7 @@ async function validateCredentials() {
 			}
 		}
 	} catch ( error ) {
-		showError( __( 'An error occurred. Please try again.', 'brain2fa' ) );
+		showError( __( 'An error occurred. Please try again.', 'brain-2fa' ) );
 	} finally {
 		isSubmitting = false;
 	}
@@ -108,7 +108,7 @@ function handleError( data ) {
 	const message =
 		data.message ||
 		data.error ||
-		__( 'An unknown error occurred. Please try again.', 'brain2fa' );
+		__( 'An unknown error occurred. Please try again.', 'brain-2fa' );
 
 	showError( message, Boolean( data.message || data.error ) );
 

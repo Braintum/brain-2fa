@@ -57,7 +57,7 @@ class UserListColumns {
 	 * @return array Modified columns.
 	 */
 	public function add_2fa_column( array $columns ): array {
-		$columns['brain2fa_status'] = __( '2FA Status', 'brain2fa' );
+		$columns['brain2fa_status'] = __( '2FA Status', 'brain-2fa' );
 		return $columns;
 	}
 
@@ -80,7 +80,7 @@ class UserListColumns {
 
 			return sprintf(
 				'<span class="brain2fa-status brain2fa-status-enabled"><span class="dashicons dashicons-shield-alt"></span> %s</span>',
-				esc_html__( 'Enabled', 'brain2fa' ),
+				esc_html__( 'Enabled', 'brain-2fa' ),
 			);
 		}
 
@@ -91,7 +91,7 @@ class UserListColumns {
 			if ( Utils::is_grace_period_expired( $user ) ) {
 				return sprintf(
 					'<span class="brain2fa-status brain2fa-status-disabled"><span class="dashicons dashicons-warning"></span> %s</span>',
-					esc_html__( 'Grace Period Expired', 'brain2fa' )
+					esc_html__( 'Grace Period Expired', 'brain-2fa' )
 				);
 			}
 
@@ -100,7 +100,7 @@ class UserListColumns {
 				esc_html(
 					sprintf(
 						/* translators: %s: grace period expiry date */
-						__( 'Setup due %s', 'brain2fa' ),
+						__( 'Setup due %s', 'brain-2fa' ),
 						date_i18n( get_option( 'date_format' ), $grace_period_expires_at )
 					)
 				)
@@ -109,7 +109,7 @@ class UserListColumns {
 
 		return sprintf(
 			'<span class="brain2fa-status brain2fa-status-disabled"><span class="dashicons dashicons-shield"></span> %s</span>',
-			esc_html__( 'Not Active', 'brain2fa' )
+			esc_html__( 'Not Active', 'brain-2fa' )
 		);
 	}
 

@@ -52,7 +52,7 @@ class LoginController {
 		$rate_key = 'brain2fa_rate_' . $ip_hash;
 		$attempts = (int) get_transient( $rate_key );
 		if ( $attempts >= 5 ) {
-			wp_send_json_error( array( 'error' => esc_html__( 'Too many attempts. Please try again in a minute.', 'brain2fa' ) ), 429 );
+			wp_send_json_error( array( 'error' => esc_html__( 'Too many attempts. Please try again in a minute.', 'brain-2fa' ) ), 429 );
 		}
 		set_transient( $rate_key, $attempts + 1, MINUTE_IN_SECONDS );
 
@@ -81,7 +81,7 @@ class LoginController {
 					'error' => wp_kses(
 						sprintf(
 							/* translators: %s is the lost password URL */
-							__( '<strong>ERROR</strong>: A username and password must be provided. <a href="%s" title="Password Lost and Found">Lost your password</a>?', 'brain2fa' ),
+							__( '<strong>ERROR</strong>: A username and password must be provided. <a href="%s" title="Password Lost and Found">Lost your password</a>?', 'brain-2fa' ),
 							wp_lostpassword_url()
 						),
 						array(
@@ -119,7 +119,7 @@ class LoginController {
 				if ( Utils::is_grace_period_expired( $user ) ) {
 					wp_send_json_error(
 						array(
-							'error' => __( 'Your grace period to set up two-factor authentication has expired. Please contact an administrator.', 'brain2fa' ),
+							'error' => __( 'Your grace period to set up two-factor authentication has expired. Please contact an administrator.', 'brain-2fa' ),
 							'reset' => true,
 						)
 					);
@@ -138,7 +138,7 @@ class LoginController {
 			if ( ! Utils::is_method_enabled( $method_id ) || ! $method ) {
 				wp_send_json_error(
 					array(
-						'error' => __( 'Your configured two-factor authentication method is unavailable. Please contact an administrator.', 'brain2fa' ),
+						'error' => __( 'Your configured two-factor authentication method is unavailable. Please contact an administrator.', 'brain-2fa' ),
 						'reset' => true,
 					)
 				);
@@ -147,7 +147,7 @@ class LoginController {
 			if ( 'email' === $method_id && ! $method->send_challenge( $user ) ) {
 				wp_send_json_error(
 					array(
-						'error' => __( 'Unable to send your email authentication code. Please try again or contact an administrator.', 'brain2fa' ),
+						'error' => __( 'Unable to send your email authentication code. Please try again or contact an administrator.', 'brain-2fa' ),
 						'reset' => true,
 					)
 				);
@@ -172,7 +172,7 @@ class LoginController {
 					$errors[] = wp_kses(
 						sprintf(
 							/* translators: %s is the lost password URL */
-							__( '<strong>ERROR</strong>: The username or password you entered is incorrect. <a href="%s" title="Password Lost and Found">Lost your password</a>?', 'brain2fa' ),
+							__( '<strong>ERROR</strong>: The username or password you entered is incorrect. <a href="%s" title="Password Lost and Found">Lost your password</a>?', 'brain-2fa' ),
 							wp_lostpassword_url()
 						),
 						array(
@@ -226,7 +226,7 @@ class LoginController {
 				'error' => wp_kses(
 					sprintf(
 						/* translators: %s is the lost password URL */
-						__( '<strong>ERROR</strong>: The username or password you entered is incorrect. <a href="%s" title="Password Lost and Found">Lost your password</a>?', 'brain2fa' ),
+						__( '<strong>ERROR</strong>: The username or password you entered is incorrect. <a href="%s" title="Password Lost and Found">Lost your password</a>?', 'brain-2fa' ),
 						wp_lostpassword_url()
 					),
 					array(
@@ -267,7 +267,7 @@ class LoginController {
 				if ( Utils::is_grace_period_expired( $user ) ) {
 					return new WP_Error(
 						'brain2fa_setup_required',
-						__( 'Your grace period to set up two-factor authentication has expired. Please contact an administrator.', 'brain2fa' )
+						__( 'Your grace period to set up two-factor authentication has expired. Please contact an administrator.', 'brain-2fa' )
 					);
 				}
 
@@ -286,20 +286,20 @@ class LoginController {
 				if ( 'email' === $method_id && Utils::is_method_enabled( $method_id ) && $method && $method->send_challenge( $user ) ) {
 					return new WP_Error(
 						'brain2fa_required',
-						__( 'An email authentication code has been sent. Enter it to continue.', 'brain2fa' )
+						__( 'An email authentication code has been sent. Enter it to continue.', 'brain-2fa' )
 					);
 				}
 
 				return new WP_Error(
 					'brain2fa_required',
-					__( 'Two-factor authentication required.', 'brain2fa' )
+					__( 'Two-factor authentication required.', 'brain-2fa' )
 				);
 			}
 
 			$code      = sanitize_text_field( wp_unslash( $_POST['brain2fa_code'] ) ); //phpcs:ignore
 
 			if ( ! Utils::is_method_enabled( $method_id ) || ! $method || ! $method->verify( $user, $code ) ) {
-				return new WP_Error( 'invalid_code', __( 'Invalid verification code.', 'brain2fa' ) );
+				return new WP_Error( 'invalid_code', __( 'Invalid verification code.', 'brain-2fa' ) );
 			}
 
 			if ( isset( $_POST['brain2fa_remember_device'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing

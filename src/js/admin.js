@@ -98,7 +98,7 @@ function handleFormSubmit( e ) {
 	if ( 0 < forceCheckboxes.length ) {
 		const message = __(
 			'You are about to require 2FA for selected user roles. Make sure administrators have set up 2FA before proceeding. Continue?',
-			'brain2fa'
+			'brain-2fa'
 		);
 
 		if ( ! confirm( message ) ) {
@@ -149,8 +149,8 @@ function showForceWarning() {
 		<div class="brain2fa-warning notice notice-warning inline" style="margin-top: 10px;">
 			<p>
 				<span class="dashicons dashicons-warning"></span>
-				<strong>${__( 'Warning:', 'brain2fa' )}</strong>
-				${__( 'Users in selected roles will be required to set up 2FA on their next login.', 'brain2fa' )}
+				<strong>${__( 'Warning:', 'brain-2fa' )}</strong>
+				${__( 'Users in selected roles will be required to set up 2FA on their next login.', 'brain-2fa' )}
 			</p>
 		</div>
 	`;
@@ -272,17 +272,17 @@ return;
 		const email = btn.dataset.email || '';
 
 		const content = [
-			site + ' - ' + __( 'Two-Factor Authentication Recovery Codes', 'brain2fa' ),
+			site + ' - ' + __( 'Two-Factor Authentication Recovery Codes', 'brain-2fa' ),
 			'',
-			__( 'Generated:', 'brain2fa' ) + ' ' + new Date().toLocaleString(),
+			__( 'Generated:', 'brain-2fa' ) + ' ' + new Date().toLocaleString(),
 			'',
-			__( 'IMPORTANT: Store these codes in a safe place.', 'brain2fa' ),
-			__( 'Each code can only be used once.', 'brain2fa' ),
+			__( 'IMPORTANT: Store these codes in a safe place.', 'brain-2fa' ),
+			__( 'Each code can only be used once.', 'brain-2fa' ),
 			'',
 			...codes,
 			'',
-			__( 'User:', 'brain2fa' )  + ' ' + user,
-			__( 'Email:', 'brain2fa' ) + ' ' + email
+			__( 'User:', 'brain-2fa' )  + ' ' + user,
+			__( 'Email:', 'brain-2fa' ) + ' ' + email
 		].join( '\n' );
 
 		const blob = new Blob([ content ], { type: 'text/plain' });

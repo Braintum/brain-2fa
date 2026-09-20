@@ -70,31 +70,31 @@ class UserProfile {
 			wp_nonce_field( 'brain2fa_extend_grace', 'brain2fa_grace_nonce' );
 		}
 		?>
-		<h2><?php esc_html_e( 'Two-Factor Authentication', 'brain2fa' ); ?></h2>
+		<h2><?php esc_html_e( 'Two-Factor Authentication', 'brain-2fa' ); ?></h2>
 		
 		<table class="form-table" role="presentation">
 			<tr>
 				<th scope="row">
-					<?php esc_html_e( '2FA Status', 'brain2fa' ); ?>
+					<?php esc_html_e( '2FA Status', 'brain-2fa' ); ?>
 				</th>
 				<td>
 					<?php if ( $is_enabled ) : ?>
 						<span class="brain2fa-status brain2fa-status-enabled">
 							<span class="dashicons dashicons-shield-alt"></span>
-							<?php esc_html_e( 'Two-Factor Authentication is Active', 'brain2fa' ); ?>
+							<?php esc_html_e( 'Two-Factor Authentication is Active', 'brain-2fa' ); ?>
 						</span>
 					<?php else : ?>
 						<span class="brain2fa-status brain2fa-status-disabled">
 							<span class="dashicons dashicons-shield"></span>
-							<?php esc_html_e( 'Two-Factor Authentication is Inactive', 'brain2fa' ); ?>
+							<?php esc_html_e( 'Two-Factor Authentication is Inactive', 'brain-2fa' ); ?>
 						</span>
 					<?php endif; ?>
 					<p class="description">
-						<?php esc_html_e( 'Add an extra layer of security to your account.', 'brain2fa' ); ?>
+						<?php esc_html_e( 'Add an extra layer of security to your account.', 'brain-2fa' ); ?>
 					</p>
 					<p>
 						<a href="<?php echo esc_url( admin_url( 'admin.php?page=brain-2fa-login-security' ) ); ?>" class="button button-secondary">
-							<?php esc_html_e( 'Manage 2FA', 'brain2fa' ); ?>
+							<?php esc_html_e( 'Manage 2FA', 'brain-2fa' ); ?>
 						</a>
 					</p>
 				</td>
@@ -102,19 +102,19 @@ class UserProfile {
 			<?php if ( $grace_period_expires_at > 0 ) : ?>
 				<tr>
 					<th scope="row">
-						<?php esc_html_e( '2FA Setup Grace Period', 'brain2fa' ); ?>
+						<?php esc_html_e( '2FA Setup Grace Period', 'brain-2fa' ); ?>
 					</th>
 					<td>
 						<?php if ( Utils::is_grace_period_expired( $user ) ) : ?>
 							<span class="brain2fa-status brain2fa-status-disabled">
 								<span class="dashicons dashicons-warning"></span>
-								<?php esc_html_e( 'Grace period expired', 'brain2fa' ); ?>
+								<?php esc_html_e( 'Grace period expired', 'brain-2fa' ); ?>
 							</span>
 							<p class="description">
 								<?php
 								printf(
 									/* translators: %s: grace period expiry date */
-									esc_html__( '2FA setup was required by %s.', 'brain2fa' ),
+									esc_html__( '2FA setup was required by %s.', 'brain-2fa' ),
 									esc_html( date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $grace_period_expires_at ) )
 								);
 								?>
@@ -122,13 +122,13 @@ class UserProfile {
 						<?php else : ?>
 							<span class="brain2fa-status brain2fa-status-enabled">
 								<span class="dashicons dashicons-clock"></span>
-								<?php esc_html_e( 'Grace period active', 'brain2fa' ); ?>
+								<?php esc_html_e( 'Grace period active', 'brain-2fa' ); ?>
 							</span>
 							<p class="description">
 								<?php
 								printf(
 									/* translators: %s: grace period expiry date */
-									esc_html__( 'Set up 2FA before %s.', 'brain2fa' ),
+									esc_html__( 'Set up 2FA before %s.', 'brain-2fa' ),
 									esc_html( date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $grace_period_expires_at ) )
 								);
 								?>
@@ -137,11 +137,11 @@ class UserProfile {
 
 						<?php if ( current_user_can( 'manage_options' ) ) : ?>
 							<p>
-								<label for="brain2fa_extend_grace_days"><?php esc_html_e( 'Extend grace period by (days)', 'brain2fa' ); ?></label>
+								<label for="brain2fa_extend_grace_days"><?php esc_html_e( 'Extend grace period by (days)', 'brain-2fa' ); ?></label>
 								<input type="number" id="brain2fa_extend_grace_days" name="brain2fa_extend_grace_days" min="1" max="365" step="1">
 							</p>
 							<p class="description">
-								<?php esc_html_e( 'Enter the number of days to add, then update the profile.', 'brain2fa' ); ?>
+								<?php esc_html_e( 'Enter the number of days to add, then update the profile.', 'brain-2fa' ); ?>
 							</p>
 						<?php endif; ?>
 					</td>
@@ -211,8 +211,8 @@ class UserProfile {
 			?>
 			<div class="notice notice-error">
 				<p>
-					<?php esc_html_e( 'Your grace period to set up two-factor authentication has expired.', 'brain2fa' ); ?>
-					<a href="<?php echo esc_url( $setup_url ); ?>"><?php esc_html_e( 'Set up 2FA now.', 'brain2fa' ); ?></a>
+					<?php esc_html_e( 'Your grace period to set up two-factor authentication has expired.', 'brain-2fa' ); ?>
+					<a href="<?php echo esc_url( $setup_url ); ?>"><?php esc_html_e( 'Set up 2FA now.', 'brain-2fa' ); ?></a>
 				</p>
 			</div>
 			<?php
@@ -226,11 +226,11 @@ class UserProfile {
 				<?php
 				printf(
 					/* translators: %d: number of grace-period days remaining */
-					esc_html( _n( 'You have %d day left to set up two-factor authentication.', 'You have %d days left to set up two-factor authentication.', $days_remaining, 'brain2fa' ) ),
+					esc_html( _n( 'You have %d day left to set up two-factor authentication.', 'You have %d days left to set up two-factor authentication.', $days_remaining, 'brain-2fa' ) ),
 					absint( $days_remaining )
 				);
 				?>
-				<a href="<?php echo esc_url( $setup_url ); ?>"><?php esc_html_e( 'Set up 2FA now.', 'brain2fa' ); ?></a>
+				<a href="<?php echo esc_url( $setup_url ); ?>"><?php esc_html_e( 'Set up 2FA now.', 'brain-2fa' ); ?></a>
 			</p>
 		</div>
 		<?php

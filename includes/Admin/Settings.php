@@ -55,8 +55,8 @@ class Settings {
 	 */
 	public function register_admin_menu(): void {
 		add_menu_page(
-			__( 'Brain 2FA Settings', 'brain2fa' ),
-			__( 'Brain 2FA', 'brain2fa' ),
+			__( 'Brain 2FA Settings', 'brain-2fa' ),
+			__( 'Brain 2FA', 'brain-2fa' ),
 			'manage_options',
 			'brain-2fa-settings',
 			array( $this, 'render_settings_page' ),
@@ -66,16 +66,16 @@ class Settings {
 
 		add_submenu_page(
 			'brain-2fa-settings',
-			__( '2FA Settings', 'brain2fa' ),
-			__( 'Settings', 'brain2fa' ),
+			__( '2FA Settings', 'brain-2fa' ),
+			__( 'Settings', 'brain-2fa' ),
 			'manage_options',
 			'brain-2fa-settings'
 		);
 
 		add_submenu_page(
 			'brain-2fa-settings',
-			__( 'Two-Factor Authentication', 'brain2fa' ),
-			__( 'Login Security', 'brain2fa' ),
+			__( 'Two-Factor Authentication', 'brain-2fa' ),
+			__( 'Login Security', 'brain-2fa' ),
 			'read',
 			'brain-2fa-login-security',
 			array( $this, 'render_login_security_page' )
@@ -97,14 +97,14 @@ class Settings {
 		// General Settings Section.
 		add_settings_section(
 			'brain2fa_general_section',
-			__( 'General Settings', 'brain2fa' ),
+			__( 'General Settings', 'brain-2fa' ),
 			array( $this, 'general_section_callback' ),
 			'brain-2fa-settings'
 		);
 
 		add_settings_field(
 			'enable_2fa',
-			__( 'Enable Two-Factor Authentication', 'brain2fa' ),
+			__( 'Enable Two-Factor Authentication', 'brain-2fa' ),
 			array( $this, 'enable_2fa_callback' ),
 			'brain-2fa-settings',
 			'brain2fa_general_section'
@@ -112,7 +112,7 @@ class Settings {
 
 		add_settings_field(
 			'force_2fa',
-			__( 'Force 2FA for Roles', 'brain2fa' ),
+			__( 'Force 2FA for Roles', 'brain-2fa' ),
 			array( $this, 'force_2fa_callback' ),
 			'brain-2fa-settings',
 			'brain2fa_general_section'
@@ -120,7 +120,7 @@ class Settings {
 
 		add_settings_field(
 			'grace_period',
-			__( '2FA Setup Grace Period', 'brain2fa' ),
+			__( '2FA Setup Grace Period', 'brain-2fa' ),
 			array( $this, 'grace_period_callback' ),
 			'brain-2fa-settings',
 			'brain2fa_general_section'
@@ -128,7 +128,7 @@ class Settings {
 
 		add_settings_field(
 			'default_method',
-			__( 'Default Authentication Method', 'brain2fa' ),
+			__( 'Default Authentication Method', 'brain-2fa' ),
 			array( $this, 'default_method_callback' ),
 			'brain-2fa-settings',
 			'brain2fa_general_section'
@@ -137,14 +137,14 @@ class Settings {
 		// Method Settings Section.
 		add_settings_section(
 			'brain2fa_methods_section',
-			__( 'Authentication Methods', 'brain2fa' ),
+			__( 'Authentication Methods', 'brain-2fa' ),
 			array( $this, 'methods_section_callback' ),
 			'brain-2fa-settings'
 		);
 
 		add_settings_field(
 			'enable_totp',
-			__( 'Enable TOTP (Authenticator App)', 'brain2fa' ),
+			__( 'Enable TOTP (Authenticator App)', 'brain-2fa' ),
 			array( $this, 'enable_totp_callback' ),
 			'brain-2fa-settings',
 			'brain2fa_methods_section'
@@ -152,7 +152,7 @@ class Settings {
 
 		add_settings_field(
 			'enable_email',
-			__( 'Enable Email Authentication', 'brain2fa' ),
+			__( 'Enable Email Authentication', 'brain-2fa' ),
 			array( $this, 'enable_email_callback' ),
 			'brain-2fa-settings',
 			'brain2fa_methods_section'
@@ -161,14 +161,14 @@ class Settings {
 		// Advanced Settings Section.
 		add_settings_section(
 			'brain2fa_advanced_section',
-			__( 'Advanced Settings', 'brain2fa' ),
+			__( 'Advanced Settings', 'brain-2fa' ),
 			array( $this, 'advanced_section_callback' ),
 			'brain-2fa-settings'
 		);
 
 		add_settings_field(
 			'code_expiry',
-			__( 'Email Code Expiry (minutes)', 'brain2fa' ),
+			__( 'Email Code Expiry (minutes)', 'brain-2fa' ),
 			array( $this, 'code_expiry_callback' ),
 			'brain-2fa-settings',
 			'brain2fa_advanced_section'
@@ -176,7 +176,7 @@ class Settings {
 
 		add_settings_field(
 			'remember_device',
-			__( 'Remember Device', 'brain2fa' ),
+			__( 'Remember Device', 'brain-2fa' ),
 			array( $this, 'remember_device_callback' ),
 			'brain-2fa-settings',
 			'brain2fa_advanced_section'
@@ -216,21 +216,21 @@ class Settings {
 	 * Section callbacks.
 	 */
 	public function general_section_callback(): void {
-		echo '<p>' . esc_html__( 'Configure the basic two-factor authentication settings.', 'brain2fa' ) . '</p>';
+		echo '<p>' . esc_html__( 'Configure the basic two-factor authentication settings.', 'brain-2fa' ) . '</p>';
 	}
 
 	/**
 	 * Section callbacks.
 	 */
 	public function methods_section_callback(): void {
-		echo '<p>' . esc_html__( 'Enable or disable specific authentication methods.', 'brain2fa' ) . '</p>';
+		echo '<p>' . esc_html__( 'Enable or disable specific authentication methods.', 'brain-2fa' ) . '</p>';
 	}
 
 	/**
 	 * Section callbacks.
 	 */
 	public function advanced_section_callback(): void {
-		echo '<p>' . esc_html__( 'Advanced configuration options for two-factor authentication.', 'brain2fa' ) . '</p>';
+		echo '<p>' . esc_html__( 'Advanced configuration options for two-factor authentication.', 'brain-2fa' ) . '</p>';
 	}
 
 	/**
@@ -242,10 +242,10 @@ class Settings {
 		?>
 		<label>
 			<input type="checkbox" name="brain2fa_settings[enable_2fa]" value="1" <?php checked( $checked ); ?>>
-			<?php esc_html_e( 'Enable two-factor authentication for the site', 'brain2fa' ); ?>
+			<?php esc_html_e( 'Enable two-factor authentication for the site', 'brain-2fa' ); ?>
 		</label>
 		<p class="description">
-			<?php esc_html_e( 'Master switch to enable/disable 2FA functionality site-wide.', 'brain2fa' ); ?>
+			<?php esc_html_e( 'Master switch to enable/disable 2FA functionality site-wide.', 'brain-2fa' ); ?>
 		</p>
 		<?php
 	}
@@ -270,7 +270,7 @@ class Settings {
 			<?php endforeach; ?>
 		</fieldset>
 		<p class="description">
-			<?php esc_html_e( 'Select user roles that are required to use 2FA.', 'brain2fa' ); ?>
+			<?php esc_html_e( 'Select user roles that are required to use 2FA.', 'brain-2fa' ); ?>
 		</p>
 		<?php
 	}
@@ -289,7 +289,7 @@ class Settings {
 			max="365"
 			step="1">
 		<p class="description">
-			<?php esc_html_e( 'Allow users in required roles this many days to set up 2FA. Set to 0 to require setup immediately.', 'brain2fa' ); ?>
+			<?php esc_html_e( 'Allow users in required roles this many days to set up 2FA. Set to 0 to require setup immediately.', 'brain-2fa' ); ?>
 		</p>
 		<?php
 	}
@@ -304,14 +304,14 @@ class Settings {
 		?>
 		<select name="brain2fa_settings[default_method]">
 			<option value="totp" <?php selected( $method, 'totp' ); ?>>
-				<?php esc_html_e( 'TOTP (Authenticator App)', 'brain2fa' ); ?>
+				<?php esc_html_e( 'TOTP (Authenticator App)', 'brain-2fa' ); ?>
 			</option>
 			<option value="email" <?php selected( $method, 'email' ); ?>>
-				<?php esc_html_e( 'Email Authentication', 'brain2fa' ); ?>
+				<?php esc_html_e( 'Email Authentication', 'brain-2fa' ); ?>
 			</option>
 		</select>
 		<p class="description">
-			<?php esc_html_e( 'Default authentication method for new users.', 'brain2fa' ); ?>
+			<?php esc_html_e( 'Default authentication method for new users.', 'brain-2fa' ); ?>
 		</p>
 		<?php
 	}
@@ -325,7 +325,7 @@ class Settings {
 		?>
 		<label>
 			<input type="checkbox" name="brain2fa_settings[enable_totp]" value="1" <?php checked( $checked ); ?>>
-			<?php esc_html_e( 'Allow users to use TOTP authenticator apps (Google Authenticator, Authy, etc.)', 'brain2fa' ); ?>
+			<?php esc_html_e( 'Allow users to use TOTP authenticator apps (Google Authenticator, Authy, etc.)', 'brain-2fa' ); ?>
 		</label>
 		<?php
 	}
@@ -339,7 +339,7 @@ class Settings {
 		?>
 		<label>
 			<input type="checkbox" name="brain2fa_settings[enable_email]" value="1" <?php checked( $checked ); ?>>
-			<?php esc_html_e( 'Allow users to receive authentication codes via email', 'brain2fa' ); ?>
+			<?php esc_html_e( 'Allow users to receive authentication codes via email', 'brain-2fa' ); ?>
 		</label>
 		<?php
 	}
@@ -358,7 +358,7 @@ class Settings {
 			max="60" 
 			step="1">
 		<p class="description">
-			<?php esc_html_e( 'How long email codes remain valid (in minutes).', 'brain2fa' ); ?>
+			<?php esc_html_e( 'How long email codes remain valid (in minutes).', 'brain-2fa' ); ?>
 		</p>
 		<?php
 	}
@@ -373,14 +373,14 @@ class Settings {
 		?>
 		<label>
 			<input type="checkbox" name="brain2fa_settings[remember_device]" value="1" <?php checked( $checked ); ?>>
-			<?php esc_html_e( 'Allow users to remember their device', 'brain2fa' ); ?>
+			<?php esc_html_e( 'Allow users to remember their device', 'brain-2fa' ); ?>
 		</label>
 		<p class="description">
-			<?php esc_html_e( 'Users can skip 2FA on trusted devices.', 'brain2fa' ); ?>
+			<?php esc_html_e( 'Users can skip 2FA on trusted devices.', 'brain-2fa' ); ?>
 		</p>
 		<div style="margin-top: 10px;">
 			<label>
-				<?php esc_html_e( 'Remember for (days):', 'brain2fa' ); ?>
+				<?php esc_html_e( 'Remember for (days):', 'brain-2fa' ); ?>
 				<input type="number" 
 					name="brain2fa_settings[remember_duration]" 
 					value="<?php echo esc_attr( $duration ); ?>" 
@@ -407,7 +407,7 @@ class Settings {
 			add_settings_error(
 				'brain2fa_messages',
 				'brain2fa_message',
-				__( 'Settings saved successfully.', 'brain2fa' ),
+				__( 'Settings saved successfully.', 'brain-2fa' ),
 				'updated'
 			);
 		}
@@ -460,9 +460,9 @@ class Settings {
 					// Capture fresh recovery codes if they were generated.
 					if ( is_array( $result ) && ! empty( $result['recovery_codes'] ) ) {
 						$fresh_recovery_codes = $result['recovery_codes'];
-						echo '<div class="notice notice-success"><p>' . esc_html__( 'Two-Factor Authentication has been activated successfully! Please save your recovery codes below.', 'brain2fa' ) . '</p></div>';
+						echo '<div class="notice notice-success"><p>' . esc_html__( 'Two-Factor Authentication has been activated successfully! Please save your recovery codes below.', 'brain-2fa' ) . '</p></div>';
 					} else {
-						echo '<div class="notice notice-success"><p>' . esc_html__( 'Two-Factor Authentication has been activated successfully!', 'brain2fa' ) . '</p></div>';
+						echo '<div class="notice notice-success"><p>' . esc_html__( 'Two-Factor Authentication has been activated successfully!', 'brain-2fa' ) . '</p></div>';
 					}
 				} elseif ( is_wp_error( $result ) ) {
 					echo '<div class="notice notice-error"><p>' . esc_html( $result->get_error_message() ) . '</p></div>'; // phpcs:ignore
@@ -474,12 +474,12 @@ class Settings {
 					$current_method_instance->save_setup( $current_user, $deactivate_data );
 				}
 				delete_user_meta( $current_user->ID, 'brain2fa_method' );
-				echo '<div class="notice notice-success"><p>' . esc_html__( 'Two-Factor Authentication has been deactivated.', 'brain2fa' ) . '</p></div>';
+				echo '<div class="notice notice-success"><p>' . esc_html__( 'Two-Factor Authentication has been deactivated.', 'brain-2fa' ) . '</p></div>';
 				$is_2fa_enabled = false;
 				$current_method = '';
 			} elseif ( 'regenerate_recovery_codes' === $action && $totp_method && $is_2fa_enabled ) {
 				$fresh_recovery_codes = $totp_method->generate_recovery_codes( $current_user );
-				echo '<div class="notice notice-success"><p>' . esc_html__( 'Recovery codes have been regenerated. Please save them securely.', 'brain2fa' ) . '</p></div>';
+				echo '<div class="notice notice-success"><p>' . esc_html__( 'Recovery codes have been regenerated. Please save them securely.', 'brain-2fa' ) . '</p></div>';
 			}
 		}
 

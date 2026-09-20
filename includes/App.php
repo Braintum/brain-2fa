@@ -166,7 +166,7 @@ final class App {
 	 * @return void
 	 */
 	public function on_plugins_loaded() {
-		load_plugin_textdomain( 'brain2fa', false, dirname( plugin_basename( BRAIN_2FA_PLUGIN_DIR . 'brain-2fa.php' ) ) . '/languages' );
+		load_plugin_textdomain( 'brain-2fa', false, dirname( plugin_basename( BRAIN_2FA_PLUGIN_DIR . 'brain-2fa.php' ) ) . '/languages' );
 
 		$this->manager->register_method( new TotpMethod() );
 		$this->manager->register_method( new EmailMethod() );
@@ -203,7 +203,7 @@ final class App {
 	 * @since 1.0.0
 	 */
 	public function __clone() {
-		_doing_it_wrong( __FUNCTION__, esc_html__( 'Cloning is forbidden.', 'brain2fa' ), '1.0.0' );
+		_doing_it_wrong( __FUNCTION__, esc_html__( 'Cloning is forbidden.', 'brain-2fa' ), '1.0.0' );
 	}
 
 	/**
@@ -212,6 +212,6 @@ final class App {
 	 * @since 1.0.0
 	 */
 	public function __wakeup() {
-		_doing_it_wrong( __FUNCTION__, esc_html__( 'Unserializing instances of this class is forbidden.', 'brain2fa' ), '1.0.0' );
+		_doing_it_wrong( __FUNCTION__, esc_html__( 'Unserializing instances of this class is forbidden.', 'brain-2fa' ), '1.0.0' );
 	}
 }

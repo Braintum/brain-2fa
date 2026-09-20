@@ -60,7 +60,7 @@ class LoginAssets {
 		// Set script translations.
 		wp_set_script_translations(
 			'brain2fa-login',
-			'brain2fa',
+			'brain-2fa',
 			BRAIN_2FA_PLUGIN_DIR . 'languages'
 		);
 

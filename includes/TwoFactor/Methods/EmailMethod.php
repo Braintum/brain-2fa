@@ -73,7 +73,7 @@ class EmailMethod implements TwoFactorMethodInterface {
 		}
 
 		if ( ! is_email( $user->user_email ) ) {
-			return new WP_Error( 'invalid_email', __( 'A valid account email address is required for email authentication.', 'brain2fa' ) );
+			return new WP_Error( 'invalid_email', __( 'A valid account email address is required for email authentication.', 'brain-2fa' ) );
 		}
 
 		update_user_meta( $user->ID, 'brain2fa_enabled', 1 );
@@ -137,14 +137,14 @@ class EmailMethod implements TwoFactorMethodInterface {
 			$site_name = get_bloginfo( 'name' );
 			$subject   = sprintf(
 				/* translators: %s: site name */
-				__( '[%s] Your two-factor authentication code', 'brain2fa' ),
+				__( '[%s] Your two-factor authentication code', 'brain-2fa' ),
 				$site_name
 			);
 			$message = sprintf(
 				/* translators: 1: user display name, 2: 6-digit code, 3: expiry in minutes, 4: site name */
 				__(
 					"Hi %1\$s,\n\nYour two-factor authentication code is:\n\n%2\$s\n\nThis code expires in %3\$d minute(s).\n\nIf you did not request this code, please ignore this email.\n\n-- %4\$s",
-					'brain2fa'
+					'brain-2fa'
 				),
 				$user->display_name,
 				$code,

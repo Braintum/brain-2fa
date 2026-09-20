@@ -68,7 +68,7 @@ export function show2FAField( form, method = 'email', showRememberDevice = false
 
 	// Label text
 	const labelText = document.createElement( 'span' );
-	labelText.textContent = __( 'Verification Code', 'brain2fa' );
+	labelText.textContent = __( 'Verification Code', 'brain-2fa' );
 	label.appendChild( labelText );
 
 
@@ -81,8 +81,8 @@ export function show2FAField( form, method = 'email', showRememberDevice = false
 	input.setAttribute( 'inputmode', 'numeric' );
 	input.setAttribute( 'autocomplete', 'one-time-code' );
 	input.required = true;
-	input.setAttribute( 'aria-label', __( 'Enter your verification code', 'brain2fa' ) );
-	input.setAttribute( 'placeholder', __( 'Enter code', 'brain2fa' ) );
+	input.setAttribute( 'aria-label', __( 'Enter your verification code', 'brain-2fa' ) );
+	input.setAttribute( 'placeholder', __( 'Enter code', 'brain-2fa' ) );
 
 	label.appendChild( input );
 	wrapper.appendChild( label );
@@ -91,7 +91,7 @@ export function show2FAField( form, method = 'email', showRememberDevice = false
 		const description = document.createElement( 'div' );
 		description.className = 'description';
 		description.style.marginBottom = '8px';
-		description.textContent = __( 'A verification code has been sent to your email address.', 'brain2fa' );
+		description.textContent = __( 'A verification code has been sent to your email address.', 'brain-2fa' );
 		wrapper.appendChild( description );
 	}
 
@@ -102,7 +102,7 @@ export function show2FAField( form, method = 'email', showRememberDevice = false
 		rememberInput.name = 'brain2fa_remember_device';
 		rememberInput.value = '1';
 		rememberLabel.appendChild( rememberInput );
-		rememberLabel.appendChild( document.createTextNode( ` ${__( 'Remember this device', 'brain2fa' )}` ) );
+		rememberLabel.appendChild( document.createTextNode( ` ${__( 'Remember this device', 'brain-2fa' )}` ) );
 		wrapper.appendChild( rememberLabel );
 	}
 

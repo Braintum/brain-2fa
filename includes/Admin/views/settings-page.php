@@ -20,7 +20,7 @@ defined( 'ABSPATH' ) || exit;
 				<?php
 				settings_fields( 'brain2fa_settings_group' );
 				do_settings_sections( 'brain-2fa-settings' );
-				submit_button( __( 'Save Settings', 'brain2fa' ) );
+				submit_button( __( 'Save Settings', 'brain-2fa' ) );
 				?>
 			</form>
 		</div>

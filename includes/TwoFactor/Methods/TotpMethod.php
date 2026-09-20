@@ -155,7 +155,7 @@ class TotpMethod implements TwoFactorMethodInterface {
 			// Re-activation with existing recovery codes — still a success.
 			return array( 'success' => true );
 		}
-		return new \WP_Error( 'invalid', __( 'Invalid verification code.', 'brain2fa' ) );
+		return new \WP_Error( 'invalid', __( 'Invalid verification code.', 'brain-2fa' ) );
 	}
 
 	/**
