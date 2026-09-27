@@ -44,6 +44,13 @@ TOTP users can use a recovery code. Site administrators can also manage setup gr
 
 Yes. The plugin supports the standard WooCommerce My Account login form.
 
+== Development ==
+
+The development source code and build tools for Brain 2FA are publicly available at:
+https://github.com/Braintum/brain-2fa
+
+The JavaScript files in `assets/js/` are generated from the source files in `src/js/`.
+
 == Changelog ==
 
 = 1.0.0 =
