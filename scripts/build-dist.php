@@ -14,7 +14,6 @@ $staging_dir = $dist_dir . '/' . $plugin_slug;
 $archive     = $dist_dir . '/' . $plugin_slug . '.zip';
 $directories = array( 'assets', 'includes', 'languages', 'vendor' );
 $files       = array( 'brain-2fa.php', 'composer.json', 'composer.lock', 'readme.txt' );
-$excluded_vendor_path = $root . '/vendor/endroid/qr-code/assets/';
 
 /**
  * Remove a known build directory.
@@ -50,7 +49,7 @@ function brain2fa_remove_directory( string $directory ): void {
  * @param string $destination Destination path.
  * @return void
  */
-function brain2fa_copy( string $source, string $destination, string $excluded_vendor_path ): void {
+function brain2fa_copy( string $source, string $destination ): void {
 	if ( is_dir( $source ) ) {
 		mkdir( $destination, 0755, true );
 		$iterator = new RecursiveIteratorIterator(
@@ -59,10 +58,6 @@ function brain2fa_copy( string $source, string $destination, string $excluded_ve
 		);
 
 		foreach ( $iterator as $item ) {
-			if ( str_starts_with( $item->getPathname(), $excluded_vendor_path ) ) {
-				continue;
-			}
-
 			$target = $destination . '/' . $iterator->getSubPathName();
 			if ( $item->isDir() ) {
 				mkdir( $target, 0755, true );
@@ -90,11 +85,11 @@ if ( file_exists( $archive ) ) {
 mkdir( $staging_dir, 0755, true );
 
 foreach ( $directories as $directory ) {
-	brain2fa_copy( $root . '/' . $directory, $staging_dir . '/' . $directory, $excluded_vendor_path );
+	brain2fa_copy( $root . '/' . $directory, $staging_dir . '/' . $directory );
 }
 
 foreach ( $files as $file ) {
-	brain2fa_copy( $root . '/' . $file, $staging_dir . '/' . $file, $excluded_vendor_path );
+	brain2fa_copy( $root . '/' . $file, $staging_dir . '/' . $file );
 }
 
 $zip = new ZipArchive();

@@ -277,7 +277,7 @@ Built with ❤️ by [Braintum](https://www.braintum.com/)
 ### Dependencies
 
 - [OTPHP](https://github.com/Spomky-Labs/otphp) - TOTP implementation
-- [Endroid QR Code](https://github.com/endroid/qr-code) - QR code generation
+- [BaconQrCode](https://github.com/Bacon/BaconQrCode) - QR code generation
 - [WordPress i18n](https://developer.wordpress.org/block-editor/reference-guides/packages/packages-i18n/) - Internationalization
 
 ---

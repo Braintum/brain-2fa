@@ -99,7 +99,7 @@ class TotpMethod implements TwoFactorMethodInterface {
 			rawurlencode( $issuer )
 		);
 
-		// Generate QR code using endroid/qr-code.
+		// Generate QR code using bacon/bacon-qr-code.
 		$qr_data_uri = $this->generate_qr_code( $uri );
 		return array(
 			'secret'   => $secret,
@@ -252,37 +252,34 @@ class TotpMethod implements TwoFactorMethodInterface {
 	/**
 	 * Generates a QR code data URI for TOTP setup.
 	 *
-	 * Attempts to use the Endroid QR Code library to generate a QR code image.
-	 * Returns an empty string if the library is unavailable or fails.
+	 * Uses the BaconQrCode library (GD back end) to render a PNG QR code, with the
+	 * plugin logo composited in the center. Returns an empty string if the library
+	 * or the GD extension is unavailable, or rendering fails.
 	 *
 	 * @param string $data The data to encode in the QR code (typically otpauth URI).
 	 *
-	 * @return string Data URI of the QR code image or Google Charts API URL.
+	 * @return string PNG data URI of the QR code image, or empty string on failure.
 	 *
 	 * @since 1.0.0
 	 */
 	protected function generate_qr_code( $data ): string {
 		try {
-			if ( class_exists( '\Endroid\QrCode\Writer\PngWriter' ) && class_exists( '\Endroid\QrCode\QrCode' ) ) {
-				$writer  = new \Endroid\QrCode\Writer\PngWriter();
-				$qr_code = \Endroid\QrCode\QrCode::create( $data )
-					->setSize( 300 )
-					->setMargin( 5 );
+			if ( class_exists( '\BaconQrCode\Writer' ) && extension_loaded( 'gd' ) ) {
+				$size = 300;
+
+				// Margin is in modules. Error correction Q (~25%) keeps the code readable with the logo covering the center.
+				$writer = new \BaconQrCode\Writer( new \BaconQrCode\Renderer\GDLibRenderer( $size, 2 ) );
+				$png    = $writer->writeString( $data, \BaconQrCode\Encoder\Encoder::DEFAULT_BYTE_MODE_ENCODING, \BaconQrCode\Common\ErrorCorrectionLevel::Q() );
 
 				// Add logo to the center of the QR code.
 				$logo_path = BRAIN_2FA_PLUGIN_DIR . 'assets/images/logo.png';
-				if ( file_exists( $logo_path ) && class_exists( '\Endroid\QrCode\Logo\Logo' ) ) {
-					$logo = \Endroid\QrCode\Logo\Logo::create( $logo_path )
-						->setResizeToWidth( 60 ) // Logo width (20% of QR code size).
-						->setPunchoutBackground( true ); // Add white background behind logo for better contrast.
-				} else {
-					$logo = null;
+				if ( file_exists( $logo_path ) ) {
+					$png = $this->add_qr_logo( $png, $logo_path, $size, 60 ); // Logo width (20% of QR code size).
 				}
 
-				$result = $writer->write( $qr_code, $logo );
-				return $result->getDataUri();
+				return 'data:image/png;base64,' . base64_encode( $png ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Encoding a PNG for a data URI.
 			}
-		} catch ( \Exception $e ) {
+		} catch ( \Throwable $e ) {
 			do_action( 'brain2fa_qr_code_generation_failed', $e );
 		}
 
@@ -290,6 +287,41 @@ class TotpMethod implements TwoFactorMethodInterface {
 		// third-party service would be a security issue. Return empty string; the view will show
 		// the manual secret key entry field instead.
 		return '';
+	}
+
+	/**
+	 * Composites a logo onto the center of a QR code PNG.
+	 *
+	 * The logo is resized to the given width and drawn on a white punchout
+	 * background for contrast. Returns the original PNG unchanged if the logo
+	 * cannot be loaded.
+	 *
+	 * @param string $png        Binary PNG data of the QR code.
+	 * @param string $logo_path  Absolute path to the logo image.
+	 * @param int    $size       QR code image size in pixels.
+	 * @param int    $logo_width Target logo width in pixels.
+	 *
+	 * @return string Binary PNG data with the logo applied.
+	 *
+	 * @since 1.0.0
+	 */
+	protected function add_qr_logo( string $png, string $logo_path, int $size, int $logo_width ): string {
+		$qr   = imagecreatefromstring( $png );
+		$logo = imagecreatefromstring( (string) file_get_contents( $logo_path ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local plugin asset.
+		if ( ! $qr || ! $logo ) {
+			return $png;
+		}
+
+		$logo_height = (int) round( imagesy( $logo ) * $logo_width / imagesx( $logo ) );
+		$x           = (int) ( ( $size - $logo_width ) / 2 );
+		$y           = (int) ( ( $size - $logo_height ) / 2 );
+
+		imagefilledrectangle( $qr, $x, $y, $x + $logo_width - 1, $y + $logo_height - 1, imagecolorallocate( $qr, 255, 255, 255 ) );
+		imagecopyresampled( $qr, $logo, $x, $y, 0, 0, $logo_width, $logo_height, imagesx( $logo ), imagesy( $logo ) );
+
+		ob_start();
+		imagepng( $qr );
+		return (string) ob_get_clean();
 	}
 
 	/**
