@@ -166,8 +166,6 @@ final class App {
 	 * @return void
 	 */
 	public function on_plugins_loaded() {
-		load_plugin_textdomain( 'brain-2fa', false, dirname( plugin_basename( BRAIN_2FA_PLUGIN_DIR . 'brain-2fa.php' ) ) . '/languages' );
-
 		$this->manager->register_method( new TotpMethod() );
 		$this->manager->register_method( new EmailMethod() );
 
