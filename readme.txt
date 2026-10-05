@@ -4,7 +4,7 @@ Tags: two-factor authentication, 2fa, security, authenticator, totp
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -53,11 +53,19 @@ The JavaScript files in `assets/js/` are generated from the source files in `src
 
 == Changelog ==
 
+= 1.0.1 =
+
+* Fix: PHP 8.4 deprecation notice in the TOTP fallback verification (explicit nullable `WP_User` parameter).
+
 = 1.0.0 =
 
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.0.1 =
+
+Fixes a PHP 8.4 deprecation notice during TOTP verification.
 
 = 1.0.0 =
 

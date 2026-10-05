@@ -230,7 +230,7 @@ class TotpMethod implements TwoFactorMethodInterface {
 	 *
 	 * @since 1.0.0
 	 */
-	protected function fallback_verify( $secret, $token, WP_User $user = null ) {
+	protected function fallback_verify( $secret, $token, ?WP_User $user = null ) {
 		$time_slice = (int) floor( time() / 30 );
 		for ( $i = -1; $i <= 1; $i++ ) {
 			$slice = $time_slice + $i;
