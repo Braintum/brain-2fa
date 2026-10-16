@@ -4,7 +4,7 @@ Brain 2FA runs inside the WordPress authentication path. This document lists wha
 
 ## What it protects against
 
-- **Stolen or guessed passwords.** A correct password is not enough when the account has 2FA enabled, or when its role requires 2FA and the grace period has expired.
+- **Stolen or guessed passwords.** A correct password is not enough when the account has 2FA enabled. When a role requires 2FA and the grace period has expired, a password only reaches the setup page (restricted setup mode).
 - **Bypassing the JavaScript flow.** Enforcement happens in the `authenticate` filter, so direct `wp-login.php` POSTs, XML-RPC and any other path that uses `wp_authenticate()` go through `verify_2fa()`.
 - **Brute-forcing codes.** After 5 failed codes (or wrong passwords on the Login Security page), the account is locked out of verification for 15 minutes. Separately, 20 failures from one IP address within 15 minutes lock that IP out for every account. The lockout is checked before any code is evaluated, on both the preflight and the `authenticate` path.
 - **Credential stuffing through the preflight endpoint.** `brain2fa_login` is rate limited to 5 attempts per minute per IP (hashed with `wp_hash()`).
@@ -25,7 +25,11 @@ Brain 2FA runs inside the WordPress authentication path. This document lists wha
 | Decision | Reason |
 | --- | --- |
 | No terminating nonce check on `brain2fa_login` | Full-page caches serve `wp-login.php` with expired nonces, and a hard check made valid sign-ins fail with HTTP 403. The endpoint does not change state; the rate limit plus WordPress's own authentication cover abuse. |
-| Grace-period and lockout checks in both `handle_login()` and `verify_2fa()` | The first gives a clear message in the UI; the second is the actual enforcement. |
+| Lockout checks in both `handle_login()` and `verify_2fa()` | The first gives a clear message in the UI; the second is the actual enforcement. |
+| Restricted setup mode instead of blocking expired users | Blocking left users no way to enroll (and a 0-day grace period locked everyone out immediately). Restricted users can sign in but reach nothing except the setup page; admin, front-end, REST and AJAX requests are redirected or refused. XML-RPC and REST logins stay blocked because they cannot show a setup page. |
+| Required users who deactivate are restricted immediately | Prevents gaining a fresh grace period by deactivating, while still allowing a method switch. |
+| Email 2FA enabled only after a code round-trip | Broken site mail would otherwise lock the user out at their next sign-in. |
+| Server-rendered code field, removed by JavaScript | Users can sign in when the login script fails or is blocked, without showing a redundant field when it works. |
 | Same error for unknown user and wrong password | Avoids user enumeration through the preflight endpoint. |
 | Lockout keyed per user, with a looser per-IP limit | The per-user limit is what stops code guessing; it only counts after a correct password, so locking out the real user requires already knowing their password. The per-IP limit is generous (20) because sites behind a proxy may see one IP for all visitors. Tune both with `brain2fa_max_failed_attempts`, `brain2fa_max_failed_attempts_per_ip` (0 disables it) and `brain2fa_lockout_duration`. |
 | Failure counter in user meta, IP counter in a transient | An attacker cannot evict user meta. The IP counter is advisory, so losing it to cache eviction is acceptable. |
@@ -59,12 +63,9 @@ These were observed in the code on 2026-10-16. Re-check them before relying on t
 
 **Policy and reliability**
 
-- **Grace-period expiry blocks login, and 0 days blocks it immediately.** An unenrolled user in a required role cannot log in after the deadline, and with a 0-day grace period the deadline is "now". There is no restricted enrollment flow yet.
-- **WooCommerce customers cannot enroll.** Setup lives in wp-admin, which WooCommerce blocks for customers, so forcing the Customer or Subscriber role leads to lockouts after the grace period.
-- **No code field without JavaScript.** Users with 2FA cannot sign in when the login script fails or on custom login forms (this fails closed).
-- **Email 2FA is enabled without a test code**, so broken site mail locks the user out at the next login.
-- **Users in required roles can deactivate 2FA**, and the old grace deadline is not cleared on enrollment.
-- **Existing sessions are not restricted** after a grace period expires.
+- **Restricted mode is enforced by redirects** on `admin_init` and `template_redirect`, plus REST and AJAX refusals. Code from other plugins that acts earlier (for example form handlers on `init`) still runs for restricted users.
+- **Application passwords bypass 2FA.** WordPress core validates application passwords for REST requests without the `authenticate` filter, so Brain 2FA does not see them. This is core's intended design for API access; sites that do not need application passwords can disable them with the `wp_is_application_passwords_available` filter.
+- **Custom login forms** other than `wp-login.php`, the WooCommerce form and `wp_login_form()` get no code field, and users with 2FA cannot sign in through them (this fails closed).
 
 ## Reporting
 

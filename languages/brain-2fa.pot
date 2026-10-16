@@ -2,21 +2,21 @@
 # This file is distributed under the GPLv2+.
 msgid ""
 msgstr ""
-"Project-Id-Version: Brain 2FA 1.0.3\n"
+"Project-Id-Version: Brain 2FA 1.0.4\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/brain-2fa\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-16T21:39:36+00:00\n"
+"POT-Creation-Date: 2026-10-16T22:45:05+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.10.0\n"
 "X-Domain: brain-2fa\n"
 
 #. Plugin Name of the plugin
 #: brain-2fa.php
-#: includes/Admin/Settings.php:59
+#: includes/Admin/Settings.php:60
 msgid "Brain 2FA"
 msgstr ""
 
@@ -35,161 +35,170 @@ msgstr ""
 msgid "https://www.braintum.com/"
 msgstr ""
 
-#: includes/Admin/Settings.php:58
+#: includes/Admin/Settings.php:59
 msgid "Brain 2FA Settings"
 msgstr ""
 
-#: includes/Admin/Settings.php:69
+#: includes/Admin/Settings.php:70
 msgid "2FA Settings"
 msgstr ""
 
-#: includes/Admin/Settings.php:70
+#: includes/Admin/Settings.php:71
 msgid "Settings"
 msgstr ""
 
-#: includes/Admin/Settings.php:77
+#: includes/Admin/Settings.php:78
 #: includes/Admin/UserProfile.php:73
 msgid "Two-Factor Authentication"
 msgstr ""
 
-#: includes/Admin/Settings.php:78
+#: includes/Admin/Settings.php:79
 msgid "Login Security"
 msgstr ""
 
-#: includes/Admin/Settings.php:100
+#: includes/Admin/Settings.php:101
 msgid "General Settings"
 msgstr ""
 
-#: includes/Admin/Settings.php:107
+#: includes/Admin/Settings.php:108
 msgid "Enable Two-Factor Authentication"
 msgstr ""
 
-#: includes/Admin/Settings.php:115
+#: includes/Admin/Settings.php:116
 msgid "Force 2FA for Roles"
 msgstr ""
 
-#: includes/Admin/Settings.php:123
+#: includes/Admin/Settings.php:124
 #: includes/Admin/UserProfile.php:105
 msgid "2FA Setup Grace Period"
 msgstr ""
 
-#: includes/Admin/Settings.php:131
+#: includes/Admin/Settings.php:132
 msgid "Default Authentication Method"
 msgstr ""
 
-#: includes/Admin/Settings.php:140
+#: includes/Admin/Settings.php:141
 msgid "Authentication Methods"
 msgstr ""
 
-#: includes/Admin/Settings.php:147
+#: includes/Admin/Settings.php:148
 msgid "Enable TOTP (Authenticator App)"
 msgstr ""
 
-#: includes/Admin/Settings.php:155
+#: includes/Admin/Settings.php:156
 msgid "Enable Email Authentication"
 msgstr ""
 
-#: includes/Admin/Settings.php:164
+#: includes/Admin/Settings.php:165
 msgid "Advanced Settings"
 msgstr ""
 
-#: includes/Admin/Settings.php:171
+#: includes/Admin/Settings.php:172
 msgid "Email Code Expiry (minutes)"
 msgstr ""
 
-#: includes/Admin/Settings.php:179
+#: includes/Admin/Settings.php:180
 msgid "Remember Device"
 msgstr ""
 
-#: includes/Admin/Settings.php:219
+#: includes/Admin/Settings.php:220
 msgid "Configure the basic two-factor authentication settings."
 msgstr ""
 
-#: includes/Admin/Settings.php:226
+#: includes/Admin/Settings.php:227
 msgid "Enable or disable specific authentication methods."
 msgstr ""
 
-#: includes/Admin/Settings.php:233
+#: includes/Admin/Settings.php:234
 msgid "Advanced configuration options for two-factor authentication."
 msgstr ""
 
-#: includes/Admin/Settings.php:245
+#: includes/Admin/Settings.php:246
 msgid "Enable two-factor authentication for the site"
 msgstr ""
 
-#: includes/Admin/Settings.php:248
+#: includes/Admin/Settings.php:249
 msgid "Master switch to enable/disable 2FA functionality site-wide."
 msgstr ""
 
-#: includes/Admin/Settings.php:273
+#: includes/Admin/Settings.php:274
 msgid "Select user roles that are required to use 2FA."
 msgstr ""
 
-#: includes/Admin/Settings.php:292
+#: includes/Admin/Settings.php:293
 msgid "Allow users in required roles this many days to set up 2FA. Set to 0 to require setup immediately."
 msgstr ""
 
-#: includes/Admin/Settings.php:307
+#: includes/Admin/Settings.php:308
 msgid "TOTP (Authenticator App)"
 msgstr ""
 
-#: includes/Admin/Settings.php:310
+#: includes/Admin/Settings.php:311
 msgid "Email Authentication"
 msgstr ""
 
-#: includes/Admin/Settings.php:314
+#: includes/Admin/Settings.php:315
 msgid "Default authentication method for new users."
 msgstr ""
 
-#: includes/Admin/Settings.php:328
+#: includes/Admin/Settings.php:329
 msgid "Allow users to use TOTP authenticator apps (Google Authenticator, Authy, etc.)"
 msgstr ""
 
-#: includes/Admin/Settings.php:342
+#: includes/Admin/Settings.php:343
 msgid "Allow users to receive authentication codes via email"
 msgstr ""
 
-#: includes/Admin/Settings.php:361
+#: includes/Admin/Settings.php:362
 msgid "How long email codes remain valid (in minutes)."
 msgstr ""
 
-#: includes/Admin/Settings.php:376
+#: includes/Admin/Settings.php:377
 msgid "Allow users to remember their device"
 msgstr ""
 
-#: includes/Admin/Settings.php:379
+#: includes/Admin/Settings.php:380
 msgid "Users can skip 2FA on trusted devices."
 msgstr ""
 
-#: includes/Admin/Settings.php:383
+#: includes/Admin/Settings.php:384
 msgid "Remember for (days):"
 msgstr ""
 
-#: includes/Admin/Settings.php:410
+#: includes/Admin/Settings.php:411
 msgid "Settings saved successfully."
 msgstr ""
 
-#: includes/Admin/Settings.php:459
+#: includes/Admin/Settings.php:466
 msgid "Two-factor authentication is already active. Deactivate it before setting up a new method."
 msgstr ""
 
-#: includes/Admin/Settings.php:477
+#. translators: %s: account email address
+#: includes/Admin/Settings.php:482
+msgid "A verification code was sent to %s. Enter it below to finish setting up email authentication."
+msgstr ""
+
+#: includes/Admin/Settings.php:497
 msgid "Two-Factor Authentication has been activated successfully! Please save your recovery codes below."
 msgstr ""
 
-#: includes/Admin/Settings.php:479
+#: includes/Admin/Settings.php:499
 msgid "Two-Factor Authentication has been activated successfully!"
 msgstr ""
 
-#: includes/Admin/Settings.php:491
+#: includes/Admin/Settings.php:518
+msgid "Two-Factor Authentication has been deactivated. Your role requires it, so set up a new method below to continue using the site."
+msgstr ""
+
+#: includes/Admin/Settings.php:520
 msgid "Two-Factor Authentication has been deactivated."
 msgstr ""
 
-#: includes/Admin/Settings.php:498
+#: includes/Admin/Settings.php:525
 msgid "Recovery codes have been regenerated. Please save them securely."
 msgstr ""
 
-#: includes/Admin/Settings.php:531
+#: includes/Admin/Settings.php:563
 msgid "The password you entered is incorrect. No changes were made."
 msgstr ""
 
@@ -216,8 +225,8 @@ msgid "Not Active"
 msgstr ""
 
 #: includes/Admin/UserProfile.php:84
-#: includes/Admin/views/login-security-page.php:25
-#: includes/Admin/views/login-security-page.php:121
+#: includes/Admin/views/login-security-page.php:31
+#: includes/Admin/views/login-security-page.php:130
 msgid "Two-Factor Authentication is Active"
 msgstr ""
 
@@ -275,151 +284,174 @@ msgid_plural "You have %d days left to set up two-factor authentication."
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/Admin/views/login-security-page.php:21
-#: includes/Admin/views/login-security-page.php:117
+#: includes/Admin/views/login-security-page.php:27
+#: includes/Admin/views/login-security-page.php:126
 msgid "Two-Factor Authentication Status"
 msgstr ""
 
-#: includes/Admin/views/login-security-page.php:28
+#: includes/Admin/views/login-security-page.php:34
 msgid "Your account is protected with TOTP (Time-based One-Time Password) authentication."
 msgstr ""
 
-#: includes/Admin/views/login-security-page.php:30
+#: includes/Admin/views/login-security-page.php:36
 msgid "You will need to enter a code from your authenticator app when logging in."
 msgstr ""
 
-#: includes/Admin/views/login-security-page.php:37
+#: includes/Admin/views/login-security-page.php:43
 msgid "Recovery Codes"
 msgstr ""
 
 #. translators: %d: number of remaining recovery codes
-#: includes/Admin/views/login-security-page.php:42
+#: includes/Admin/views/login-security-page.php:48
 msgid "You have %d recovery code(s) remaining. Recovery codes can be used to access your account if you lose access to your authenticator app."
 msgstr ""
 
-#: includes/Admin/views/login-security-page.php:53
+#: includes/Admin/views/login-security-page.php:59
 msgid "Save these codes now! They will not be shown again."
 msgstr ""
 
-#: includes/Admin/views/login-security-page.php:71
+#: includes/Admin/views/login-security-page.php:77
 msgid "Download Recovery Codes"
 msgstr ""
 
-#: includes/Admin/views/login-security-page.php:80
-#: includes/Admin/views/login-security-page.php:105
-#: includes/Admin/views/login-security-page.php:132
+#: includes/Admin/views/login-security-page.php:86
+#: includes/Admin/views/login-security-page.php:114
+#: includes/Admin/views/login-security-page.php:144
 msgid "Confirm your password"
 msgstr ""
 
-#: includes/Admin/views/login-security-page.php:83
+#: includes/Admin/views/login-security-page.php:89
 msgid "Are you sure you want to regenerate recovery codes? This will invalidate all previous recovery codes."
 msgstr ""
 
-#: includes/Admin/views/login-security-page.php:85
+#: includes/Admin/views/login-security-page.php:91
 msgid "Regenerate Recovery Codes"
 msgstr ""
 
-#: includes/Admin/views/login-security-page.php:99
+#: includes/Admin/views/login-security-page.php:105
 #: src/js/admin.js:152
 msgid "Warning:"
 msgstr ""
 
-#: includes/Admin/views/login-security-page.php:100
+#: includes/Admin/views/login-security-page.php:106
 msgid "Deactivating 2FA will make your account less secure."
 msgstr ""
 
-#: includes/Admin/views/login-security-page.php:109
-#: includes/Admin/views/login-security-page.php:135
+#: includes/Admin/views/login-security-page.php:111
+#: includes/Admin/views/login-security-page.php:141
+msgid "Your role requires two-factor authentication. After deactivating, you must set up a new method before you can continue using the site."
+msgstr ""
+
+#: includes/Admin/views/login-security-page.php:118
+#: includes/Admin/views/login-security-page.php:147
 msgid "Are you sure you want to deactivate Two-Factor Authentication?"
 msgstr ""
 
-#: includes/Admin/views/login-security-page.php:111
-#: includes/Admin/views/login-security-page.php:137
+#: includes/Admin/views/login-security-page.php:120
+#: includes/Admin/views/login-security-page.php:149
 msgid "Deactivate 2FA"
 msgstr ""
 
-#: includes/Admin/views/login-security-page.php:124
+#: includes/Admin/views/login-security-page.php:133
 msgid "Your account is protected with email authentication."
 msgstr ""
 
-#: includes/Admin/views/login-security-page.php:126
+#: includes/Admin/views/login-security-page.php:135
 msgid "A verification code will be sent to your account email address when you log in."
 msgstr ""
 
-#: includes/Admin/views/login-security-page.php:143
+#: includes/Admin/views/login-security-page.php:155
 msgid "Set Up Email Authentication"
 msgstr ""
 
-#: includes/Admin/views/login-security-page.php:144
+#: includes/Admin/views/login-security-page.php:156
 msgid "Receive a verification code at your account email address whenever you log in."
 msgstr ""
 
-#: includes/Admin/views/login-security-page.php:146
+#: includes/Admin/views/login-security-page.php:158
 msgid "Email address:"
 msgstr ""
 
-#: includes/Admin/views/login-security-page.php:155
-msgid "Activate Email Authentication"
-msgstr ""
-
-#: includes/Admin/views/login-security-page.php:163
-msgid "Setup Two-Factor Authentication"
-msgstr ""
-
-#: includes/Admin/views/login-security-page.php:164
-msgid "Enhance your account security by enabling two-factor authentication using an authenticator app."
-msgstr ""
-
-#: includes/Admin/views/login-security-page.php:167
-msgid "How to Set Up:"
-msgstr ""
-
-#: includes/Admin/views/login-security-page.php:169
-msgid "Install an authenticator app on your phone (Google Authenticator, Authy, Microsoft Authenticator, etc.)"
-msgstr ""
-
-#: includes/Admin/views/login-security-page.php:170
-msgid "Scan the QR code below with your authenticator app"
-msgstr ""
-
-#: includes/Admin/views/login-security-page.php:171
-msgid "Enter the 6-digit code from your app to verify and activate"
-msgstr ""
-
-#: includes/Admin/views/login-security-page.php:185
-msgid "QR Code"
-msgstr ""
-
-#: includes/Admin/views/login-security-page.php:189
-msgid "TOTP QR Code"
-msgstr ""
-
-#: includes/Admin/views/login-security-page.php:192
-msgid "Scan this QR code with your authenticator app."
-msgstr ""
-
-#: includes/Admin/views/login-security-page.php:199
-msgid "Secret Key"
-msgstr ""
-
-#: includes/Admin/views/login-security-page.php:206
-msgid "If you cannot scan the QR code, manually enter this secret key into your authenticator app."
-msgstr ""
-
-#: includes/Admin/views/login-security-page.php:212
+#: includes/Admin/views/login-security-page.php:166
+#: includes/Admin/views/login-security-page.php:257
+#: includes/Auth/LoginController.php:374
 #: src/js/utils/dom.js:71
 msgid "Verification Code"
 msgstr ""
 
-#: includes/Admin/views/login-security-page.php:225
-msgid "Enter the 6-digit code from your authenticator app to verify and activate 2FA."
+#: includes/Admin/views/login-security-page.php:178
+msgid "Enter the 6-digit code we emailed you to confirm that email delivery works."
+msgstr ""
+
+#: includes/Admin/views/login-security-page.php:182
+msgid "Activate Email Authentication"
+msgstr ""
+
+#: includes/Admin/views/login-security-page.php:189
+msgid "Send a new code"
+msgstr ""
+
+#: includes/Admin/views/login-security-page.php:195
+msgid "We will email you a verification code to confirm that email delivery works before turning this on."
+msgstr ""
+
+#: includes/Admin/views/login-security-page.php:199
+msgid "Send Verification Code"
+msgstr ""
+
+#: includes/Admin/views/login-security-page.php:208
+msgid "Setup Two-Factor Authentication"
+msgstr ""
+
+#: includes/Admin/views/login-security-page.php:209
+msgid "Enhance your account security by enabling two-factor authentication using an authenticator app."
+msgstr ""
+
+#: includes/Admin/views/login-security-page.php:212
+msgid "How to Set Up:"
+msgstr ""
+
+#: includes/Admin/views/login-security-page.php:214
+msgid "Install an authenticator app on your phone (Google Authenticator, Authy, Microsoft Authenticator, etc.)"
+msgstr ""
+
+#: includes/Admin/views/login-security-page.php:215
+msgid "Scan the QR code below with your authenticator app"
+msgstr ""
+
+#: includes/Admin/views/login-security-page.php:216
+msgid "Enter the 6-digit code from your app to verify and activate"
+msgstr ""
+
+#: includes/Admin/views/login-security-page.php:230
+msgid "QR Code"
 msgstr ""
 
 #: includes/Admin/views/login-security-page.php:234
+msgid "TOTP QR Code"
+msgstr ""
+
+#: includes/Admin/views/login-security-page.php:237
+msgid "Scan this QR code with your authenticator app."
+msgstr ""
+
+#: includes/Admin/views/login-security-page.php:244
+msgid "Secret Key"
+msgstr ""
+
+#: includes/Admin/views/login-security-page.php:251
+msgid "If you cannot scan the QR code, manually enter this secret key into your authenticator app."
+msgstr ""
+
+#: includes/Admin/views/login-security-page.php:270
+msgid "Enter the 6-digit code from your authenticator app to verify and activate 2FA."
+msgstr ""
+
+#: includes/Admin/views/login-security-page.php:279
 msgid "Activate Two-Factor Authentication"
 msgstr ""
 
-#: includes/Admin/views/login-security-page.php:240
+#: includes/Admin/views/login-security-page.php:285
 msgid "Unable to generate QR code. Please ensure the required libraries are installed."
 msgstr ""
 
@@ -479,66 +511,105 @@ msgstr ""
 msgid "Documentation"
 msgstr ""
 
-#: includes/App.php:206
+#: includes/App.php:208
 msgid "Cloning is forbidden."
 msgstr ""
 
-#: includes/App.php:215
+#: includes/App.php:217
 msgid "Unserializing instances of this class is forbidden."
 msgstr ""
 
-#: includes/Auth/LoginController.php:55
+#: includes/Auth/EnrollmentGuard.php:200
+msgid "Two-factor authentication is active for your account."
+msgstr ""
+
+#: includes/Auth/EnrollmentGuard.php:201
+msgid "Manage two-factor authentication"
+msgstr ""
+
+#. translators: %d: number of days left to set up two-factor authentication
+#: includes/Auth/EnrollmentGuard.php:207
+msgid "Your account requires two-factor authentication. You have %d day left to set it up."
+msgid_plural "Your account requires two-factor authentication. You have %d days left to set it up."
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/Auth/EnrollmentGuard.php:210
+#: includes/Auth/EnrollmentGuard.php:213
+msgid "Set up two-factor authentication"
+msgstr ""
+
+#: includes/Auth/EnrollmentGuard.php:212
+msgid "Protect your account with two-factor authentication."
+msgstr ""
+
+#: includes/Auth/EnrollmentGuard.php:230
+msgid "Your account must use two-factor authentication. Set it up to continue using this site."
+msgstr ""
+
+#: includes/Auth/LoginController.php:58
 msgid "Too many attempts. Please try again in a minute."
 msgstr ""
 
 #. translators: %s is the lost password URL
-#: includes/Auth/LoginController.php:84
+#: includes/Auth/LoginController.php:87
 msgid "<strong>ERROR</strong>: A username and password must be provided. <a href=\"%s\" title=\"Password Lost and Found\">Lost your password</a>?"
 msgstr ""
 
-#: includes/Auth/LoginController.php:122
-#: includes/Auth/LoginController.php:280
-msgid "Your grace period to set up two-factor authentication has expired. Please contact an administrator."
-msgstr ""
-
-#: includes/Auth/LoginController.php:151
+#: includes/Auth/LoginController.php:146
 msgid "Your configured two-factor authentication method is unavailable. Please contact an administrator."
 msgstr ""
 
-#: includes/Auth/LoginController.php:160
+#: includes/Auth/LoginController.php:155
 msgid "Unable to send your email authentication code. Please try again or contact an administrator."
 msgstr ""
 
 #. translators: %s is the lost password URL
-#: includes/Auth/LoginController.php:185
-#: includes/Auth/LoginController.php:239
+#: includes/Auth/LoginController.php:180
+#: includes/Auth/LoginController.php:234
 msgid "<strong>ERROR</strong>: The username or password you entered is incorrect. <a href=\"%s\" title=\"Password Lost and Found\">Lost your password</a>?"
 msgstr ""
 
-#: includes/Auth/LoginController.php:305
+#: includes/Auth/LoginController.php:277
+msgid "Two-factor authentication must be set up for this account. Sign in through the website to set it up."
+msgstr ""
+
+#: includes/Auth/LoginController.php:302
 msgid "An email authentication code has been sent. Enter it to continue."
 msgstr ""
 
-#: includes/Auth/LoginController.php:311
+#: includes/Auth/LoginController.php:308
 msgid "Two-factor authentication required."
 msgstr ""
 
-#: includes/Auth/LoginController.php:319
+#: includes/Auth/LoginController.php:316
 #: includes/TwoFactor/Methods/TotpMethod.php:180
 msgid "Invalid verification code."
 msgstr ""
 
-#: includes/TwoFactor/Methods/EmailMethod.php:76
+#: includes/Auth/LoginController.php:375
+msgid "Only needed if two-factor authentication is enabled for your account. Email users: sign in once without a code to receive one."
+msgstr ""
+
+#: includes/TwoFactor/Methods/EmailMethod.php:77
 msgid "A valid account email address is required for email authentication."
 msgstr ""
 
+#: includes/TwoFactor/Methods/EmailMethod.php:84
+msgid "The verification email could not be sent. Check the site's email settings or contact an administrator."
+msgstr ""
+
+#: includes/TwoFactor/Methods/EmailMethod.php:91
+msgid "Invalid or expired verification code."
+msgstr ""
+
 #. translators: %s: site name
-#: includes/TwoFactor/Methods/EmailMethod.php:140
+#: includes/TwoFactor/Methods/EmailMethod.php:179
 msgid "[%s] Your two-factor authentication code"
 msgstr ""
 
 #. translators: 1: user display name, 2: 6-digit code, 3: expiry in minutes, 4: site name
-#: includes/TwoFactor/Methods/EmailMethod.php:145
+#: includes/TwoFactor/Methods/EmailMethod.php:184
 msgid ""
 "Hi %1$s,\n"
 "\n"
@@ -624,15 +695,15 @@ msgstr ""
 msgid "Email:"
 msgstr ""
 
-#: src/js/components/LoginForm.js:65
+#: src/js/components/LoginForm.js:68
 msgid "Please enter your username and password."
 msgstr ""
 
-#: src/js/components/LoginForm.js:96
+#: src/js/components/LoginForm.js:99
 msgid "An error occurred. Please try again."
 msgstr ""
 
-#: src/js/components/LoginForm.js:111
+#: src/js/components/LoginForm.js:114
 msgid "An unknown error occurred. Please try again."
 msgstr ""
 

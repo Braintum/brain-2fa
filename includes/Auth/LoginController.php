@@ -33,6 +33,9 @@ class LoginController {
 	public static function init(): void {
 		add_action( 'wp_ajax_nopriv_brain2fa_login', array( __CLASS__, 'handle_login' ) );
 		add_filter( 'authenticate', array( __CLASS__, 'verify_2fa' ), 40, 3 );
+		add_action( 'login_form', array( __CLASS__, 'render_fallback_code_field' ) );
+		add_action( 'woocommerce_login_form', array( __CLASS__, 'render_fallback_code_field' ) );
+		add_filter( 'login_form_middle', array( __CLASS__, 'append_fallback_code_field' ) );
 	}
 
 	/**
@@ -116,16 +119,8 @@ class LoginController {
 			$is_2fa_enabled = get_user_meta( $user->ID, 'brain2fa_enabled', true );
 
 			if ( ! $is_2fa_enabled ) {
-				if ( Utils::is_grace_period_expired( $user ) ) {
-					wp_send_json_error(
-						array(
-							'error' => __( 'Your grace period to set up two-factor authentication has expired. Please contact an administrator.', 'brain-2fa' ),
-							'reset' => true,
-						)
-					);
-				}
-
-				// Not enabled for this user, is whitelisted, has a valid remembered cookie, or has already provided a 2FA code via the password field pass the credentials on to the normal login flow.
+				// Not enrolled: sign in normally. If the grace period has expired, EnrollmentGuard
+				// redirects the user to the setup page and restricts them there until they enroll.
 				wp_send_json_success( array( 'login' => 1 ) );
 			}
 
@@ -274,10 +269,12 @@ class LoginController {
 			// Check if user has 2FA enabled.
 			$is_2fa_enabled = get_user_meta( $user->ID, 'brain2fa_enabled', true );
 			if ( ! $is_2fa_enabled ) {
-				if ( Utils::is_grace_period_expired( $user ) ) {
+				// Interactive sign-ins continue into restricted setup mode (see EnrollmentGuard).
+				// XML-RPC and REST have no setup page, so they stay blocked until the user enrolls.
+				if ( Utils::is_enrollment_required( $user ) && self::is_non_interactive_request() ) {
 					return new WP_Error(
 						'brain2fa_setup_required',
-						__( 'Your grace period to set up two-factor authentication has expired. Please contact an administrator.', 'brain-2fa' )
+						__( 'Two-factor authentication must be set up for this account. Sign in through the website to set it up.', 'brain-2fa' )
 					);
 				}
 
@@ -327,5 +324,55 @@ class LoginController {
 		}
 
 		return $user;
+	}
+
+	/**
+	 * Check whether the current request authenticates without a browser session (XML-RPC or REST).
+	 *
+	 * @return bool True for XML-RPC and REST API requests.
+	 */
+	private static function is_non_interactive_request(): bool {
+		return ( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST ) || ( defined( 'REST_REQUEST' ) && REST_REQUEST );
+	}
+
+	/**
+	 * Render the server-side verification code field on login forms.
+	 *
+	 * The login script removes this field and shows its own after the credential
+	 * check, so it only remains when JavaScript is unavailable or fails to load.
+	 * Users then submit their username, password and code in one request, which
+	 * verify_2fa() handles like any other login.
+	 *
+	 * @return void
+	 */
+	public static function render_fallback_code_field(): void {
+		echo self::get_fallback_code_field(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in get_fallback_code_field().
+	}
+
+	/**
+	 * Append the fallback code field to wp_login_form() output.
+	 *
+	 * @param string $content HTML already in the login_form_middle slot.
+	 * @return string HTML with the fallback field appended.
+	 */
+	public static function append_fallback_code_field( $content ): string {
+		return (string) $content . self::get_fallback_code_field();
+	}
+
+	/**
+	 * Build the fallback verification code field.
+	 *
+	 * @return string Escaped HTML, or an empty string when 2FA is off site-wide.
+	 */
+	private static function get_fallback_code_field(): string {
+		if ( ! Utils::is_2fa_enabled_sitewide() ) {
+			return '';
+		}
+
+		return sprintf(
+			'<p class="brain2fa-fallback-field"><label for="brain2fa_code_fallback">%1$s</label><input type="text" name="brain2fa_code" id="brain2fa_code_fallback" class="input" inputmode="numeric" autocomplete="one-time-code" size="20"><span class="description">%2$s</span></p>',
+			esc_html__( 'Verification Code', 'brain-2fa' ),
+			esc_html__( 'Only needed if two-factor authentication is enabled for your account. Email users: sign in once without a code to receive one.', 'brain-2fa' )
+		);
 	}
 }

@@ -10,6 +10,7 @@ Keep production changes inside this plugin. Do not modify WordPress core or `ven
 
 - `includes/Auth/LoginController.php` owns the login preflight AJAX action and the native `authenticate` filter.
 - `includes/Auth/AccountEvents.php` revokes trusted devices when a password changes.
+- `includes/Auth/EnrollmentGuard.php` restricts users who must enroll to the setup page, and opens that page to WooCommerce customers.
 - `includes/Auth/LoginAssets.php` loads the browser login script on `wp-login.php`.
 - `includes/TwoFactor/Methods/TotpMethod.php` owns TOTP setup, verification, and recovery codes.
 - `includes/Admin/Settings.php` owns site-wide settings and the Login Security page.
@@ -31,7 +32,7 @@ Site settings are stored in the `brain2fa_settings` option. Relevant values are:
 
 User metadata includes `brain2fa_enabled`, `brain2fa_method`, `brain2fa_secret`, `brain2fa_recovery_codes`, `brain2fa_totp_last_step` (TOTP replay protection), `brain2fa_failed_attempts` (verification lockout), and `brain2fa_grace_expires_at`. A deadline is created lazily when an unenrolled user in a required role is first evaluated. A value of `0` grace days makes that deadline immediate. Administrators extend a deadline from the target user's profile; the extension adds days to an active deadline or starts from the current time after expiry.
 
-Keep `Utils::is_grace_period_expired()` in both `LoginController::handle_login()` and `LoginController::verify_2fa()`. The former gives AJAX users a useful error; the latter protects native login requests. The Dashboard notice intentionally surfaces both an active deadline and an exceeded one for the current user.
+After the deadline, a user is not blocked from signing in. `Utils::is_enrollment_required()` puts them in restricted setup mode instead: `EnrollmentGuard` sends them to the Login Security page after login and redirects every other admin page, front-end page, REST and AJAX request (except Heartbeat) there until they enroll. This also applies to sessions that started before the deadline. XML-RPC and REST logins stay blocked in `verify_2fa()` because they have no setup page. Restricted mode never applies when no method is enabled. Enrolling clears the deadline; a required user who deactivates is restricted again immediately (`Utils::require_enrollment_now()`). The Dashboard notice surfaces an active deadline for the current user.
 
 ## Assets and Localization
 
@@ -53,7 +54,7 @@ php wp-cli.phar eval 'echo Brain_2FA\Utils::get_grace_period_days();'
 
 `wp-cli.phar` lives in the WordPress root (`../../..` from this plugin); a global `wp` also works.
 
-There is no PHPUnit configuration in this plugin. For login changes, test a required user with no 2FA during the grace window, after expiry, and a user with active TOTP through both the normal `wp-login.php` form and the JavaScript-assisted path.
+There is no PHPUnit configuration in this plugin. For login changes, test a required user with no 2FA during the grace window and after expiry (restricted mode, including a 0-day grace period), a user with active TOTP through both the JavaScript-assisted path and a no-JavaScript submission (the server-rendered `brain2fa_code_fallback` field), and a WooCommerce customer on the My Account login form.
 
 ## Coding Standards
 

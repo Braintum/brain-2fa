@@ -13,6 +13,12 @@ defined( 'ABSPATH' ) || exit;
 
 	<?php settings_errors( 'brain2fa_messages' ); ?>
 
+	<?php if ( $must_enroll ) : ?>
+		<div class="notice notice-warning">
+			<p><strong><?php echo esc_html( \Brain_2FA\Auth\EnrollmentGuard::get_restriction_message() ); ?></strong></p>
+		</div>
+	<?php endif; ?>
+
 	<div class="brain2fa-settings-container">
 		<div class="brain2fa-settings-main">
 			<?php if ( $is_2fa_enabled && 'totp' === $current_method ) : ?>
@@ -101,6 +107,9 @@ defined( 'ABSPATH' ) || exit;
 							</p>
 						</div>
 						
+						<?php if ( $role_requires_2fa ) : ?>
+							<p class="description"><?php esc_html_e( 'Your role requires two-factor authentication. After deactivating, you must set up a new method before you can continue using the site.', 'brain-2fa' ); ?></p>
+						<?php endif; ?>
 						<p>
 							<label for="brain2fa_confirm_password_deactivate_totp"><?php esc_html_e( 'Confirm your password', 'brain-2fa' ); ?></label><br>
 							<input type="password" id="brain2fa_confirm_password_deactivate_totp" name="brain2fa_confirm_password" class="regular-text" autocomplete="current-password" required>
@@ -128,6 +137,9 @@ defined( 'ABSPATH' ) || exit;
 					<form method="post" action="">
 						<?php wp_nonce_field( 'brain2fa_setup_action', 'brain2fa_setup_nonce' ); ?>
 						<input type="hidden" name="brain2fa_action" value="deactivate">
+						<?php if ( $role_requires_2fa ) : ?>
+							<p class="description"><?php esc_html_e( 'Your role requires two-factor authentication. After deactivating, you must set up a new method before you can continue using the site.', 'brain-2fa' ); ?></p>
+						<?php endif; ?>
 						<p>
 							<label for="brain2fa_confirm_password_deactivate_email"><?php esc_html_e( 'Confirm your password', 'brain-2fa' ); ?></label><br>
 							<input type="password" id="brain2fa_confirm_password_deactivate_email" name="brain2fa_confirm_password" class="regular-text" autocomplete="current-password" required>
@@ -146,16 +158,49 @@ defined( 'ABSPATH' ) || exit;
 						<strong><?php esc_html_e( 'Email address:', 'brain-2fa' ); ?></strong>
 						<?php echo esc_html( $setup_data['email'] ?? $current_user->user_email ); ?>
 					</p>
-					<form method="post" action="">
-						<?php wp_nonce_field( 'brain2fa_setup_action', 'brain2fa_setup_nonce' ); ?>
-						<input type="hidden" name="brain2fa_action" value="activate">
-						<p class="submit">
-							<button type="submit" class="button button-primary brain2fa-button-primary">
-								<span class="dashicons dashicons-shield-alt" style="margin-top: 3px;"></span>
-								<?php esc_html_e( 'Activate Email Authentication', 'brain-2fa' ); ?>
-							</button>
-						</p>
-					</form>
+					<?php if ( $email_code_pending ) : ?>
+						<form method="post" action="">
+							<?php wp_nonce_field( 'brain2fa_setup_action', 'brain2fa_setup_nonce' ); ?>
+							<input type="hidden" name="brain2fa_action" value="activate">
+							<p>
+								<label for="brain2fa_email_setup_code"><?php esc_html_e( 'Verification Code', 'brain-2fa' ); ?></label><br>
+								<input type="text"
+									id="brain2fa_email_setup_code"
+									name="brain2fa_code"
+									class="brain2fa-verification-input"
+									placeholder="000000"
+									maxlength="6"
+									pattern="[0-9]{6}"
+									inputmode="numeric"
+									autocomplete="one-time-code"
+									required>
+							</p>
+							<p class="description"><?php esc_html_e( 'Enter the 6-digit code we emailed you to confirm that email delivery works.', 'brain-2fa' ); ?></p>
+							<p class="submit">
+								<button type="submit" class="button button-primary brain2fa-button-primary">
+									<span class="dashicons dashicons-shield-alt" style="margin-top: 3px;"></span>
+									<?php esc_html_e( 'Activate Email Authentication', 'brain-2fa' ); ?>
+								</button>
+							</p>
+						</form>
+						<form method="post" action="">
+							<?php wp_nonce_field( 'brain2fa_setup_action', 'brain2fa_setup_nonce' ); ?>
+							<input type="hidden" name="brain2fa_action" value="resend_email_code">
+							<button type="submit" class="button-link"><?php esc_html_e( 'Send a new code', 'brain-2fa' ); ?></button>
+						</form>
+					<?php else : ?>
+						<form method="post" action="">
+							<?php wp_nonce_field( 'brain2fa_setup_action', 'brain2fa_setup_nonce' ); ?>
+							<input type="hidden" name="brain2fa_action" value="activate">
+							<p class="description"><?php esc_html_e( 'We will email you a verification code to confirm that email delivery works before turning this on.', 'brain-2fa' ); ?></p>
+							<p class="submit">
+								<button type="submit" class="button button-primary brain2fa-button-primary">
+									<span class="dashicons dashicons-email" style="margin-top: 3px;"></span>
+									<?php esc_html_e( 'Send Verification Code', 'brain-2fa' ); ?>
+								</button>
+							</p>
+						</form>
+					<?php endif; ?>
 				</div>
 			<?php else : ?>
 				<!-- 2FA is Not Active - Show Setup Form -->

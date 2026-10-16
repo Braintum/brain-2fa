@@ -55,15 +55,16 @@ class EmailMethod implements TwoFactorMethodInterface {
 	/**
 	 * Saves the email 2FA setup configuration for a user.
 	 *
-	 * Validates and stores the backup email address for two-factor authentication.
-	 * Updates user meta to enable the backup email method and stores the sanitized email.
+	 * Activation is a two-step process so email 2FA is only enabled once delivery
+	 * works: without a code, a verification code is emailed; with a code, the code
+	 * is verified and email authentication is enabled.
 	 *
 	 * @param WP_User $user The WordPress user object to save the setup for.
-	 * @param array   $data Array containing setup data with 'brain2fa_backup_email' key.
+	 * @param array   $data Setup data: 'brain2fa_deactivate' to deactivate, or 'code' to verify.
 	 *
-	 * @return bool|array|WP_Error Returns true on successful deactivation,
-	 *                    array with 'success' and 'recovery_codes' keys on activation,
-	 *                    WP_Error on invalid code
+	 * @return bool|array|WP_Error True on deactivation or successful activation,
+	 *                             array with 'code_sent' => true after emailing a code,
+	 *                             WP_Error when the email cannot be sent or the code is invalid.
 	 */
 	public function save_setup( WP_User $user, array $data ) {
 		if ( ! empty( $data['brain2fa_deactivate'] ) ) {
@@ -76,9 +77,47 @@ class EmailMethod implements TwoFactorMethodInterface {
 			return new WP_Error( 'invalid_email', __( 'A valid account email address is required for email authentication.', 'brain-2fa' ) );
 		}
 
+		$code = isset( $data['code'] ) ? preg_replace( '/[^0-9]/', '', (string) $data['code'] ) : '';
+
+		if ( '' === $code ) {
+			if ( ! $this->send_challenge( $user ) ) {
+				return new WP_Error( 'email_send_failed', __( 'The verification email could not be sent. Check the site\'s email settings or contact an administrator.', 'brain-2fa' ) );
+			}
+
+			return array( 'code_sent' => true );
+		}
+
+		if ( ! $this->verify( $user, $code ) ) {
+			return new WP_Error( 'invalid_code', __( 'Invalid or expired verification code.', 'brain-2fa' ) );
+		}
+
 		update_user_meta( $user->ID, 'brain2fa_enabled', 1 );
 
 		return true;
+	}
+
+	/**
+	 * Check whether an unused verification code is waiting for the user.
+	 *
+	 * @param WP_User $user User to check.
+	 * @return bool True when a code has been sent and has not expired or been used.
+	 *
+	 * @since 1.0.4
+	 */
+	public function has_pending_code( WP_User $user ): bool {
+		return false !== get_transient( 'brain2fa_backup_code_' . $user->ID );
+	}
+
+	/**
+	 * Discard the user's pending verification code so a new one can be sent.
+	 *
+	 * @param WP_User $user User whose code is discarded.
+	 * @return void
+	 *
+	 * @since 1.0.4
+	 */
+	public function clear_pending_code( WP_User $user ): void {
+		delete_transient( 'brain2fa_backup_code_' . $user->ID );
 	}
 
 	/**

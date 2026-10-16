@@ -22,6 +22,7 @@ This plugin sits in the WordPress login path. A bug here either locks users out 
 11. **Verification is rate limited.** `Utils::get_verification_lockout()` is checked before any code is evaluated or emailed, in both `handle_login()` and `verify_2fa()`. Every failed code or password confirmation calls `Utils::record_failed_verification()`, and only a successful login code calls `clear_failed_verifications()`. New verification paths must do the same.
 12. **Factor changes need the password.** Deactivating and regenerating recovery codes go through `Settings::confirm_password()`; activation is refused while a factor is active; each change calls `Utils::send_factor_change_notification()`.
 13. **Password changes revoke trusted devices** (`Auth\AccountEvents`).
+14. **Expired users are restricted, not blocked.** `Utils::is_enrollment_required()` users may sign in interactively, but `Auth\EnrollmentGuard` must keep them on the setup page: any new entry point (admin page, front-end route, REST route, AJAX action) must stay covered by its redirects and refusals. Keep XML-RPC and REST logins blocked for them in `verify_2fa()`.
 
 ## General WordPress rules
 
@@ -52,6 +53,6 @@ Before you finish a change in this area, answer each one:
 
 ## Known hardening gaps (verify before relying on them)
 
-See the backlog in `docs/security.md`. In short: TOTP-step and recovery-code consumption are not atomic; email codes and TOTP secrets are stored in plain text; grace-period expiry blocks login (0 days blocks immediately); WooCommerce customers cannot enroll; there is no code field without JavaScript.
+See the backlog in `docs/security.md`. In short: TOTP-step and recovery-code consumption are not atomic; email codes and TOTP secrets are stored in plain text; restricted mode is enforced by redirects (code running on `init` is not covered); application passwords bypass 2FA by core design.
 
 If you change any of these, update this section and `docs/security.md`.

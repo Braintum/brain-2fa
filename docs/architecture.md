@@ -16,6 +16,7 @@ Brain 2FA is a WordPress plugin (PHP 8.1+, WordPress 6.4+) that adds a second au
 | Class | Responsibility |
 | --- | --- |
 | `Auth\LoginController` | AJAX credential preflight (`wp_ajax_nopriv_brain2fa_login`) and the `authenticate` filter (`verify_2fa`, priority 40) that enforces 2FA. |
+| `Auth\EnrollmentGuard` | Restricted setup mode for users who must enroll (login redirects, admin/front-end/REST/AJAX restriction), WooCommerce access to the setup page, and the My Account 2FA status line. |
 | `Auth\AccountEvents` | Revokes trusted devices when a password changes (`wp_set_password`, `profile_update`). |
 | `Auth\LoginAssets` | Enqueues `assets/js/login.js` on `wp-login.php` and on the WooCommerce My Account login form, with localized `Brain2FA` data. |
 | `TwoFactor\Manager` | Registry of methods keyed by ID (`totp`, `email`). |
@@ -36,10 +37,10 @@ Browser (login.js)                    WordPress / Brain 2FA
 submit username + password  ──AJAX──▶ LoginController::handle_login()
                                         - per-IP rate limit (5/min)
                                         - wp_authenticate() with BRAIN_2FA_AUTHENTICATION_CHECK defined
+                                        - site 2FA off, user not enrolled, or trusted device
+                                            → {login: 1}  (expired grace → restricted mode after login)
                                         - verification locked out → error + reset
-                                        - site 2FA off, user not enrolled (grace OK), or trusted device
-                                            → {login: 1}
-                                        - grace expired / method unavailable → error + reset
+                                        - method unavailable → error + reset
                                         - email method → send_challenge()
                                         - otherwise → {login: 1, requires_2fa: true, method}
 show "Verification Code" field
@@ -54,6 +55,23 @@ submit the native login form  ──POST─▶ wp-login.php → authenticate fil
 
 The AJAX step never sets auth cookies. Without JavaScript, or with a direct POST, `verify_2fa()` still enforces the same policy. With the email method, it also sends the code and returns a "code sent" error so the user can retry with the code.
 
+**No-JavaScript fallback.** `LoginController` renders a `brain2fa_code` field (`.brain2fa-fallback-field`) on `wp-login.php` (`login_form`), the WooCommerce login form (`woocommerce_login_form`) and `wp_login_form()` (`login_form_middle`). `login.js` removes it on load, so it only remains when the script is unavailable; users then submit username, password and code together.
+
+## Restricted setup mode
+
+A user must enroll when their role requires 2FA, they have not enrolled, and their grace deadline has passed (`Utils::is_enrollment_required()`; never true when no method is enabled). They can still sign in interactively, and `EnrollmentGuard` then:
+
+- redirects them to the Login Security page after login (`login_redirect`, `woocommerce_login_redirect`);
+- redirects every other admin page (`admin_init`) and front-end page (`template_redirect`) there, including for sessions that began before the deadline;
+- refuses admin-ajax (except Heartbeat) and cookie-authenticated REST requests with HTTP 403;
+- lets WooCommerce customers open the setup page (`woocommerce_prevent_admin_access`).
+
+XML-RPC and REST logins have no setup page, so `verify_2fa()` keeps rejecting them (`brain2fa_setup_required`) until the user enrolls. Enrolling deletes the grace deadline. A required user who deactivates 2FA gets a deadline of "now" and is restricted again, which is how method switching works for required roles.
+
+## Email setup
+
+Email authentication is enabled only after the user enters a code sent to their address: the first activation request sends a code (`save_setup()` returns `code_sent`), the second verifies it. "Send a new code" discards the pending code and sends another.
+
 ## Data model
 
 **Option** `brain2fa_settings` (sanitized by `Settings::sanitize_settings()`):
@@ -62,7 +80,7 @@ The AJAX step never sets auth cookies. Without JavaScript, or with a direct POST
 | --- | --- | --- | --- |
 | `enable_2fa` | bool | false | Site-wide master switch. |
 | `force_2fa_roles` | string[] | `[]` | Validated against registered roles. |
-| `grace_period_days` | int 0–365 | 14 | `0` makes the setup deadline immediate. |
+| `grace_period_days` | int 0–365 | 14 | `0` puts unenrolled required users in restricted setup mode at their first sign-in. |
 | `default_method` | `totp` \| `email` | `totp` | Falls back to an enabled method. The legacy value `email_backup` maps to `email`. |
 | `enable_totp`, `enable_email` | bool | true when unset | Method availability. |
 | `code_expiry` | int 1–60 minutes | 10 | Email code lifetime. |

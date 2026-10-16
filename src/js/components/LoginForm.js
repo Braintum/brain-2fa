@@ -24,6 +24,9 @@ export function initLoginForm( formElement ) {
 	loginForm = formElement;
 	isSubmitting = false;
 
+	// The server renders a code field for browsers without JavaScript; this script shows its own when needed.
+	loginForm.querySelectorAll( '.brain2fa-fallback-field' ).forEach( ( field ) => field.remove() );
+
 	submitHandler = handleSubmit;
 	loginForm.addEventListener( 'submit', submitHandler );
 }

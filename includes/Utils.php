@@ -493,6 +493,48 @@ class Utils {
 	}
 
 	/**
+	 * Check whether a user must set up 2FA before using the site.
+	 *
+	 * True for an unenrolled user in a required role whose grace period has expired.
+	 * Such users can still sign in interactively, but are restricted to the setup page.
+	 * Never true when no authentication method is enabled, because setup would be impossible.
+	 *
+	 * @param \WP_User $user User to evaluate.
+	 * @return bool True when the user is restricted to 2FA setup.
+	 */
+	public static function is_enrollment_required( \WP_User $user ): bool {
+		if ( ! self::is_method_enabled( 'totp' ) && ! self::is_method_enabled( 'email' ) ) {
+			return false;
+		}
+
+		return self::is_grace_period_expired( $user );
+	}
+
+	/**
+	 * End a user's grace period now, so they must set up 2FA before continuing.
+	 *
+	 * Used when a user in a required role deactivates their method.
+	 *
+	 * @param \WP_User $user User to restrict.
+	 * @return void
+	 */
+	public static function require_enrollment_now( \WP_User $user ): void {
+		if ( self::is_2fa_required_for_user( $user ) ) {
+			update_user_meta( $user->ID, self::GRACE_PERIOD_EXPIRY_META_KEY, time() );
+		}
+	}
+
+	/**
+	 * Remove a user's grace-period deadline after they enroll.
+	 *
+	 * @param int $user_id User ID.
+	 * @return void
+	 */
+	public static function clear_grace_period( int $user_id ): void {
+		delete_user_meta( $user_id, self::GRACE_PERIOD_EXPIRY_META_KEY );
+	}
+
+	/**
 	 * Extend a required user's current grace period.
 	 *
 	 * @param \WP_User $user User whose grace period will be extended.

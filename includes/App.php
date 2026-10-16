@@ -13,6 +13,7 @@ use Brain_2FA\Admin\Settings;
 use Brain_2FA\Admin\UserProfile;
 use Brain_2FA\Admin\Assets;
 use Brain_2FA\Auth\AccountEvents;
+use Brain_2FA\Auth\EnrollmentGuard;
 use Brain_2FA\Auth\LoginController;
 use Brain_2FA\TwoFactor\Manager;
 use Brain_2FA\TwoFactor\Methods\EmailMethod;
@@ -174,6 +175,7 @@ final class App {
 		LoginController::init();
 		LoginAssets::init();
 		AccountEvents::init();
+		EnrollmentGuard::init();
 
 		// Initialize admin classes.
 		if ( is_admin() ) {

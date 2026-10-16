@@ -10,6 +10,7 @@
 
 namespace Brain_2FA\Admin;
 
+use Brain_2FA\TwoFactor\Methods\EmailMethod;
 use Brain_2FA\Utils;
 
 defined( 'ABSPATH' ) || exit;
@@ -455,18 +456,37 @@ class Settings {
 				}
 			}
 
+			// A new email code replaces the pending one; activation below then sends it.
+			if ( 'resend_email_code' === $action && ! $has_active_factor && $setup_method instanceof EmailMethod ) {
+				$setup_method->clear_pending_code( $current_user );
+				$action = 'activate';
+			}
+
 			if ( 'activate' === $action && $has_active_factor ) {
 				echo '<div class="notice notice-error"><p>' . esc_html__( 'Two-factor authentication is already active. Deactivate it before setting up a new method.', 'brain-2fa' ) . '</p></div>';
 			} elseif ( 'activate' === $action && $setup_method && Utils::is_method_enabled( $setup_method_id ) ) {
+				$code = isset( $_POST['brain2fa_code'] ) ? sanitize_text_field( wp_unslash( $_POST['brain2fa_code'] ) ) : '';
 				$data = 'totp' === $setup_method_id ? array(
 					'secret' => isset( $_POST['brain2fa_secret'] ) ? sanitize_text_field( wp_unslash( $_POST['brain2fa_secret'] ) ) : '',
-					'code'   => isset( $_POST['brain2fa_code'] ) ? sanitize_text_field( wp_unslash( $_POST['brain2fa_code'] ) ) : '',
-				) : array();
+					'code'   => $code,
+				) : array( 'code' => $code );
 
 				$result = $setup_method->save_setup( $current_user, $data );
 
-				if ( true === $result || ( is_array( $result ) && ! empty( $result['success'] ) ) ) {
+				if ( is_array( $result ) && ! empty( $result['code_sent'] ) ) {
+					printf(
+						'<div class="notice notice-info"><p>%s</p></div>',
+						esc_html(
+							sprintf(
+								/* translators: %s: account email address */
+								__( 'A verification code was sent to %s. Enter it below to finish setting up email authentication.', 'brain-2fa' ),
+								$current_user->user_email
+							)
+						)
+					);
+				} elseif ( true === $result || ( is_array( $result ) && ! empty( $result['success'] ) ) ) {
 					update_user_meta( $current_user->ID, 'brain2fa_method', $setup_method_id );
+					Utils::clear_grace_period( $current_user->ID );
 					$is_2fa_enabled = true;
 					$current_method = $setup_method_id;
 					Utils::send_factor_change_notification( $current_user, 'activated' );
@@ -488,10 +508,17 @@ class Settings {
 					$current_method_instance->save_setup( $current_user, $deactivate_data );
 				}
 				delete_user_meta( $current_user->ID, 'brain2fa_method' );
-				echo '<div class="notice notice-success"><p>' . esc_html__( 'Two-Factor Authentication has been deactivated.', 'brain-2fa' ) . '</p></div>';
 				$is_2fa_enabled = false;
 				$current_method = '';
 				Utils::send_factor_change_notification( $current_user, 'deactivated' );
+
+				// Users whose role requires 2FA go straight back to setup instead of getting a new grace period.
+				if ( Utils::is_2fa_required_for_user( $current_user ) ) {
+					Utils::require_enrollment_now( $current_user );
+					echo '<div class="notice notice-warning"><p>' . esc_html__( 'Two-Factor Authentication has been deactivated. Your role requires it, so set up a new method below to continue using the site.', 'brain-2fa' ) . '</p></div>';
+				} else {
+					echo '<div class="notice notice-success"><p>' . esc_html__( 'Two-Factor Authentication has been deactivated.', 'brain-2fa' ) . '</p></div>';
+				}
 			} elseif ( 'regenerate_recovery_codes' === $action && $totp_method && $is_2fa_enabled ) {
 				$fresh_recovery_codes = $totp_method->generate_recovery_codes( $current_user );
 				Utils::send_factor_change_notification( $current_user, 'recovery_codes_regenerated' );
@@ -507,6 +534,11 @@ class Settings {
 
 		// Get recovery codes count.
 		$recovery_codes_count = $is_2fa_enabled && $totp_method ? $totp_method->get_recovery_codes_count( $current_user ) : 0;
+
+		// State for the view: pending email code, role requirement and restricted setup mode.
+		$email_code_pending = ! $is_2fa_enabled && $setup_method instanceof EmailMethod && $setup_method->has_pending_code( $current_user );
+		$role_requires_2fa  = Utils::is_2fa_required_for_user( $current_user );
+		$must_enroll        = Utils::is_enrollment_required( $current_user );
 
 		include BRAIN_2FA_PLUGIN_DIR . 'includes/Admin/views/login-security-page.php';
 	}

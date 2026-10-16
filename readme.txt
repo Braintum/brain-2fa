@@ -4,7 +4,7 @@ Tags: two-factor authentication, 2fa, security, authenticator, totp
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 1.0.3
+Stable tag: 1.0.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -22,10 +22,11 @@ Codes are generated and verified on your own server. Brain 2FA does not send any
 * **Email verification codes:** Sends a one-time code to the account email address, with a configurable expiry time.
 * **Recovery codes:** TOTP users receive one-time recovery codes they can download and regenerate in case they lose their phone.
 * **Role-based enforcement:** Require two-factor authentication for selected user roles, such as Administrator, Editor or Shop manager.
-* **Setup grace period:** Give users in required roles a set number of days to enable 2FA. Administrators can see deadlines in the Users list and extend them from a user's profile.
+* **Setup grace period:** Give users in required roles a set number of days to enable 2FA. After the deadline, they can sign in but only reach the setup page until 2FA is enabled. Administrators can see deadlines in the Users list and extend them from a user's profile.
 * **Trusted devices:** Users can optionally skip the code on devices they trust, using expiring, password-hashed tokens.
 * **Consistent enforcement:** The 2FA policy applies to every sign-in, including direct submissions of the login form, not only the JavaScript-assisted flow. The credential check before the code step is rate limited per IP address.
-* **WooCommerce support:** Works with the default WordPress login form and the WooCommerce My Account login form.
+* **WooCommerce support:** Works with the default WordPress login form and the WooCommerce My Account login form. Customers can set up and manage 2FA from a link on their My Account dashboard.
+* **Works without JavaScript:** If the login script cannot run, a verification code field is shown on the login form instead.
 * **Translation ready:** All user-facing text can be translated.
 
 = Support =
@@ -55,11 +56,11 @@ TOTP users can use a recovery code. Site administrators can also manage setup gr
 
 = Can I require two-factor authentication for specific roles? =
 
-Yes. In **Brain 2FA > Settings**, select the roles that must use 2FA and set a grace period. Users in those roles get the configured number of days to complete setup.
+Yes. In **Brain 2FA > Settings**, select the roles that must use 2FA and set a grace period. Users in those roles get the configured number of days to complete setup. After that, or immediately with a grace period of 0, they can still sign in but are taken to the setup page and cannot use the rest of the site until 2FA is enabled.
 
 = Does the plugin support WooCommerce login? =
 
-Yes. The plugin supports the standard WooCommerce My Account login form.
+Yes. The plugin supports the standard WooCommerce My Account login form. Customers can set up two-factor authentication from the link on their My Account dashboard.
 
 = Does Brain 2FA connect to external services? =
 
@@ -87,6 +88,15 @@ The JavaScript files in `assets/js/` are generated from the source files in `src
 
 == Changelog ==
 
+= 1.0.4 =
+
+* New: Users who miss their setup deadline are no longer locked out. They can sign in, but only reach the setup page until two-factor authentication is enabled. A grace period of 0 now works as described: setup is required at the first sign-in.
+* New: WooCommerce customers can set up and manage two-factor authentication from a link on their My Account dashboard.
+* New: A verification code field is shown on login forms when JavaScript is unavailable.
+* Improvement: Email authentication is turned on only after you enter a code sent to your address, so broken site email cannot lock you out.
+* Improvement: Users whose role requires two-factor authentication must set up a new method right after deactivating, instead of getting a new grace period.
+* Security: Sessions started before a setup deadline are also restricted to the setup page once it passes. XML-RPC and REST logins stay blocked until setup is complete.
+
 = 1.0.3 =
 
 * Security: Limit failed verification attempts. After 5 failed codes, an account is locked out of verification for 15 minutes; repeated failures from one IP address are also limited.
@@ -112,6 +122,10 @@ The JavaScript files in `assets/js/` are generated from the source files in `src
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.0.4 =
+
+Users past their setup deadline can now sign in and are taken to the setup page instead of being locked out. Adds WooCommerce customer setup, a no-JavaScript code field and verified email setup.
 
 = 1.0.3 =
 
