@@ -12,6 +12,7 @@ use Brain_2FA\Admin\UserListColumns;
 use Brain_2FA\Admin\Settings;
 use Brain_2FA\Admin\UserProfile;
 use Brain_2FA\Admin\Assets;
+use Brain_2FA\Auth\AccountEvents;
 use Brain_2FA\Auth\LoginController;
 use Brain_2FA\TwoFactor\Manager;
 use Brain_2FA\TwoFactor\Methods\EmailMethod;
@@ -172,6 +173,7 @@ final class App {
 		// Initialize login handler.
 		LoginController::init();
 		LoginAssets::init();
+		AccountEvents::init();
 
 		// Initialize admin classes.
 		if ( is_admin() ) {

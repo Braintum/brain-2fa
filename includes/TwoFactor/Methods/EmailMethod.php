@@ -180,8 +180,8 @@ class EmailMethod implements TwoFactorMethodInterface {
 			return false;
 		}
 		if ( hash_equals( (string) $stored, trim( $token ) ) ) {
-			delete_transient( 'brain2fa_backup_code_' . $user->ID );
-			return true;
+			// Only the request that actually deletes the code may use it, so concurrent requests cannot both succeed.
+			return delete_transient( 'brain2fa_backup_code_' . $user->ID );
 		}
 		return false;
 	}

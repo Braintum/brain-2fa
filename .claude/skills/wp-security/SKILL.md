@@ -19,6 +19,9 @@ This plugin sits in the WordPress login path. A bug here either locks users out 
 8. **Deactivating 2FA clears everything:** secret, enabled flag, recovery codes, the last TOTP step and trusted devices (`Utils::forget_remembered_devices()`). Any new per-user credential must be cleared here too.
 9. **Trusted-device cookies** are `httponly`, `secure` on SSL, `SameSite=Lax`, bound to a user ID, expiring, and capped at 10 per user.
 10. **TOTP codes are single-use.** `TotpMethod::verify_totp_code()` accepts a code only for a time step later than `brain2fa_totp_last_step`. Do not replace it with otphp's `TOTP::verify()`: in otphp 11 its leeway is in seconds and it does not track used codes.
+11. **Verification is rate limited.** `Utils::get_verification_lockout()` is checked before any code is evaluated or emailed, in both `handle_login()` and `verify_2fa()`. Every failed code or password confirmation calls `Utils::record_failed_verification()`, and only a successful login code calls `clear_failed_verifications()`. New verification paths must do the same.
+12. **Factor changes need the password.** Deactivating and regenerating recovery codes go through `Settings::confirm_password()`; activation is refused while a factor is active; each change calls `Utils::send_factor_change_notification()`.
+13. **Password changes revoke trusted devices** (`Auth\AccountEvents`).
 
 ## General WordPress rules
 
@@ -49,8 +52,6 @@ Before you finish a change in this area, answer each one:
 
 ## Known hardening gaps (verify before relying on them)
 
-- The TOTP last-step check and update are not atomic: two simultaneous requests with the same code could both pass.
-- Email codes are stored in a plain transient (`brain2fa_backup_code_{user_id}`), and `verify_2fa()` does not limit failed code attempts per user. The password must already be correct, which limits exposure.
-- TOTP secrets are stored in plain user meta (`brain2fa_secret`), as in most WordPress 2FA plugins.
+See the backlog in `docs/security.md`. In short: TOTP-step and recovery-code consumption are not atomic; email codes and TOTP secrets are stored in plain text; grace-period expiry blocks login (0 days blocks immediately); WooCommerce customers cannot enroll; there is no code field without JavaScript.
 
 If you change any of these, update this section and `docs/security.md`.

@@ -4,7 +4,7 @@ Tags: two-factor authentication, 2fa, security, authenticator, totp
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 1.0.2
+Stable tag: 1.0.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -87,6 +87,17 @@ The JavaScript files in `assets/js/` are generated from the source files in `src
 
 == Changelog ==
 
+= 1.0.3 =
+
+* Security: Limit failed verification attempts. After 5 failed codes, an account is locked out of verification for 15 minutes; repeated failures from one IP address are also limited.
+* Security: Turning off two-factor authentication and regenerating recovery codes now require your account password.
+* Security: A new authentication method can no longer be set up over an active one.
+* Security: Users receive an email when two-factor authentication is turned on or off, or recovery codes are regenerated.
+* Security: Trusted devices are revoked when a password is changed or reset.
+* Security: Email verification codes can only be used once, even with simultaneous requests.
+* Fix: The email code expiry setting is limited to 1–60 minutes.
+* Fix: The QR code area is hidden when the QR code cannot be generated; the secret key is still shown.
+
 = 1.0.2 =
 
 * Security: TOTP codes can no longer be reused within their validity window.
@@ -101,6 +112,10 @@ The JavaScript files in `assets/js/` are generated from the source files in `src
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.0.3 =
+
+Security hardening: limits failed verification attempts, requires your password to change two-factor settings, and revokes trusted devices on password change. Recommended for all users.
 
 = 1.0.2 =
 

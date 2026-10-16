@@ -76,6 +76,10 @@ defined( 'ABSPATH' ) || exit;
 						<form method="post" action="" style="margin-top: 15px;">
 							<?php wp_nonce_field( 'brain2fa_setup_action', 'brain2fa_setup_nonce' ); ?>
 							<input type="hidden" name="brain2fa_action" value="regenerate_recovery_codes">
+							<p>
+								<label for="brain2fa_confirm_password_regenerate"><?php esc_html_e( 'Confirm your password', 'brain-2fa' ); ?></label><br>
+								<input type="password" id="brain2fa_confirm_password_regenerate" name="brain2fa_confirm_password" class="regular-text" autocomplete="current-password" required>
+							</p>
 							<button type="submit" class="button button-secondary" onclick="return confirm('<?php esc_attr_e( 'Are you sure you want to regenerate recovery codes? This will invalidate all previous recovery codes.', 'brain-2fa' ); ?>');">
 								<span class="dashicons dashicons-update" style="margin-top: 3px;"></span>
 								<?php esc_html_e( 'Regenerate Recovery Codes', 'brain-2fa' ); ?>
@@ -96,6 +100,11 @@ defined( 'ABSPATH' ) || exit;
 								<?php esc_html_e( 'Deactivating 2FA will make your account less secure.', 'brain-2fa' ); ?>
 							</p>
 						</div>
+						
+						<p>
+							<label for="brain2fa_confirm_password_deactivate_totp"><?php esc_html_e( 'Confirm your password', 'brain-2fa' ); ?></label><br>
+							<input type="password" id="brain2fa_confirm_password_deactivate_totp" name="brain2fa_confirm_password" class="regular-text" autocomplete="current-password" required>
+						</p>
 						
 						<button type="submit" class="button button-secondary brain2fa-button-danger" onclick="return confirm('<?php esc_attr_e( 'Are you sure you want to deactivate Two-Factor Authentication?', 'brain-2fa' ); ?>');">
 							<span class="dashicons dashicons-shield" style="margin-top: 3px;"></span>
@@ -119,6 +128,10 @@ defined( 'ABSPATH' ) || exit;
 					<form method="post" action="">
 						<?php wp_nonce_field( 'brain2fa_setup_action', 'brain2fa_setup_nonce' ); ?>
 						<input type="hidden" name="brain2fa_action" value="deactivate">
+						<p>
+							<label for="brain2fa_confirm_password_deactivate_email"><?php esc_html_e( 'Confirm your password', 'brain-2fa' ); ?></label><br>
+							<input type="password" id="brain2fa_confirm_password_deactivate_email" name="brain2fa_confirm_password" class="regular-text" autocomplete="current-password" required>
+						</p>
 						<button type="submit" class="button button-secondary brain2fa-button-danger" onclick="return confirm('<?php esc_attr_e( 'Are you sure you want to deactivate Two-Factor Authentication?', 'brain-2fa' ); ?>');">
 							<span class="dashicons dashicons-shield" style="margin-top: 3px;"></span>
 							<?php esc_html_e( 'Deactivate 2FA', 'brain-2fa' ); ?>
@@ -166,6 +179,7 @@ defined( 'ABSPATH' ) || exit;
 							<input type="hidden" name="brain2fa_secret" value="<?php echo esc_attr( $setup_data['secret'] ); ?>">
 							
 							<table class="form-table" role="presentation">
+								<?php if ( ! empty( $setup_data['qr_image'] ) ) : ?>
 								<tr>
 									<th scope="row">
 										<label><?php esc_html_e( 'QR Code', 'brain-2fa' ); ?></label>
@@ -179,6 +193,7 @@ defined( 'ABSPATH' ) || exit;
 										</p>
 									</td>
 								</tr>
+								<?php endif; ?>
 								<tr>
 									<th scope="row">
 										<label><?php esc_html_e( 'Secret Key', 'brain-2fa' ); ?></label>

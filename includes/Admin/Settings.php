@@ -205,7 +205,7 @@ class Settings {
 			$default_method = $sanitized['enable_totp'] ? 'totp' : 'email';
 		}
 		$sanitized['default_method']    = $default_method;
-		$sanitized['code_expiry']       = absint( $input['code_expiry'] ?? 10 );
+		$sanitized['code_expiry']       = min( 60, max( 1, absint( $input['code_expiry'] ?? 10 ) ) );
 		$sanitized['remember_device']   = ! empty( $input['remember_device'] );
 		$sanitized['remember_duration'] = min( 365, max( 1, absint( $input['remember_duration'] ?? 30 ) ) );
 
@@ -442,9 +442,22 @@ class Settings {
 
 		// Handle form submission.
 		if ( isset( $_POST['brain2fa_action'] ) && check_admin_referer( 'brain2fa_setup_action', 'brain2fa_setup_nonce' ) ) {
-			$action = sanitize_text_field( wp_unslash( $_POST['brain2fa_action'] ) );
+			$action            = sanitize_text_field( wp_unslash( $_POST['brain2fa_action'] ) );
+			$has_active_factor = $is_2fa_enabled && brain_2fa()->manager->get_method( (string) $current_method );
 
-			if ( 'activate' === $action && $setup_method && Utils::is_method_enabled( $setup_method_id ) ) {
+			// Changing an active factor requires the account password, so a hijacked session cannot do it.
+			if ( in_array( $action, array( 'deactivate', 'regenerate_recovery_codes' ), true ) ) {
+				$password     = isset( $_POST['brain2fa_confirm_password'] ) && is_string( $_POST['brain2fa_confirm_password'] ) ? wp_unslash( $_POST['brain2fa_confirm_password'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Passwords must not be altered before checking.
+				$confirmation = $this->confirm_password( $current_user, $password );
+				if ( is_wp_error( $confirmation ) ) {
+					echo '<div class="notice notice-error"><p>' . esc_html( $confirmation->get_error_message() ) . '</p></div>';
+					$action = '';
+				}
+			}
+
+			if ( 'activate' === $action && $has_active_factor ) {
+				echo '<div class="notice notice-error"><p>' . esc_html__( 'Two-factor authentication is already active. Deactivate it before setting up a new method.', 'brain-2fa' ) . '</p></div>';
+			} elseif ( 'activate' === $action && $setup_method && Utils::is_method_enabled( $setup_method_id ) ) {
 				$data = 'totp' === $setup_method_id ? array(
 					'secret' => isset( $_POST['brain2fa_secret'] ) ? sanitize_text_field( wp_unslash( $_POST['brain2fa_secret'] ) ) : '',
 					'code'   => isset( $_POST['brain2fa_code'] ) ? sanitize_text_field( wp_unslash( $_POST['brain2fa_code'] ) ) : '',
@@ -456,6 +469,7 @@ class Settings {
 					update_user_meta( $current_user->ID, 'brain2fa_method', $setup_method_id );
 					$is_2fa_enabled = true;
 					$current_method = $setup_method_id;
+					Utils::send_factor_change_notification( $current_user, 'activated' );
 
 					// Capture fresh recovery codes if they were generated.
 					if ( is_array( $result ) && ! empty( $result['recovery_codes'] ) ) {
@@ -477,8 +491,10 @@ class Settings {
 				echo '<div class="notice notice-success"><p>' . esc_html__( 'Two-Factor Authentication has been deactivated.', 'brain-2fa' ) . '</p></div>';
 				$is_2fa_enabled = false;
 				$current_method = '';
+				Utils::send_factor_change_notification( $current_user, 'deactivated' );
 			} elseif ( 'regenerate_recovery_codes' === $action && $totp_method && $is_2fa_enabled ) {
 				$fresh_recovery_codes = $totp_method->generate_recovery_codes( $current_user );
+				Utils::send_factor_change_notification( $current_user, 'recovery_codes_regenerated' );
 				echo '<div class="notice notice-success"><p>' . esc_html__( 'Recovery codes have been regenerated. Please save them securely.', 'brain-2fa' ) . '</p></div>';
 			}
 		}
@@ -493,5 +509,28 @@ class Settings {
 		$recovery_codes_count = $is_2fa_enabled && $totp_method ? $totp_method->get_recovery_codes_count( $current_user ) : 0;
 
 		include BRAIN_2FA_PLUGIN_DIR . 'includes/Admin/views/login-security-page.php';
+	}
+
+	/**
+	 * Confirm the current user's password before a sensitive two-factor change.
+	 *
+	 * Failed attempts count toward the same lockout as failed login codes.
+	 *
+	 * @param \WP_User $user     The current user.
+	 * @param string   $password The submitted password, unslashed and unsanitized.
+	 * @return true|\WP_Error True when the password is correct.
+	 */
+	private function confirm_password( \WP_User $user, string $password ) {
+		$locked_for = Utils::get_verification_lockout( $user );
+		if ( $locked_for > 0 ) {
+			return new \WP_Error( 'brain2fa_too_many_attempts', Utils::get_lockout_message( $locked_for ) );
+		}
+
+		if ( '' === $password || ! wp_check_password( $password, $user->user_pass, $user->ID ) ) {
+			Utils::record_failed_verification( $user );
+			return new \WP_Error( 'brain2fa_incorrect_password', __( 'The password you entered is incorrect. No changes were made.', 'brain-2fa' ) );
+		}
+
+		return true;
 	}
 }

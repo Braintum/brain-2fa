@@ -34,6 +34,20 @@ class Utils {
 	private const REMEMBERED_DEVICES_META_KEY = 'brain2fa_remembered_devices';
 
 	/**
+	 * User meta key storing the failed verification counter and lockout expiry.
+	 *
+	 * @var string
+	 */
+	private const FAILED_ATTEMPTS_META_KEY = 'brain2fa_failed_attempts';
+
+	/**
+	 * Transient prefix for the per-IP failed verification counter.
+	 *
+	 * @var string
+	 */
+	private const IP_FAILURES_TRANSIENT_PREFIX = 'brain2fa_ip_failures_';
+
+	/**
 	 * Check whether 2FA is enabled for a specific user.
 	 *
 	 * @param int|string $user_id User ID.
@@ -201,6 +215,204 @@ class Utils {
 	 */
 	public static function forget_remembered_devices( int $user_id ): void {
 		delete_user_meta( $user_id, self::REMEMBERED_DEVICES_META_KEY );
+	}
+
+	/**
+	 * Get the number of failed verifications that triggers a lockout.
+	 *
+	 * @return int Number of failed attempts, at least 1.
+	 */
+	public static function get_max_failed_attempts(): int {
+		return max( 1, (int) apply_filters( 'brain2fa_max_failed_attempts', 5 ) );
+	}
+
+	/**
+	 * Get the number of failed verifications from one IP address that triggers a lockout.
+	 *
+	 * @return int Number of failed attempts, or 0 to disable the per-IP limit.
+	 */
+	public static function get_max_failed_attempts_per_ip(): int {
+		return max( 0, (int) apply_filters( 'brain2fa_max_failed_attempts_per_ip', 20 ) );
+	}
+
+	/**
+	 * Get how long a lockout lasts, which is also the per-IP counting window.
+	 *
+	 * @return int Duration in seconds, at least one minute.
+	 */
+	public static function get_lockout_duration(): int {
+		return max( MINUTE_IN_SECONDS, (int) apply_filters( 'brain2fa_lockout_duration', 15 * MINUTE_IN_SECONDS ) );
+	}
+
+	/**
+	 * Get the remaining lockout time for verification attempts by a user.
+	 *
+	 * Covers both the per-user lockout and the per-IP limit for the current request.
+	 *
+	 * @param \WP_User $user User attempting verification.
+	 * @return int Seconds until the user may try again, or 0 when not locked out.
+	 */
+	public static function get_verification_lockout( \WP_User $user ): int {
+		$now        = time();
+		$state      = self::get_failed_attempts_state( $user->ID );
+		$user_lock  = max( 0, $state['locked_until'] - $now );
+		$ip_limit   = self::get_max_failed_attempts_per_ip();
+		$ip_state   = get_transient( self::IP_FAILURES_TRANSIENT_PREFIX . self::get_client_ip_hash() );
+		$ip_lock    = 0;
+		$ip_count   = is_array( $ip_state ) ? absint( $ip_state['count'] ?? 0 ) : 0;
+		$ip_expires = is_array( $ip_state ) ? absint( $ip_state['expires_at'] ?? 0 ) : 0;
+
+		if ( $ip_limit > 0 && $ip_count >= $ip_limit ) {
+			$ip_lock = max( 0, $ip_expires - $now );
+		}
+
+		return max( $user_lock, $ip_lock );
+	}
+
+	/**
+	 * Record a failed verification for a user and for the current IP address.
+	 *
+	 * After get_max_failed_attempts() failures, the user is locked out for
+	 * get_lockout_duration() seconds. Failures older than the lockout duration
+	 * no longer count.
+	 *
+	 * @param \WP_User $user User whose verification failed.
+	 * @return void
+	 */
+	public static function record_failed_verification( \WP_User $user ): void {
+		$now      = time();
+		$duration = self::get_lockout_duration();
+		$state    = self::get_failed_attempts_state( $user->ID );
+
+		if ( $state['last_failure'] + $duration <= $now ) {
+			$state['count'] = 0;
+		}
+
+		++$state['count'];
+		$state['last_failure'] = $now;
+
+		if ( $state['count'] >= self::get_max_failed_attempts() ) {
+			$state['count']        = 0;
+			$state['locked_until'] = $now + $duration;
+		}
+
+		update_user_meta( $user->ID, self::FAILED_ATTEMPTS_META_KEY, $state );
+
+		$ip_key   = self::IP_FAILURES_TRANSIENT_PREFIX . self::get_client_ip_hash();
+		$ip_state = get_transient( $ip_key );
+		if ( ! is_array( $ip_state ) || absint( $ip_state['expires_at'] ?? 0 ) <= $now ) {
+			$ip_state = array(
+				'count'      => 0,
+				'expires_at' => $now + $duration,
+			);
+		}
+		++$ip_state['count'];
+		set_transient( $ip_key, $ip_state, max( 1, $ip_state['expires_at'] - $now ) );
+	}
+
+	/**
+	 * Reset a user's failed verification counter after a successful verification.
+	 *
+	 * The per-IP counter is left untouched so one valid account cannot reset it.
+	 *
+	 * @param \WP_User $user User who verified successfully.
+	 * @return void
+	 */
+	public static function clear_failed_verifications( \WP_User $user ): void {
+		delete_user_meta( $user->ID, self::FAILED_ATTEMPTS_META_KEY );
+	}
+
+	/**
+	 * Build the error message shown while verification is locked out.
+	 *
+	 * @param int $seconds Remaining lockout time in seconds.
+	 * @return string Translated message.
+	 */
+	public static function get_lockout_message( int $seconds ): string {
+		$minutes = max( 1, (int) ceil( $seconds / MINUTE_IN_SECONDS ) );
+
+		return sprintf(
+			/* translators: %d: number of minutes until the user may try again */
+			_n(
+				'Too many failed verification attempts. Please try again in %d minute.',
+				'Too many failed verification attempts. Please try again in %d minutes.',
+				$minutes,
+				'brain-2fa'
+			),
+			$minutes
+		);
+	}
+
+	/**
+	 * Email the account owner after their two-factor authentication settings change.
+	 *
+	 * @param \WP_User $user  User whose settings changed.
+	 * @param string   $event One of 'activated', 'deactivated' or 'recovery_codes_regenerated'.
+	 * @return void
+	 */
+	public static function send_factor_change_notification( \WP_User $user, string $event ): void {
+		if ( ! is_email( $user->user_email ) || ! apply_filters( 'brain2fa_send_change_notification', true, $user, $event ) ) {
+			return;
+		}
+
+		$events = array(
+			'activated'                  => __( 'Two-factor authentication was turned on for your account.', 'brain-2fa' ),
+			'deactivated'                => __( 'Two-factor authentication was turned off for your account.', 'brain-2fa' ),
+			'recovery_codes_regenerated' => __( 'New recovery codes were generated for your account. Your previous recovery codes no longer work.', 'brain-2fa' ),
+		);
+
+		if ( ! isset( $events[ $event ] ) ) {
+			return;
+		}
+
+		$site_name = wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES );
+		$subject   = sprintf(
+			/* translators: %s: site name */
+			__( '[%s] Your two-factor authentication settings changed', 'brain-2fa' ),
+			$site_name
+		);
+		$message = sprintf(
+			/* translators: 1: user display name, 2: description of the change, 3: date and time of the change, 4: site name, 5: site URL */
+			__(
+				"Hi %1\$s,\n\n%2\$s\n\nTime: %3\$s\n\nIf you did not make this change, reset your password immediately and contact the site administrator.\n\n-- %4\$s\n%5\$s",
+				'brain-2fa'
+			),
+			$user->display_name,
+			$events[ $event ],
+			wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) ),
+			$site_name,
+			home_url( '/' )
+		);
+
+		wp_mail( $user->user_email, $subject, $message );
+	}
+
+	/**
+	 * Get a user's failed verification state.
+	 *
+	 * @param int $user_id User ID.
+	 * @return array{count:int,last_failure:int,locked_until:int} Normalized state.
+	 */
+	private static function get_failed_attempts_state( int $user_id ): array {
+		$state = get_user_meta( $user_id, self::FAILED_ATTEMPTS_META_KEY, true );
+		$state = is_array( $state ) ? $state : array();
+
+		return array(
+			'count'        => absint( $state['count'] ?? 0 ),
+			'last_failure' => absint( $state['last_failure'] ?? 0 ),
+			'locked_until' => absint( $state['locked_until'] ?? 0 ),
+		);
+	}
+
+	/**
+	 * Get a hash of the client IP address for use in counter keys.
+	 *
+	 * @return string Hash of REMOTE_ADDR.
+	 */
+	private static function get_client_ip_hash(): string {
+		$ip = isset( $_SERVER['REMOTE_ADDR'] ) && is_string( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
+
+		return wp_hash( $ip );
 	}
 
 	/**

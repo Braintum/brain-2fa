@@ -133,6 +133,16 @@ class LoginController {
 				wp_send_json_success( array( 'login' => 1 ) );
 			}
 
+			$locked_for = Utils::get_verification_lockout( $user );
+			if ( $locked_for > 0 ) {
+				wp_send_json_error(
+					array(
+						'error' => Utils::get_lockout_message( $locked_for ),
+						'reset' => true,
+					)
+				);
+			}
+
 			$method_id = get_user_meta( $user->ID, 'brain2fa_method', true );
 			$method    = brain_2fa()->manager->get_method( $method_id );
 			if ( ! Utils::is_method_enabled( $method_id ) || ! $method ) {
@@ -278,6 +288,12 @@ class LoginController {
 				return $user;
 			}
 
+			// Checked before any code is evaluated, so locked-out attempts cost nothing and send no email.
+			$locked_for = Utils::get_verification_lockout( $user );
+			if ( $locked_for > 0 ) {
+				return new WP_Error( 'brain2fa_too_many_attempts', Utils::get_lockout_message( $locked_for ) );
+			}
+
 			$method_id = get_user_meta( $user->ID, 'brain2fa_method', true );
 			$method    = brain_2fa()->manager->get_method( $method_id );
 
@@ -299,8 +315,11 @@ class LoginController {
 			$code      = sanitize_text_field( wp_unslash( $_POST['brain2fa_code'] ) ); //phpcs:ignore
 
 			if ( ! Utils::is_method_enabled( $method_id ) || ! $method || ! $method->verify( $user, $code ) ) {
+				Utils::record_failed_verification( $user );
 				return new WP_Error( 'invalid_code', __( 'Invalid verification code.', 'brain-2fa' ) );
 			}
+
+			Utils::clear_failed_verifications( $user );
 
 			if ( isset( $_POST['brain2fa_remember_device'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
 				Utils::remember_device( $user );
