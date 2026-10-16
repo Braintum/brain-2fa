@@ -4,7 +4,7 @@ Tags: two-factor authentication, 2fa, security, authenticator, totp
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 1.0.1
+Stable tag: 1.0.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -87,6 +87,11 @@ The JavaScript files in `assets/js/` are generated from the source files in `src
 
 == Changelog ==
 
+= 1.0.2 =
+
+* Security: TOTP codes can no longer be reused within their validity window.
+* Fix: Clock-drift tolerance now correctly accepts the previous and next 30-second authenticator codes.
+
 = 1.0.1 =
 
 * Fix: PHP 8.4 deprecation notice in the TOTP fallback verification (explicit nullable `WP_User` parameter).
@@ -96,6 +101,10 @@ The JavaScript files in `assets/js/` are generated from the source files in `src
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.0.2 =
+
+Security fix: prevents reuse of authenticator codes and fixes clock-drift tolerance. Recommended for all users.
 
 = 1.0.1 =
 

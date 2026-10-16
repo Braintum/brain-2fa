@@ -28,7 +28,7 @@ Site settings are stored in the `brain2fa_settings` option. Relevant values are:
 - `force_2fa_roles`: role slugs subject to the setup policy.
 - `grace_period_days`: `0` through `365`, defaulting to `14`.
 
-User metadata includes `brain2fa_enabled`, `brain2fa_method`, `brain2fa_secret`, `brain2fa_recovery_codes`, and `brain2fa_grace_expires_at`. A deadline is created lazily when an unenrolled user in a required role is first evaluated. A value of `0` grace days makes that deadline immediate. Administrators extend a deadline from the target user's profile; the extension adds days to an active deadline or starts from the current time after expiry.
+User metadata includes `brain2fa_enabled`, `brain2fa_method`, `brain2fa_secret`, `brain2fa_recovery_codes`, `brain2fa_totp_last_step` (TOTP replay protection), and `brain2fa_grace_expires_at`. A deadline is created lazily when an unenrolled user in a required role is first evaluated. A value of `0` grace days makes that deadline immediate. Administrators extend a deadline from the target user's profile; the extension adds days to an active deadline or starts from the current time after expiry.
 
 Keep `Utils::is_grace_period_expired()` in both `LoginController::handle_login()` and `LoginController::verify_2fa()`. The former gives AJAX users a useful error; the latter protects native login requests. The Dashboard notice intentionally surfaces both an active deadline and an exceeded one for the current user.
 

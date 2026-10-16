@@ -21,6 +21,27 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class TotpMethod implements TwoFactorMethodInterface {
 	/**
+	 * TOTP time-step length in seconds. Must match the period in the otpauth URI.
+	 *
+	 * @var int
+	 */
+	private const PERIOD = 30;
+
+	/**
+	 * Number of time steps accepted on either side of the current one, to tolerate clock drift.
+	 *
+	 * @var int
+	 */
+	private const DRIFT_STEPS = 1;
+
+	/**
+	 * User meta key storing the last accepted TOTP time step, used for replay protection.
+	 *
+	 * @var string
+	 */
+	private const LAST_STEP_META_KEY = 'brain2fa_totp_last_step';
+
+	/**
 	 * The unique identifier for this two-factor authentication method.
 	 *
 	 * @var string
@@ -132,6 +153,7 @@ class TotpMethod implements TwoFactorMethodInterface {
 			delete_user_meta( $user->ID, 'brain2fa_secret' );
 			delete_user_meta( $user->ID, 'brain2fa_enabled' );
 			delete_user_meta( $user->ID, 'brain2fa_recovery_codes' );
+			delete_user_meta( $user->ID, self::LAST_STEP_META_KEY );
 			Utils::forget_remembered_devices( $user->ID );
 			return true;
 		}
@@ -178,9 +200,8 @@ class TotpMethod implements TwoFactorMethodInterface {
 	/**
 	 * Verifies a TOTP token for the given user.
 	 *
-	 * Validates a time-based one-time password token against the user's stored secret.
-	 * Uses the OTPHP library if available, otherwise falls back to custom implementation.
-	 * Also checks recovery codes if TOTP verification fails.
+	 * Validates a time-based one-time password token against the user's stored secret,
+	 * then falls back to the user's recovery codes if TOTP verification fails.
 	 *
 	 * @param WP_User $user    The WordPress user object to verify the token for.
 	 * @param string  $token   The TOTP token to verify.
@@ -196,57 +217,74 @@ class TotpMethod implements TwoFactorMethodInterface {
 			return false;
 		}
 
-		// First, try TOTP verification.
-		$is_valid = false;
-		if ( class_exists( '\OTPHP\\TOTP' ) ) {
-			$t = \OTPHP\TOTP::create( $secret );
-			// verify() handles ±1 period clock-drift tolerance and built-in replay protection.
-			$is_valid = $t->verify( $token, null, 1 );
-		} else {
-			$is_valid = $this->fallback_verify( $secret, $token, $user );
+		if ( $this->verify_totp_code( $user, (string) $secret, $token ) ) {
+			return true;
 		}
 
-		// If TOTP fails, try recovery code.
-		if ( ! $is_valid ) {
-			$is_valid = $this->verify_recovery_code( $user, $token );
-		}
-
-		return $is_valid;
+		return $this->verify_recovery_code( $user, $token );
 	}
 
 	/**
-	 * Verifies a TOTP token using fallback implementation.
+	 * Verifies a six-digit TOTP code with clock-drift tolerance and replay protection.
 	 *
-	 * When the OTPHP library is not available, this method provides a fallback
-	 * verification using a custom HOTP implementation with time-based counter.
-	 * Allows for a 30-second window tolerance (±1 time slice) to account for
-	 * clock drift between client and server.
+	 * Accepts codes for the current time step and DRIFT_STEPS steps on either side.
+	 * A code is accepted only for a time step later than the last one this user
+	 * successfully used, so an intercepted code cannot be replayed within its
+	 * validity window, and an older code cannot be used after a newer one.
 	 *
-	 * @param string       $secret The base32-encoded TOTP secret key.
-	 * @param string       $token  The TOTP token to verify.
-	 * @param WP_User|null $user User receiving the replay-protection check.
+	 * @param WP_User $user   User whose last accepted time step is checked and updated.
+	 * @param string  $secret The base32-encoded TOTP secret key.
+	 * @param string  $token  The submitted code.
 	 *
-	 * @return bool True if the token is valid within the time window, false otherwise.
+	 * @return bool True if the code is valid and has not been used before.
 	 *
-	 * @since 1.0.0
+	 * @since 1.0.2
 	 */
-	protected function fallback_verify( $secret, $token, ?WP_User $user = null ) {
-		$time_slice = (int) floor( time() / 30 );
-		for ( $i = -1; $i <= 1; $i++ ) {
-			$slice = $time_slice + $i;
-			if ( $this->hotp( $secret, $slice ) === $token ) {
-				// Replay protection: reject if this time-slice was already used for this user.
-				if ( $user ) {
-					$replay_key = 'brain2fa_used_slice_' . $user->ID;
-					if ( (int) get_transient( $replay_key ) === $slice ) {
-						return false;
-					}
-					set_transient( $replay_key, $slice, 90 ); // 3× the period to cover ±1 window.
-				}
+	protected function verify_totp_code( WP_User $user, string $secret, string $token ): bool {
+		$token = (string) preg_replace( '/\s+/', '', $token );
+		if ( 1 !== preg_match( '/^\d{6}$/', $token ) ) {
+			return false;
+		}
+
+		$current_step = intdiv( time(), self::PERIOD );
+		$last_step    = absint( get_user_meta( $user->ID, self::LAST_STEP_META_KEY, true ) );
+
+		for ( $step = $current_step - self::DRIFT_STEPS; $step <= $current_step + self::DRIFT_STEPS; $step++ ) {
+			if ( $step <= $last_step ) {
+				continue;
+			}
+
+			if ( hash_equals( $this->code_for_step( $secret, $step ), $token ) ) {
+				update_user_meta( $user->ID, self::LAST_STEP_META_KEY, $step );
 				return true;
 			}
 		}
+
 		return false;
+	}
+
+	/**
+	 * Generates the TOTP code for a time step.
+	 *
+	 * Uses the OTPHP library when available, otherwise the built-in HOTP implementation.
+	 *
+	 * @param string $secret The base32-encoded TOTP secret key.
+	 * @param int    $step   Time step (Unix time divided by the period).
+	 *
+	 * @return string Six-digit code, or an empty string if the secret is invalid.
+	 *
+	 * @since 1.0.2
+	 */
+	protected function code_for_step( string $secret, int $step ): string {
+		try {
+			if ( class_exists( '\OTPHP\\TOTP' ) ) {
+				return \OTPHP\TOTP::create( $secret, self::PERIOD )->at( $step * self::PERIOD );
+			}
+
+			return $this->hotp( $secret, $step );
+		} catch ( \Throwable $e ) {
+			return '';
+		}
 	}
 
 	/**

@@ -9,6 +9,7 @@ Brain 2FA runs inside the WordPress authentication path. This document lists wha
 - **Credential stuffing through the preflight endpoint.** `brain2fa_login` is rate limited to 5 attempts per minute per IP (hashed with `wp_hash()`).
 - **Secret leakage.** QR codes are rendered on the server. The `otpauth://` URI, which contains the secret, is never sent to a third party.
 - **Database disclosure of long-lived tokens.** Recovery codes and trusted-device tokens are stored only as `wp_hash_password()` hashes.
+- **TOTP code replay.** Each TOTP time step is accepted once per user, and never after a later step (`brain2fa_totp_last_step`), so an intercepted code cannot be reused within its validity window.
 
 ## Out of scope
 
@@ -25,7 +26,8 @@ Brain 2FA runs inside the WordPress authentication path. This document lists wha
 | Same error for unknown user and wrong password | Avoids user enumeration through the preflight endpoint. |
 | Deactivation clears secret, recovery codes and trusted devices | Re-enabling must start from fresh credentials. |
 | Trusted devices capped at 10 per user, with expiry | Limits the impact of stale cookies; tokens are hashed at rest. |
-| `hash_equals()` for email codes | Constant-time comparison. |
+| `hash_equals()` for email and TOTP codes | Constant-time comparison. |
+| TOTP steps checked explicitly instead of otphp's `verify()` | otphp 11's `verify()` takes a leeway in seconds (not periods) and keeps no record of used codes. `TotpMethod::verify_totp_code()` checks the current step ±1 and stores the last accepted step in user meta (not a transient, which an object cache could evict). |
 
 ## Invariants
 
@@ -40,7 +42,7 @@ Brain 2FA runs inside the WordPress authentication path. This document lists wha
 
 These were observed in the code on 2026-10-16. Re-check them before relying on this list.
 
-- **TOTP replay within the validity window.** With otphp (always bundled), `TotpMethod::verify()` uses `TOTP::verify( $token, null, 1 )`, which does not remember used codes. A captured code can be replayed for up to about 90 seconds. Only `fallback_verify()` stores the last used time slice, and the inline comment claiming otphp has replay protection is inaccurate. Fix: store the last accepted time step per user and reject codes for that step or earlier.
+- **Concurrent TOTP submissions.** The last-step check and update are not atomic, so two requests carrying the same code at the same instant could both pass. Exploiting this needs the password plus the code within the same few milliseconds as the real user.
 - **No per-user limit on failed codes.** `verify_2fa()` does not count invalid codes per user. The password must already be correct, which limits this, but a per-user lockout or backoff would harden it.
 - **Email codes are stored in plain text** in the `brain2fa_backup_code_{user_id}` transient for their lifetime (default 10 minutes).
 - **TOTP secrets are stored in plain text** in `brain2fa_secret` user meta. This is common practice for WordPress 2FA plugins, but encrypting at rest with a key from `wp-config.php` would protect against database-only leaks.

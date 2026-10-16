@@ -19,7 +19,7 @@ Brain 2FA is a WordPress plugin (PHP 8.1+, WordPress 6.4+) that adds a second au
 | `Auth\LoginAssets` | Enqueues `assets/js/login.js` on `wp-login.php` and on the WooCommerce My Account login form, with localized `Brain2FA` data. |
 | `TwoFactor\Manager` | Registry of methods keyed by ID (`totp`, `email`). |
 | `TwoFactor\Interfaces\TwoFactorMethodInterface` | Contract for a method: setup data, save/deactivate, send challenge, verify, recovery codes. |
-| `TwoFactor\Methods\TotpMethod` | TOTP secret generation (otphp, with an internal HOTP fallback), local QR rendering (bacon-qr-code + GD, logo in the centre), verification with ±1 period tolerance, and hashed single-use recovery codes. |
+| `TwoFactor\Methods\TotpMethod` | TOTP secret generation (otphp, with an internal HOTP fallback), local QR rendering (bacon-qr-code + GD, logo in the centre), verification of the current time step ±1 with per-user replay protection, and hashed single-use recovery codes. |
 | `TwoFactor\Methods\EmailMethod` | Six-digit email codes stored in a transient for the configured expiry. Sending is filterable. |
 | `Utils` | Shared policy: site-wide and per-method enablement, default method, role enforcement, grace-period deadlines, trusted devices. |
 | `Admin\Settings` | The Brain 2FA menu, the site settings page (Settings API, `brain2fa_settings`), and the per-user Login Security page (setup, deactivate, regenerate recovery codes). |
@@ -66,9 +66,9 @@ The AJAX step never sets auth cookies. Without JavaScript, or with a direct POST
 | `remember_device` | bool | false | Trusted devices on or off. |
 | `remember_duration` | int 1–365 days | 30 | Trusted device lifetime. |
 
-**User meta:** `brain2fa_enabled`, `brain2fa_method`, `brain2fa_secret` (TOTP, base32), `brain2fa_recovery_codes` (array of `wp_hash_password` hashes), `brain2fa_grace_expires_at` (Unix time, created lazily), `brain2fa_remembered_devices` (list of `{token: hash, expires_at}`, max 10).
+**User meta:** `brain2fa_enabled`, `brain2fa_method`, `brain2fa_secret` (TOTP, base32), `brain2fa_recovery_codes` (array of `wp_hash_password` hashes), `brain2fa_grace_expires_at` (Unix time, created lazily), `brain2fa_totp_last_step` (last accepted TOTP time step, for replay protection), `brain2fa_remembered_devices` (list of `{token: hash, expires_at}`, max 10).
 
-**Transients:** `brain2fa_rate_{wp_hash(ip)}` (preflight attempt counter, 60 s), `brain2fa_backup_code_{user_id}` (pending email code), `brain2fa_used_slice_{user_id}` (replay guard used only by the HOTP fallback).
+**Transients:** `brain2fa_rate_{wp_hash(ip)}` (preflight attempt counter, 60 s), `brain2fa_backup_code_{user_id}` (pending email code).
 
 **Cookie:** `brain2fa_remember_{user_id}`: random 64-character token, `httponly`, `secure` on SSL, `SameSite=Lax`.
 

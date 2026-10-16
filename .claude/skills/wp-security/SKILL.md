@@ -16,8 +16,9 @@ This plugin sits in the WordPress login path. A bug here either locks users out 
 5. **Secrets never leave the server.** The `otpauth://` URI contains the TOTP secret, so QR codes are rendered locally with bacon/bacon-qr-code. Never add a remote QR or API fallback, analytics or logging that includes secrets, codes or recovery codes.
 6. **Store only hashes of long-lived tokens.** Recovery codes and trusted-device tokens go through `wp_hash_password()` and are checked with `wp_check_password()`. A recovery code is single-use: remove it after a match. Compare short-lived codes with `hash_equals()`.
 7. **Use cryptographic randomness:** `random_int()`, `wp_generate_password( 64, false, false )`, or otphp. Never `rand()`, `mt_rand()`, `uniqid()` or `md5( time() )`.
-8. **Deactivating 2FA clears everything:** secret, enabled flag, recovery codes and trusted devices (`Utils::forget_remembered_devices()`). Any new per-user credential must be cleared here too.
+8. **Deactivating 2FA clears everything:** secret, enabled flag, recovery codes, the last TOTP step and trusted devices (`Utils::forget_remembered_devices()`). Any new per-user credential must be cleared here too.
 9. **Trusted-device cookies** are `httponly`, `secure` on SSL, `SameSite=Lax`, bound to a user ID, expiring, and capped at 10 per user.
+10. **TOTP codes are single-use.** `TotpMethod::verify_totp_code()` accepts a code only for a time step later than `brain2fa_totp_last_step`. Do not replace it with otphp's `TOTP::verify()`: in otphp 11 its leeway is in seconds and it does not track used codes.
 
 ## General WordPress rules
 
@@ -48,7 +49,7 @@ Before you finish a change in this area, answer each one:
 
 ## Known hardening gaps (verify before relying on them)
 
-- When otphp is available (it always is in release builds), `TotpMethod::verify()` calls `TOTP::verify( $token, null, 1 )`. otphp does **not** track used codes, so a TOTP code can be replayed within its ±1 window. Only `fallback_verify()` stores the last used slice. The code comment there says otphp has built-in replay protection; that is inaccurate.
+- The TOTP last-step check and update are not atomic: two simultaneous requests with the same code could both pass.
 - Email codes are stored in a plain transient (`brain2fa_backup_code_{user_id}`), and `verify_2fa()` does not limit failed code attempts per user. The password must already be correct, which limits exposure.
 - TOTP secrets are stored in plain user meta (`brain2fa_secret`), as in most WordPress 2FA plugins.
 
