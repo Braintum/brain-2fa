@@ -1,0 +1,29 @@
+{
+    "landingPage": "\/wp-admin\/admin.php?page=brain-2fa-settings",
+    "preferredVersions": {
+        "php": "8.3",
+        "wp": "latest"
+    },
+    "phpExtensionBundles": [
+    ],
+    "features": {
+        "networking": true
+    },
+    "steps": [
+        {
+            "step": "login",
+            "username": "admin",
+            "password": "password"
+        },
+        {
+            "step": "installPlugin",
+            "pluginZipFile": {
+                "resource": "wordpress.org\/plugins",
+                "slug": "brain-2fa"
+            },
+            "options": {
+                "activate": true
+            }
+        }
+    ]
+}

@@ -179,7 +179,7 @@ defined( 'ABSPATH' ) || exit;
 										</p>
 									</td>
 								</tr>
-								<!--<tr>
+								<tr>
 									<th scope="row">
 										<label><?php esc_html_e( 'Secret Key', 'brain-2fa' ); ?></label>
 									</th>
@@ -191,7 +191,7 @@ defined( 'ABSPATH' ) || exit;
 											<?php esc_html_e( 'If you cannot scan the QR code, manually enter this secret key into your authenticator app.', 'brain-2fa' ); ?>
 										</p>
 									</td>
-								</tr>-->
+								</tr>
 								<tr>
 									<th scope="row">
 										<label for="brain2fa_code"><?php esc_html_e( 'Verification Code', 'brain-2fa' ); ?></label>

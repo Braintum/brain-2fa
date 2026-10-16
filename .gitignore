@@ -22,6 +22,9 @@ assets/js/*.js.map
 assets/css/*.css
 assets/css/*.css.map
 
+# Claude Code local settings
+.claude/settings.local.json
+
 # IDE & Editor files
 .vscode/
 .idea/

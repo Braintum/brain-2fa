@@ -249,6 +249,7 @@ Any TOTP-compatible app works, including:
 
 - **Documentation**: [README-JAVASCRIPT.md](README-JAVASCRIPT.md)
 - **Issues**: [GitHub Issues](https://github.com/braintum/brain-2fa/issues)
+- **Support**: [https://www.braintum.com/support/](https://www.braintum.com/support/)
 - **Website**: [https://www.braintum.com/](https://www.braintum.com/)
 
 ## License

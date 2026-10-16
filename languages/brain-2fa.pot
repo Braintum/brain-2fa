@@ -2,14 +2,14 @@
 # This file is distributed under the GPLv2+.
 msgid ""
 msgstr ""
-"Project-Id-Version: Brain 2FA 1.0.0\n"
+"Project-Id-Version: Brain 2FA 1.0.1\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/brain-2fa\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-20T00:11:11+00:00\n"
+"POT-Creation-Date: 2026-10-16T18:55:29+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.10.0\n"
 "X-Domain: brain-2fa\n"
@@ -465,11 +465,11 @@ msgstr ""
 msgid "Documentation"
 msgstr ""
 
-#: includes/App.php:206
+#: includes/App.php:204
 msgid "Cloning is forbidden."
 msgstr ""
 
-#: includes/App.php:215
+#: includes/App.php:213
 msgid "Unserializing instances of this class is forbidden."
 msgstr ""
 
