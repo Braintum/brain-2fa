@@ -5,6 +5,7 @@ declare( strict_types=1 );
 namespace Brain_2FA\TwoFactor\Methods;
 
 use Brain_2FA\Utils;
+use Brain_2FA\TwoFactor\QrRoundedEye;
 use Brain_2FA\TwoFactor\SystemClock;
 use Brain_2FA\TwoFactor\Interfaces\TwoFactorMethodInterface;
 use WP_User;
@@ -296,18 +297,23 @@ class TotpMethod implements TwoFactorMethodInterface {
 	/**
 	 * Generates a QR code data URI for TOTP setup.
 	 *
-	 * Uses the BaconQrCode library (GD back end) to render a PNG QR code, with the
-	 * plugin logo composited in the center. Returns an empty string if the library
-	 * or the GD extension is unavailable, or rendering fails.
+	 * Uses the BaconQrCode library to render a styled SVG QR code with the plugin
+	 * logo in a round badge in the center. Falls back to a plain PNG (GD back end)
+	 * when the XMLWriter extension is missing. Returns an empty string if neither
+	 * back end is available, or rendering fails.
 	 *
 	 * @param string $data The data to encode in the QR code (typically otpauth URI).
 	 *
-	 * @return string PNG data URI of the QR code image, or empty string on failure.
+	 * @return string SVG or PNG data URI of the QR code image, or empty string on failure.
 	 *
 	 * @since 1.0.0
 	 */
 	protected function generate_qr_code( $data ): string {
 		try {
+			if ( class_exists( '\BaconQrCode\Writer' ) && class_exists( '\XMLWriter' ) ) {
+				return 'data:image/svg+xml;base64,' . base64_encode( $this->render_svg_qr_code( $data ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Encoding an SVG for a data URI.
+			}
+
 			if ( class_exists( '\BaconQrCode\Writer' ) && extension_loaded( 'gd' ) ) {
 				$size = 300;
 
@@ -316,7 +322,7 @@ class TotpMethod implements TwoFactorMethodInterface {
 				$png    = $writer->writeString( $data, \BaconQrCode\Encoder\Encoder::DEFAULT_BYTE_MODE_ENCODING, \BaconQrCode\Common\ErrorCorrectionLevel::Q() );
 
 				// Add logo to the center of the QR code.
-				$logo_path = BRAIN_2FA_PLUGIN_DIR . 'assets/images/logo.png';
+				$logo_path = BRAIN_2FA_PLUGIN_DIR . 'assets/images/qr-logo.png';
 				if ( file_exists( $logo_path ) ) {
 					$png = $this->add_qr_logo( $png, $logo_path, $size, 60 ); // Logo width (20% of QR code size).
 				}
@@ -334,9 +340,82 @@ class TotpMethod implements TwoFactorMethodInterface {
 	}
 
 	/**
+	 * Renders a styled QR code as SVG markup.
+	 *
+	 * Modules have rounded corners and the finder patterns are rounded squares,
+	 * all in black on white. The modules under the logo are cleared in a circle,
+	 * so the round badge never cuts a module in half; error correction level Q
+	 * (~25%) recovers the cleared area.
+	 *
+	 * @param string $data The data to encode in the QR code (typically otpauth URI).
+	 *
+	 * @return string SVG markup.
+	 *
+	 * @since 1.1.0
+	 */
+	protected function render_svg_qr_code( string $data ): string {
+		$size   = 300;
+		$margin = 2; // In modules.
+
+		$qr_code = \BaconQrCode\Encoder\Encoder::encode( $data, \BaconQrCode\Common\ErrorCorrectionLevel::Q(), \BaconQrCode\Encoder\Encoder::DEFAULT_BYTE_MODE_ENCODING );
+		$modules = $qr_code->getMatrix()->getWidth();
+
+		$logo_path = BRAIN_2FA_PLUGIN_DIR . 'assets/images/qr-logo.png';
+		$has_logo  = file_exists( $logo_path );
+		$radius    = $modules * 0.15; // Badge radius in modules: the badge spans 30% of the code.
+
+		if ( $has_logo ) {
+			$matrix = $qr_code->getMatrix();
+			$center = ( $modules - 1 ) / 2;
+			for ( $y = 0; $y < $modules; $y++ ) {
+				for ( $x = 0; $x < $modules; $x++ ) {
+					if ( ( ( $x - $center ) ** 2 ) + ( ( $y - $center ) ** 2 ) <= ( ( $radius + 0.5 ) ** 2 ) ) {
+						$matrix->set( $x, $y, 0 );
+					}
+				}
+			}
+		}
+
+		$fill     = \BaconQrCode\Renderer\RendererStyle\Fill::uniformColor(
+			new \BaconQrCode\Renderer\Color\Rgb( 255, 255, 255 ),
+			new \BaconQrCode\Renderer\Color\Rgb( 0, 0, 0 )
+		);
+		$style    = new \BaconQrCode\Renderer\RendererStyle\RendererStyle(
+			$size,
+			$margin,
+			new \BaconQrCode\Renderer\Module\RoundnessModule( \BaconQrCode\Renderer\Module\RoundnessModule::STRONG ),
+			new QrRoundedEye(),
+			$fill
+		);
+		$renderer = new \BaconQrCode\Renderer\ImageRenderer( $style, new \BaconQrCode\Renderer\Image\SvgImageBackEnd() );
+		$svg      = $renderer->render( $qr_code );
+
+		if ( ! $has_logo ) {
+			return $svg;
+		}
+
+		// The code is centered, so the badge center is the image center.
+		$center_px = $size / 2;
+		$radius_px = $radius * $size / ( $modules + 2 * $margin );
+		$logo_px   = $radius_px * 2 / 1.25; // The shield's corners stay inside the circle.
+		$logo      = base64_encode( (string) file_get_contents( $logo_path ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode, WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Embedding a local plugin asset in the SVG.
+
+		$badge = sprintf(
+			'<circle cx="%1$.2F" cy="%1$.2F" r="%2$.2F" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/><image x="%3$.2F" y="%3$.2F" width="%4$.2F" height="%4$.2F" href="data:image/png;base64,%5$s"/>',
+			$center_px,
+			$radius_px,
+			$center_px - ( $logo_px / 2 ),
+			$logo_px,
+			$logo
+		);
+
+		return str_replace( '</svg>', $badge . '</svg>', $svg );
+	}
+
+	/**
 	 * Composites a logo onto the center of a QR code PNG.
 	 *
-	 * The logo is resized to the given width and drawn on a white punchout
+	 * The logo is resized to the given width and drawn on a round white punchout
 	 * background for contrast. Returns the original PNG unchanged if the logo
 	 * cannot be loaded.
 	 *
@@ -360,7 +439,9 @@ class TotpMethod implements TwoFactorMethodInterface {
 		$x           = (int) ( ( $size - $logo_width ) / 2 );
 		$y           = (int) ( ( $size - $logo_height ) / 2 );
 
-		imagefilledrectangle( $qr, $x, $y, $x + $logo_width - 1, $y + $logo_height - 1, imagecolorallocate( $qr, 255, 255, 255 ) );
+		// The circle is 25% wider than the logo so the shield's corners stay inside it.
+		$diameter = (int) round( max( $logo_width, $logo_height ) * 1.25 );
+		imagefilledellipse( $qr, (int) ( $size / 2 ), (int) ( $size / 2 ), $diameter, $diameter, imagecolorallocate( $qr, 255, 255, 255 ) );
 		imagecopyresampled( $qr, $logo, $x, $y, 0, 0, $logo_width, $logo_height, imagesx( $logo ), imagesy( $logo ) );
 
 		ob_start();

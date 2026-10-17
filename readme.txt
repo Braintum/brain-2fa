@@ -140,6 +140,7 @@ The JavaScript files in `assets/js/` are generated from the source files in `src
 * Improvement: The Login Security page starts with a summary of your sign-in protection, followed by separate sections for passkeys, two-factor codes, recovery codes and password sign-in. Errors appear next to the form that caused them.
 * Improvement: Deleting the plugin now removes all of its data (settings, email templates, user two-factor data and the passkeys table). Deactivating keeps everything; define `BRAIN2FA_KEEP_DATA_ON_UNINSTALL` to keep data on deletion.
 * Improvement: Compatibility with the next major version of the TOTP library (no more deprecation notice).
+* Improvement: A refreshed authenticator app QR code with rounded modules and the logo in a round badge. It stays sharp on high-resolution screens and no longer needs the GD extension.
 * Fix: Entering a wrong code while setting up an authenticator app no longer replaces the QR code you already scanned.
 
 = 1.0.4 =
