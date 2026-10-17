@@ -88,9 +88,11 @@ jobs:
           cp languages/brain-2fa.pot /tmp/committed-raw.pot
           # Same command and exclusions as a local `npm run make-pot` (package.json).
           npm run make-pot --silent
-          # Compare the strings only: ignore source line references, ordering and the creation date.
-          msgcat --no-location --sort-output --no-wrap /tmp/committed-raw.pot | grep -v '^"POT-Creation-Date:' > /tmp/committed.pot
-          msgcat --no-location --sort-output --no-wrap languages/brain-2fa.pot | grep -v '^"POT-Creation-Date:' > /tmp/generated.pot
+          # Compare the translatable strings only. Headers, flags (e.g. "#, php-format"), source
+          # references and ordering vary with the WP-CLI version, so they are ignored.
+          strings() { msgcat --no-location --sort-output --no-wrap "$1" | grep -E '^(msgctxt|msgid|msgid_plural) '; }
+          strings /tmp/committed-raw.pot > /tmp/committed.pot
+          strings languages/brain-2fa.pot > /tmp/generated.pot
           if ! diff -u /tmp/committed.pot /tmp/generated.pot; then
             echo "::error file=languages/brain-2fa.pot::The POT file is out of date. Run npm run make-pot and commit languages/brain-2fa.pot."
             exit 1
