@@ -7,6 +7,7 @@
  */
 namespace Brain_2FA\Auth;
 
+use Brain_2FA\Passkeys\PasskeyLogin;
 use Brain_2FA\Utils;
 use WP_Error;
 use WP_User;
@@ -265,6 +266,11 @@ class LoginController {
 		}
 
 		if ( $user instanceof WP_User ) {
+
+			// A passkey with user verification is multi-factor on its own.
+			if ( PasskeyLogin::is_passkey_authentication( $user ) ) {
+				return $user;
+			}
 
 			// Check if user has 2FA enabled.
 			$is_2fa_enabled = get_user_meta( $user->ID, 'brain2fa_enabled', true );

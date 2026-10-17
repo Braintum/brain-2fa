@@ -49,6 +49,10 @@ class UserProfile {
 		add_action( 'personal_options_update', array( $this, 'save_user_2fa_settings' ) );
 		add_action( 'edit_user_profile_update', array( $this, 'save_user_2fa_settings' ) );
 		add_action( 'admin_notices', array( $this, 'render_grace_period_notice' ) );
+		add_action( 'show_user_profile', array( $this, 'render_passkeys_section' ) );
+		add_action( 'edit_user_profile', array( $this, 'render_passkeys_section' ) );
+		add_action( 'personal_options_update', array( $this, 'save_passkeys_section' ) );
+		add_action( 'edit_user_profile_update', array( $this, 'save_passkeys_section' ) );
 	}
 
 	/**
@@ -234,5 +238,79 @@ class UserProfile {
 			</p>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Show a user's passkeys to administrators, with an option to revoke them.
+	 *
+	 * @param \WP_User $user User being viewed.
+	 * @return void
+	 */
+	public function render_passkeys_section( $user ): void {
+		if ( ! $user instanceof \WP_User || ! current_user_can( 'manage_options' ) || ! current_user_can( 'edit_user', $user->ID ) ) {
+			return;
+		}
+
+		$passkeys = \Brain_2FA\Passkeys\PasskeyRepository::get_for_user( $user->ID );
+		if ( empty( $passkeys ) ) {
+			return;
+		}
+		?>
+		<h2><?php esc_html_e( 'Passkeys', 'brain-2fa' ); ?></h2>
+		<table class="form-table" role="presentation">
+			<tr>
+				<th scope="row"><?php esc_html_e( 'Registered passkeys', 'brain-2fa' ); ?></th>
+				<td>
+					<ul>
+						<?php foreach ( $passkeys as $passkey ) : ?>
+							<li>
+								<strong><?php echo esc_html( $passkey->name ); ?></strong>
+								&mdash;
+								<?php
+								echo esc_html(
+									$passkey->last_used_at
+										? sprintf(
+											/* translators: %s: date and time the passkey was last used */
+											__( 'last used %s', 'brain-2fa' ),
+											get_date_from_gmt( $passkey->last_used_at, get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) )
+										)
+										: __( 'never used', 'brain-2fa' )
+								);
+								?>
+							</li>
+						<?php endforeach; ?>
+					</ul>
+					<?php wp_nonce_field( 'brain2fa_revoke_passkeys_' . $user->ID, 'brain2fa_passkeys_nonce' ); ?>
+					<label>
+						<input type="checkbox" name="brain2fa_revoke_passkeys" value="1">
+						<?php esc_html_e( 'Remove all passkeys from this account', 'brain-2fa' ); ?>
+					</label>
+					<p class="description"><?php esc_html_e( 'Use this if a device was lost or the account may be compromised. The user is notified by email.', 'brain-2fa' ); ?></p>
+				</td>
+			</tr>
+		</table>
+		<?php
+	}
+
+	/**
+	 * Revoke a user's passkeys when an administrator ticks the option.
+	 *
+	 * @param int $user_id User being saved.
+	 * @return void
+	 */
+	public function save_passkeys_section( int $user_id ): void {
+		if ( ! current_user_can( 'manage_options' ) || ! current_user_can( 'edit_user', $user_id ) || empty( $_POST['brain2fa_revoke_passkeys'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Verified below before any change.
+			return;
+		}
+
+		$nonce = isset( $_POST['brain2fa_passkeys_nonce'] ) && is_string( $_POST['brain2fa_passkeys_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['brain2fa_passkeys_nonce'] ) ) : '';
+		if ( ! wp_verify_nonce( $nonce, 'brain2fa_revoke_passkeys_' . $user_id ) ) {
+			return;
+		}
+
+		$user = get_userdata( $user_id );
+		if ( $user instanceof \WP_User ) {
+			\Brain_2FA\Passkeys\PasskeyRegistration::revoke_all( $user );
+		}
 	}
 }

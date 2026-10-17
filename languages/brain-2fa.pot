@@ -2,21 +2,21 @@
 # This file is distributed under the GPLv2+.
 msgid ""
 msgstr ""
-"Project-Id-Version: Brain 2FA 1.0.4\n"
+"Project-Id-Version: Brain 2FA 1.1.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/brain-2fa\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-16T22:45:05+00:00\n"
+"POT-Creation-Date: 2026-10-17T14:12:37+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.10.0\n"
 "X-Domain: brain-2fa\n"
 
 #. Plugin Name of the plugin
 #: brain-2fa.php
-#: includes/Admin/Settings.php:60
+#: includes/Admin/Settings.php:64
 msgid "Brain 2FA"
 msgstr ""
 
@@ -35,175 +35,195 @@ msgstr ""
 msgid "https://www.braintum.com/"
 msgstr ""
 
-#: includes/Admin/Settings.php:59
+#: includes/Admin/Settings.php:63
 msgid "Brain 2FA Settings"
 msgstr ""
 
-#: includes/Admin/Settings.php:70
+#: includes/Admin/Settings.php:74
 msgid "2FA Settings"
 msgstr ""
 
-#: includes/Admin/Settings.php:71
+#: includes/Admin/Settings.php:75
 msgid "Settings"
 msgstr ""
 
-#: includes/Admin/Settings.php:78
-#: includes/Admin/UserProfile.php:73
+#: includes/Admin/Settings.php:82
+#: includes/Admin/UserProfile.php:77
 msgid "Two-Factor Authentication"
 msgstr ""
 
-#: includes/Admin/Settings.php:79
+#: includes/Admin/Settings.php:83
 msgid "Login Security"
 msgstr ""
 
-#: includes/Admin/Settings.php:101
+#: includes/Admin/Settings.php:105
 msgid "General Settings"
 msgstr ""
 
-#: includes/Admin/Settings.php:108
+#: includes/Admin/Settings.php:112
 msgid "Enable Two-Factor Authentication"
 msgstr ""
 
-#: includes/Admin/Settings.php:116
+#: includes/Admin/Settings.php:120
 msgid "Force 2FA for Roles"
 msgstr ""
 
-#: includes/Admin/Settings.php:124
-#: includes/Admin/UserProfile.php:105
+#: includes/Admin/Settings.php:128
+#: includes/Admin/UserProfile.php:109
 msgid "2FA Setup Grace Period"
 msgstr ""
 
-#: includes/Admin/Settings.php:132
+#: includes/Admin/Settings.php:136
 msgid "Default Authentication Method"
 msgstr ""
 
-#: includes/Admin/Settings.php:141
+#: includes/Admin/Settings.php:145
 msgid "Authentication Methods"
 msgstr ""
 
-#: includes/Admin/Settings.php:148
+#: includes/Admin/Settings.php:152
 msgid "Enable TOTP (Authenticator App)"
 msgstr ""
 
-#: includes/Admin/Settings.php:156
+#: includes/Admin/Settings.php:160
 msgid "Enable Email Authentication"
 msgstr ""
 
-#: includes/Admin/Settings.php:165
+#: includes/Admin/Settings.php:168
+msgid "Enable Passkeys"
+msgstr ""
+
+#: includes/Admin/Settings.php:177
 msgid "Advanced Settings"
 msgstr ""
 
-#: includes/Admin/Settings.php:172
+#: includes/Admin/Settings.php:184
 msgid "Email Code Expiry (minutes)"
 msgstr ""
 
-#: includes/Admin/Settings.php:180
+#: includes/Admin/Settings.php:192
 msgid "Remember Device"
 msgstr ""
 
-#: includes/Admin/Settings.php:220
+#: includes/Admin/Settings.php:233
 msgid "Configure the basic two-factor authentication settings."
 msgstr ""
 
-#: includes/Admin/Settings.php:227
+#: includes/Admin/Settings.php:240
 msgid "Enable or disable specific authentication methods."
 msgstr ""
 
-#: includes/Admin/Settings.php:234
+#: includes/Admin/Settings.php:247
 msgid "Advanced configuration options for two-factor authentication."
 msgstr ""
 
-#: includes/Admin/Settings.php:246
+#: includes/Admin/Settings.php:259
 msgid "Enable two-factor authentication for the site"
 msgstr ""
 
-#: includes/Admin/Settings.php:249
+#: includes/Admin/Settings.php:262
 msgid "Master switch to enable/disable 2FA functionality site-wide."
 msgstr ""
 
-#: includes/Admin/Settings.php:274
+#: includes/Admin/Settings.php:287
 msgid "Select user roles that are required to use 2FA."
 msgstr ""
 
-#: includes/Admin/Settings.php:293
+#: includes/Admin/Settings.php:306
 msgid "Allow users in required roles this many days to set up 2FA. Set to 0 to require setup immediately."
 msgstr ""
 
-#: includes/Admin/Settings.php:308
+#: includes/Admin/Settings.php:321
 msgid "TOTP (Authenticator App)"
 msgstr ""
 
-#: includes/Admin/Settings.php:311
+#: includes/Admin/Settings.php:324
 msgid "Email Authentication"
 msgstr ""
 
-#: includes/Admin/Settings.php:315
+#: includes/Admin/Settings.php:328
 msgid "Default authentication method for new users."
 msgstr ""
 
-#: includes/Admin/Settings.php:329
+#: includes/Admin/Settings.php:342
 msgid "Allow users to use TOTP authenticator apps (Google Authenticator, Authy, etc.)"
 msgstr ""
 
-#: includes/Admin/Settings.php:343
+#: includes/Admin/Settings.php:356
 msgid "Allow users to receive authentication codes via email"
 msgstr ""
 
-#: includes/Admin/Settings.php:362
+#: includes/Admin/Settings.php:372
+msgid "Allow users to sign in without a password using passkeys (Face ID, Touch ID, Windows Hello, phones or security keys)"
+msgstr ""
+
+#: includes/Admin/Settings.php:375
+msgid "A passkey sign-in counts as two-factor authentication. Users add passkeys on their Login Security page."
+msgstr ""
+
+#: includes/Admin/Settings.php:379
+msgid "Passkeys need HTTPS. Your site address does not use HTTPS, so passkeys stay hidden until it does."
+msgstr ""
+
+#: includes/Admin/Settings.php:399
 msgid "How long email codes remain valid (in minutes)."
 msgstr ""
 
-#: includes/Admin/Settings.php:377
+#: includes/Admin/Settings.php:414
 msgid "Allow users to remember their device"
 msgstr ""
 
-#: includes/Admin/Settings.php:380
+#: includes/Admin/Settings.php:417
 msgid "Users can skip 2FA on trusted devices."
 msgstr ""
 
-#: includes/Admin/Settings.php:384
+#: includes/Admin/Settings.php:421
 msgid "Remember for (days):"
 msgstr ""
 
-#: includes/Admin/Settings.php:411
+#: includes/Admin/Settings.php:448
 msgid "Settings saved successfully."
 msgstr ""
 
-#: includes/Admin/Settings.php:466
+#: includes/Admin/Settings.php:502
+msgid "The passkey was removed."
+msgstr ""
+
+#: includes/Admin/Settings.php:506
+msgid "The passkey was renamed."
+msgstr ""
+
+#: includes/Admin/Settings.php:524
 msgid "Two-factor authentication is already active. Deactivate it before setting up a new method."
 msgstr ""
 
 #. translators: %s: account email address
-#: includes/Admin/Settings.php:482
+#: includes/Admin/Settings.php:540
 msgid "A verification code was sent to %s. Enter it below to finish setting up email authentication."
 msgstr ""
 
-#: includes/Admin/Settings.php:497
+#: includes/Admin/Settings.php:555
 msgid "Two-Factor Authentication has been activated successfully! Please save your recovery codes below."
 msgstr ""
 
-#: includes/Admin/Settings.php:499
+#: includes/Admin/Settings.php:557
 msgid "Two-Factor Authentication has been activated successfully!"
 msgstr ""
 
-#: includes/Admin/Settings.php:518
+#: includes/Admin/Settings.php:576
 msgid "Two-Factor Authentication has been deactivated. Your role requires it, so set up a new method below to continue using the site."
 msgstr ""
 
-#: includes/Admin/Settings.php:520
+#: includes/Admin/Settings.php:578
 msgid "Two-Factor Authentication has been deactivated."
 msgstr ""
 
-#: includes/Admin/Settings.php:525
+#: includes/Admin/Settings.php:583
 msgid "Recovery codes have been regenerated. Please save them securely."
 msgstr ""
 
-#: includes/Admin/Settings.php:563
-msgid "The password you entered is incorrect. No changes were made."
-msgstr ""
-
 #: includes/Admin/UserListColumns.php:60
-#: includes/Admin/UserProfile.php:78
+#: includes/Admin/UserProfile.php:82
 msgid "2FA Status"
 msgstr ""
 
@@ -224,65 +244,91 @@ msgstr ""
 msgid "Not Active"
 msgstr ""
 
-#: includes/Admin/UserProfile.php:84
+#: includes/Admin/UserProfile.php:88
 #: includes/Admin/views/login-security-page.php:31
 #: includes/Admin/views/login-security-page.php:130
 msgid "Two-Factor Authentication is Active"
 msgstr ""
 
-#: includes/Admin/UserProfile.php:89
+#: includes/Admin/UserProfile.php:93
 msgid "Two-Factor Authentication is Inactive"
 msgstr ""
 
-#: includes/Admin/UserProfile.php:93
+#: includes/Admin/UserProfile.php:97
 msgid "Add an extra layer of security to your account."
 msgstr ""
 
-#: includes/Admin/UserProfile.php:97
+#: includes/Admin/UserProfile.php:101
 msgid "Manage 2FA"
 msgstr ""
 
-#: includes/Admin/UserProfile.php:111
+#: includes/Admin/UserProfile.php:115
 msgid "Grace period expired"
 msgstr ""
 
 #. translators: %s: grace period expiry date
-#: includes/Admin/UserProfile.php:117
+#: includes/Admin/UserProfile.php:121
 msgid "2FA setup was required by %s."
 msgstr ""
 
-#: includes/Admin/UserProfile.php:125
+#: includes/Admin/UserProfile.php:129
 msgid "Grace period active"
 msgstr ""
 
 #. translators: %s: grace period expiry date
-#: includes/Admin/UserProfile.php:131
+#: includes/Admin/UserProfile.php:135
 msgid "Set up 2FA before %s."
 msgstr ""
 
-#: includes/Admin/UserProfile.php:140
+#: includes/Admin/UserProfile.php:144
 msgid "Extend grace period by (days)"
 msgstr ""
 
-#: includes/Admin/UserProfile.php:144
+#: includes/Admin/UserProfile.php:148
 msgid "Enter the number of days to add, then update the profile."
 msgstr ""
 
-#: includes/Admin/UserProfile.php:214
+#: includes/Admin/UserProfile.php:218
 msgid "Your grace period to set up two-factor authentication has expired."
 msgstr ""
 
-#: includes/Admin/UserProfile.php:215
-#: includes/Admin/UserProfile.php:233
+#: includes/Admin/UserProfile.php:219
+#: includes/Admin/UserProfile.php:237
 msgid "Set up 2FA now."
 msgstr ""
 
 #. translators: %d: number of grace-period days remaining
-#: includes/Admin/UserProfile.php:229
+#: includes/Admin/UserProfile.php:233
 msgid "You have %d day left to set up two-factor authentication."
 msgid_plural "You have %d days left to set up two-factor authentication."
 msgstr[0] ""
 msgstr[1] ""
+
+#: includes/Admin/UserProfile.php:259
+#: includes/Admin/views/login-security-page.php:293
+msgid "Passkeys"
+msgstr ""
+
+#: includes/Admin/UserProfile.php:262
+msgid "Registered passkeys"
+msgstr ""
+
+#. translators: %s: date and time the passkey was last used
+#: includes/Admin/UserProfile.php:274
+msgid "last used %s"
+msgstr ""
+
+#: includes/Admin/UserProfile.php:277
+msgid "never used"
+msgstr ""
+
+#: includes/Admin/UserProfile.php:286
+msgid "Remove all passkeys from this account"
+msgstr ""
+
+#: includes/Admin/UserProfile.php:288
+msgid "Use this if a device was lost or the account may be compromised. The user is notified by email."
+msgstr ""
 
 #: includes/Admin/views/login-security-page.php:27
 #: includes/Admin/views/login-security-page.php:126
@@ -317,6 +363,8 @@ msgstr ""
 #: includes/Admin/views/login-security-page.php:86
 #: includes/Admin/views/login-security-page.php:114
 #: includes/Admin/views/login-security-page.php:144
+#: includes/Admin/views/login-security-page.php:345
+#: includes/Admin/views/login-security-page.php:365
 msgid "Confirm your password"
 msgstr ""
 
@@ -374,7 +422,7 @@ msgstr ""
 
 #: includes/Admin/views/login-security-page.php:166
 #: includes/Admin/views/login-security-page.php:257
-#: includes/Auth/LoginController.php:374
+#: includes/Auth/LoginController.php:380
 #: src/js/utils/dom.js:71
 msgid "Verification Code"
 msgstr ""
@@ -455,6 +503,72 @@ msgstr ""
 msgid "Unable to generate QR code. Please ensure the required libraries are installed."
 msgstr ""
 
+#: includes/Admin/views/login-security-page.php:294
+msgid "Sign in without a password using your device screen lock (Face ID, Touch ID, Windows Hello), your phone, or a security key. A passkey sign-in also counts as two-factor authentication."
+msgstr ""
+
+#: includes/Admin/views/login-security-page.php:297
+msgid "You have not added any passkeys yet."
+msgstr ""
+
+#: includes/Admin/views/login-security-page.php:302
+#: includes/Admin/views/login-security-page.php:335
+msgid "Name"
+msgstr ""
+
+#: includes/Admin/views/login-security-page.php:303
+msgid "Added"
+msgstr ""
+
+#: includes/Admin/views/login-security-page.php:304
+msgid "Last used"
+msgstr ""
+
+#: includes/Admin/views/login-security-page.php:305
+msgid "Manage"
+msgstr ""
+
+#: includes/Admin/views/login-security-page.php:314
+msgid "Synced across your devices"
+msgstr ""
+
+#: includes/Admin/views/login-security-page.php:323
+msgid "Never"
+msgstr ""
+
+#: includes/Admin/views/login-security-page.php:329
+msgid "Rename or remove"
+msgstr ""
+
+#: includes/Admin/views/login-security-page.php:337
+msgid "Rename"
+msgstr ""
+
+#: includes/Admin/views/login-security-page.php:347
+msgid "Remove this passkey? You will no longer be able to sign in with it."
+msgstr ""
+
+#: includes/Admin/views/login-security-page.php:347
+msgid "Remove"
+msgstr ""
+
+#: includes/Admin/views/login-security-page.php:358
+#: includes/Admin/views/login-security-page.php:370
+msgid "Add a passkey"
+msgstr ""
+
+#: includes/Admin/views/login-security-page.php:361
+msgid "Passkey name"
+msgstr ""
+
+#: includes/Admin/views/login-security-page.php:362
+msgid "For example: MacBook Touch ID"
+msgstr ""
+
+#: includes/Admin/views/login-security-page.php:374
+msgid "Adding a passkey requires JavaScript."
+msgstr ""
+
 #: includes/Admin/views/settings-page.php:23
 msgid "Save Settings"
 msgstr ""
@@ -511,11 +625,11 @@ msgstr ""
 msgid "Documentation"
 msgstr ""
 
-#: includes/App.php:208
+#: includes/App.php:219
 msgid "Cloning is forbidden."
 msgstr ""
 
-#: includes/App.php:217
+#: includes/App.php:228
 msgid "Unserializing instances of this class is forbidden."
 msgstr ""
 
@@ -547,48 +661,112 @@ msgstr ""
 msgid "Your account must use two-factor authentication. Set it up to continue using this site."
 msgstr ""
 
-#: includes/Auth/LoginController.php:58
+#: includes/Auth/LoginController.php:59
 msgid "Too many attempts. Please try again in a minute."
 msgstr ""
 
 #. translators: %s is the lost password URL
-#: includes/Auth/LoginController.php:87
+#: includes/Auth/LoginController.php:88
 msgid "<strong>ERROR</strong>: A username and password must be provided. <a href=\"%s\" title=\"Password Lost and Found\">Lost your password</a>?"
 msgstr ""
 
-#: includes/Auth/LoginController.php:146
+#: includes/Auth/LoginController.php:147
 msgid "Your configured two-factor authentication method is unavailable. Please contact an administrator."
 msgstr ""
 
-#: includes/Auth/LoginController.php:155
+#: includes/Auth/LoginController.php:156
 msgid "Unable to send your email authentication code. Please try again or contact an administrator."
 msgstr ""
 
 #. translators: %s is the lost password URL
-#: includes/Auth/LoginController.php:180
-#: includes/Auth/LoginController.php:234
+#: includes/Auth/LoginController.php:181
+#: includes/Auth/LoginController.php:235
 msgid "<strong>ERROR</strong>: The username or password you entered is incorrect. <a href=\"%s\" title=\"Password Lost and Found\">Lost your password</a>?"
 msgstr ""
 
-#: includes/Auth/LoginController.php:277
+#: includes/Auth/LoginController.php:283
 msgid "Two-factor authentication must be set up for this account. Sign in through the website to set it up."
 msgstr ""
 
-#: includes/Auth/LoginController.php:302
+#: includes/Auth/LoginController.php:308
 msgid "An email authentication code has been sent. Enter it to continue."
 msgstr ""
 
-#: includes/Auth/LoginController.php:308
+#: includes/Auth/LoginController.php:314
 msgid "Two-factor authentication required."
 msgstr ""
 
-#: includes/Auth/LoginController.php:316
+#: includes/Auth/LoginController.php:322
 #: includes/TwoFactor/Methods/TotpMethod.php:180
 msgid "Invalid verification code."
 msgstr ""
 
-#: includes/Auth/LoginController.php:375
+#: includes/Auth/LoginController.php:381
 msgid "Only needed if two-factor authentication is enabled for your account. Email users: sign in once without a code to receive one."
+msgstr ""
+
+#: includes/Passkeys/PasskeyLogin.php:81
+#: includes/Passkeys/PasskeyLogin.php:101
+#: includes/Passkeys/PasskeyRegistration.php:102
+msgid "Passkeys are not available on this site."
+msgstr ""
+
+#: includes/Passkeys/PasskeyLogin.php:85
+msgid "Too many requests. Please try again in a minute."
+msgstr ""
+
+#: includes/Passkeys/PasskeyLogin.php:146
+#: includes/Passkeys/PasskeyRegistration.php:147
+msgid "The passkey request expired. Please try again."
+msgstr ""
+
+#: includes/Passkeys/PasskeyLogin.php:155
+msgid "This passkey is not registered on this site. It may have been removed."
+msgstr ""
+
+#: includes/Passkeys/PasskeyLogin.php:163
+#: includes/Passkeys/PasskeyRegistration.php:83
+#: includes/Passkeys/WebAuthnServer.php:206
+#: includes/Passkeys/WebAuthnServer.php:213
+#: includes/Passkeys/WebAuthnServer.php:259
+#: includes/Passkeys/WebAuthnServer.php:282
+msgid "The passkey could not be verified. Please try again."
+msgstr ""
+
+#: includes/Passkeys/PasskeyLogin.php:217
+#: includes/Passkeys/PasskeyLogin.php:222
+#: includes/Passkeys/PasskeyLogin.php:227
+msgid "Your passkey sign-in expired. Please try again."
+msgstr ""
+
+#. translators: %s: date the passkey was added
+#: includes/Passkeys/PasskeyRegistration.php:112
+msgid "Passkey added %s"
+msgstr ""
+
+#: includes/Passkeys/PasskeyRegistration.php:156
+msgid "This passkey is already registered."
+msgstr ""
+
+#: includes/Passkeys/PasskeyRegistration.php:162
+msgid "The passkey could not be saved. Please try again."
+msgstr ""
+
+#: includes/Passkeys/PasskeyRegistration.php:185
+#: includes/Passkeys/PasskeyRegistration.php:211
+msgid "That passkey was not found."
+msgstr ""
+
+#: includes/Passkeys/PasskeyRegistration.php:205
+msgid "Enter a name for the passkey."
+msgstr ""
+
+#: includes/Passkeys/WebAuthnServer.php:256
+msgid "This passkey was blocked because it may have been copied. Use another sign-in method and contact the site administrator."
+msgstr ""
+
+#: includes/Passkeys/WebAuthnServer.php:287
+msgid "This passkey request came from an unexpected website."
 msgstr ""
 
 #: includes/TwoFactor/Methods/EmailMethod.php:77
@@ -624,32 +802,52 @@ msgid ""
 "-- %4$s"
 msgstr ""
 
+#: includes/Utils.php:362
+msgid "The password you entered is incorrect. No changes were made."
+msgstr ""
+
 #. translators: %d: number of minutes until the user may try again
-#: includes/Utils.php:336
+#: includes/Utils.php:391
 msgid "Too many failed verification attempts. Please try again in %d minute."
 msgid_plural "Too many failed verification attempts. Please try again in %d minutes."
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/Utils.php:359
+#: includes/Utils.php:415
 msgid "Two-factor authentication was turned on for your account."
 msgstr ""
 
-#: includes/Utils.php:360
+#: includes/Utils.php:416
 msgid "Two-factor authentication was turned off for your account."
 msgstr ""
 
-#: includes/Utils.php:361
+#: includes/Utils.php:417
 msgid "New recovery codes were generated for your account. Your previous recovery codes no longer work."
 msgstr ""
 
+#: includes/Utils.php:418
+msgid "A new passkey was added to your account. It can be used to sign in without a password."
+msgstr ""
+
+#: includes/Utils.php:419
+msgid "A passkey was removed from your account."
+msgstr ""
+
+#: includes/Utils.php:420
+msgid "An administrator removed the passkeys from your account."
+msgstr ""
+
+#: includes/Utils.php:421
+msgid "A sign-in with one of your passkeys was blocked because the passkey may have been copied. Remove it from your account and contact the site administrator."
+msgstr ""
+
 #. translators: %s: site name
-#: includes/Utils.php:371
+#: includes/Utils.php:431
 msgid "[%s] Your two-factor authentication settings changed"
 msgstr ""
 
 #. translators: 1: user display name, 2: description of the change, 3: date and time of the change, 4: site name, 5: site URL
-#: includes/Utils.php:376
+#: includes/Utils.php:436
 msgid ""
 "Hi %1$s,\n"
 "\n"
@@ -705,6 +903,48 @@ msgstr ""
 
 #: src/js/components/LoginForm.js:114
 msgid "An unknown error occurred. Please try again."
+msgstr ""
+
+#: src/js/passkey-login.js:83
+msgid "Passkey sign-in is unavailable. Please try again."
+msgstr ""
+
+#: src/js/passkey-login.js:100
+#: src/js/passkey-login.js:117
+msgid "Passkey sign-in failed. Please try again."
+msgstr ""
+
+#: src/js/passkey-login.js:154
+msgid "Sign in with a passkey"
+msgstr ""
+
+#: src/js/passkey-manage.js:59
+msgid "This browser does not support passkeys."
+msgstr ""
+
+#: src/js/passkey-manage.js:65
+msgid "Enter your password to add a passkey."
+msgstr ""
+
+#: src/js/passkey-manage.js:71
+msgid "Follow the prompts from your browser or device."
+msgstr ""
+
+#: src/js/passkey-manage.js:82
+#: src/js/passkey-manage.js:93
+msgid "The passkey could not be added."
+msgstr ""
+
+#: src/js/passkey-manage.js:97
+msgid "Passkey added. Reloading…"
+msgstr ""
+
+#: src/js/passkey-manage.js:101
+msgid "This device already has a passkey for your account."
+msgstr ""
+
+#: src/js/passkey-manage.js:102
+msgid "Passkey setup was cancelled or failed. Please try again."
 msgstr ""
 
 #: src/js/utils/dom.js:84

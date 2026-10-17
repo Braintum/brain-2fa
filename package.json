@@ -1,6 +1,6 @@
 {
   "name": "brain-2fa",
-  "version": "1.0.4",
+  "version": "1.1.0",
   "description": "Two Factor Authentication (2FA) plugin for WordPress",
   "author": "Braintum",
   "license": "GPL-2.0-or-later",
@@ -37,5 +37,8 @@
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=9.0.0"
+  },
+  "dependencies": {
+    "@simplewebauthn/browser": "14.0.0"
   }
 }

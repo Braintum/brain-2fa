@@ -16,6 +16,11 @@ Brain 2FA is a WordPress plugin (PHP 8.1+, WordPress 6.4+) that adds a second au
 | Class | Responsibility |
 | --- | --- |
 | `Auth\LoginController` | AJAX credential preflight (`wp_ajax_nopriv_brain2fa_login`) and the `authenticate` filter (`verify_2fa`, priority 40) that enforces 2FA. |
+| `Install` | Creates the `brain2fa_passkeys` table with `dbDelta()` on activation and whenever `brain2fa_db_version` differs from `Install::DB_VERSION`. |
+| `Passkeys\WebAuthnServer` | Wraps `lbuchs/webauthn`: RP ID and allowed origins, an exact origin check, WebAuthn option JSON, registration and assertion verification. |
+| `Passkeys\PasskeyRepository` | CRUD for the `brain2fa_passkeys` table (lookup by credential-ID hash) and each user's random WebAuthn user handle. |
+| `Passkeys\PasskeyRegistration` | Logged-in AJAX to add passkeys (password-confirmed), plus rename, remove and admin revoke. |
+| `Passkeys\PasskeyLogin` | Passwordless sign-in: nopriv challenge and verify endpoints, single-use login tokens, and the `authenticate` filter at priority 15. |
 | `Auth\EnrollmentGuard` | Restricted setup mode for users who must enroll (login redirects, admin/front-end/REST/AJAX restriction), WooCommerce access to the setup page, and the My Account 2FA status line. |
 | `Auth\AccountEvents` | Revokes trusted devices when a password changes (`wp_set_password`, `profile_update`). |
 | `Auth\LoginAssets` | Enqueues `assets/js/login.js` on `wp-login.php` and on the WooCommerce My Account login form, with localized `Brain2FA` data. |
@@ -72,6 +77,34 @@ XML-RPC and REST logins have no setup page, so `verify_2fa()` keeps rejecting th
 
 Email authentication is enabled only after the user enters a code sent to their address: the first activation request sends a code (`save_setup()` returns `code_sent`), the second verifies it. "Send a new code" discards the pending code and sends another.
 
+## Passkeys (passwordless sign-in)
+
+Off by default (`enable_passkeys`), and only active over HTTPS or on localhost (`WebAuthnServer::is_available()`), because browsers only allow WebAuthn in a secure context. A passkey sign-in requires user verification (biometric or PIN), so it satisfies 2FA without a code. In this phase, passkeys do not count toward required-role enrollment, and password sign-ins are unchanged.
+
+**Registering** (Login Security page, `passkey-manage.js`): the user enters a name and their password, and `brain2fa_passkey_register_options` confirms the password (`Utils::confirm_password()`) and returns creation options (`residentKey` and `userVerification` required, `attestation: none`, existing passkeys excluded). The challenge is stored in `brain2fa_webauthn_reg_{user_id}`. `brain2fa_passkey_register_verify` consumes the challenge, verifies the response and stores the passkey.
+
+**Signing in** (`passkey-login.js` on wp-login.php and the WooCommerce form):
+
+```
+page load / button  ──AJAX──▶ brain2fa_passkey_auth_options
+                              - per-IP limit (30/min)
+                              - random session value → httponly cookie brain2fa_passkey_{COOKIEHASH}
+                              - challenge stored under hash(session)
+browser signs (autofill or modal)
+                    ──AJAX──▶ brain2fa_passkey_auth_verify
+                              - IP lockout check; consume challenge for this cookie
+                              - credential ID → passkey row; userHandle must match the owner
+                              - exact origin, RP ID hash, UV flag, signature, sign counter
+                              - single-use login token (2 min) bound to hash(session)
+fill username, add brain2fa_passkey_token, submit the form natively
+                    ──POST──▶ wp_signon() → authenticate filter
+                              PasskeyLogin::authenticate_with_token() (priority 15)
+                              - consume token, check cookie binding → WP_User
+                              verify_2fa() (priority 40) skips the code for this user
+```
+
+Because the final step is a normal form submission, `wp_signon()`, remember-me, `login_redirect`, WooCommerce redirects and `EnrollmentGuard` all apply as for a password sign-in. Tokens are ignored for XML-RPC and REST requests.
+
 ## Data model
 
 **Option** `brain2fa_settings` (sanitized by `Settings::sanitize_settings()`):
@@ -83,6 +116,7 @@ Email authentication is enabled only after the user enters a code sent to their 
 | `grace_period_days` | int 0–365 | 14 | `0` puts unenrolled required users in restricted setup mode at their first sign-in. |
 | `default_method` | `totp` \| `email` | `totp` | Falls back to an enabled method. The legacy value `email_backup` maps to `email`. |
 | `enable_totp`, `enable_email` | bool | true when unset | Method availability. |
+| `enable_passkeys` | bool | false | Passkey registration and passwordless sign-in (needs HTTPS). |
 | `code_expiry` | int 1–60 minutes | 10 | Email code lifetime. |
 | `remember_device` | bool | false | Trusted devices on or off. |
 | `remember_duration` | int 1–365 days | 30 | Trusted device lifetime. |
@@ -91,7 +125,11 @@ Email authentication is enabled only after the user enters a code sent to their 
 
 **Transients:** `brain2fa_rate_{wp_hash(ip)}` (preflight attempt counter, 60 s), `brain2fa_backup_code_{user_id}` (pending email code), `brain2fa_ip_failures_{wp_hash(ip)}` (failed verifications per IP, `{count, expires_at}`).
 
-**Cookie:** `brain2fa_remember_{user_id}`: random 64-character token, `httponly`, `secure` on SSL, `SameSite=Lax`.
+**Table** `{prefix}brain2fa_passkeys`: `user_id`, `credential_hash` (SHA-256 of the credential ID, unique), `credential_id` (base64url), `public_key` (PEM), `sign_count`, `transports`, `aaguid`, `backup_eligible`, `backed_up`, `name`, `created_at`, `last_used_at` (GMT). Rows are deleted with the user (`deleted_user`). Option `brain2fa_db_version` tracks the schema.
+
+**Passkey user meta and transients:** `brain2fa_webauthn_user_handle` (base64url of 32 random bytes), `brain2fa_webauthn_reg_{user_id}` and `brain2fa_webauthn_auth_{hash}` (challenges, 5 min), `brain2fa_passkey_token_{hash}` (login tokens, 2 min), `brain2fa_passkey_opts_{ip hash}` (options rate limit).
+
+**Cookies:** `brain2fa_remember_{user_id}`: random 64-character token, `httponly`, `secure` on SSL, `SameSite=Lax`. `brain2fa_passkey_{COOKIEHASH}`: random passkey session value binding challenges and tokens to the browser, `httponly`, `SameSite=Lax`, cleared after sign-in.
 
 ## Extension points
 
@@ -104,15 +142,17 @@ Email authentication is enabled only after the user enters a code sent to their 
 | `brain2fa_max_failed_attempts` | filter | Failed codes or passwords before a user is locked out (default 5). |
 | `brain2fa_max_failed_attempts_per_ip` | filter | Failed verifications per IP before that IP is locked out (default 20, `0` disables). |
 | `brain2fa_lockout_duration` | filter | Lockout length and per-IP window in seconds (default 900). |
+| `brain2fa_passkey_allowed_origins` | filter | Exact origins accepted for passkey ceremonies (default: the origins of `home_url()` and `site_url()`). |
+| `brain2fa_passkey_options_per_minute` | filter | Passkey challenge requests allowed per IP per minute (default 30). |
 | `brain2fa_send_change_notification` | filter | Return `false` to skip the email sent after 2FA is turned on or off or recovery codes are regenerated. Args: `true`, `WP_User`, `string $event`. |
 | `login_errors` | filter (core) | Applied to preflight credential errors, as on `wp-login.php`. |
 
 ## Front-end build
 
-- `src/js/` → webpack → `assets/js/{login,admin}.js` (+ `.asset.php`), using `@wordpress/dependency-extraction-webpack-plugin`.
+- `src/js/` → webpack → `assets/js/{login,admin,passkey-login,passkey-manage}.js` (dependencies in `assets/assets.php`), using `@wordpress/dependency-extraction-webpack-plugin`. `@simplewebauthn/browser` is bundled into the passkey scripts.
 - `src/scss/` → `assets/css/admin.css`.
 - `assets/js/` and `assets/css/` are gitignored and produced by `npm run build`. Release builds include them.
 
 ## Release build
 
-`npm run dist` runs: webpack production build, then POT generation (`wp i18n make-pot`), then `composer install --no-dev`, then `scripts/build-dist.php` (copies `assets`, `includes`, `languages`, `vendor`, `brain-2fa.php`, `composer.json`, `composer.lock` and `readme.txt` into `dist/brain-2fa/` and zips it), then restores dev dependencies. `scripts/deploy.sh` publishes `dist/brain-2fa/` to SVN. See `docs/releasing.md`.
+`npm run dist` runs: webpack production build, then POT generation (`wp i18n make-pot`), then `composer install --no-dev`, then `scripts/build-dist.php` (skips `vendor/lbuchs/webauthn/_test`, a demo server; copies `assets`, `includes`, `languages`, `vendor`, `brain-2fa.php`, `composer.json`, `composer.lock` and `readme.txt` into `dist/brain-2fa/` and zips it), then restores dev dependencies. `scripts/deploy.sh` publishes `dist/brain-2fa/` to SVN. See `docs/releasing.md`.

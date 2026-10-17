@@ -89,6 +89,18 @@ class Utils {
 	}
 
 	/**
+	 * Check whether passkey sign-in is enabled in the plugin settings.
+	 *
+	 * Passkeys also need HTTPS; see WebAuthnServer::is_available().
+	 *
+	 * @return bool True when the site owner enabled passkeys.
+	 */
+	public static function is_passkeys_enabled(): bool {
+		$plugin_settings = get_option( 'brain2fa_settings', array() );
+		return ! empty( $plugin_settings['enable_passkeys'] );
+	}
+
+	/**
 	 * Get the active default authentication method.
 	 *
 	 * @return string Authentication method ID.
@@ -253,20 +265,28 @@ class Utils {
 	 * @return int Seconds until the user may try again, or 0 when not locked out.
 	 */
 	public static function get_verification_lockout( \WP_User $user ): int {
-		$now        = time();
-		$state      = self::get_failed_attempts_state( $user->ID );
-		$user_lock  = max( 0, $state['locked_until'] - $now );
+		$state     = self::get_failed_attempts_state( $user->ID );
+		$user_lock = max( 0, $state['locked_until'] - time() );
+
+		return max( $user_lock, self::get_ip_lockout() );
+	}
+
+	/**
+	 * Get the remaining lockout time for the current IP address.
+	 *
+	 * @return int Seconds until the IP may try again, or 0 when not locked out.
+	 */
+	public static function get_ip_lockout(): int {
 		$ip_limit   = self::get_max_failed_attempts_per_ip();
 		$ip_state   = get_transient( self::IP_FAILURES_TRANSIENT_PREFIX . self::get_client_ip_hash() );
-		$ip_lock    = 0;
 		$ip_count   = is_array( $ip_state ) ? absint( $ip_state['count'] ?? 0 ) : 0;
 		$ip_expires = is_array( $ip_state ) ? absint( $ip_state['expires_at'] ?? 0 ) : 0;
 
 		if ( $ip_limit > 0 && $ip_count >= $ip_limit ) {
-			$ip_lock = max( 0, $ip_expires - $now );
+			return max( 0, $ip_expires - time() );
 		}
 
-		return max( $user_lock, $ip_lock );
+		return 0;
 	}
 
 	/**
@@ -298,16 +318,51 @@ class Utils {
 
 		update_user_meta( $user->ID, self::FAILED_ATTEMPTS_META_KEY, $state );
 
+		self::record_failed_ip_attempt();
+	}
+
+	/**
+	 * Record a failed attempt for the current IP address only.
+	 *
+	 * Used where no account is known yet, such as an unrecognized passkey.
+	 *
+	 * @return void
+	 */
+	public static function record_failed_ip_attempt(): void {
+		$now      = time();
 		$ip_key   = self::IP_FAILURES_TRANSIENT_PREFIX . self::get_client_ip_hash();
 		$ip_state = get_transient( $ip_key );
 		if ( ! is_array( $ip_state ) || absint( $ip_state['expires_at'] ?? 0 ) <= $now ) {
 			$ip_state = array(
 				'count'      => 0,
-				'expires_at' => $now + $duration,
+				'expires_at' => $now + self::get_lockout_duration(),
 			);
 		}
 		++$ip_state['count'];
 		set_transient( $ip_key, $ip_state, max( 1, $ip_state['expires_at'] - $now ) );
+	}
+
+	/**
+	 * Confirm a user's account password before a sensitive change.
+	 *
+	 * Failed attempts count toward the same lockout as failed login codes.
+	 *
+	 * @param \WP_User $user     The user confirming their password.
+	 * @param string   $password The submitted password, unslashed and unsanitized.
+	 * @return true|\WP_Error True when the password is correct.
+	 */
+	public static function confirm_password( \WP_User $user, string $password ) {
+		$locked_for = self::get_verification_lockout( $user );
+		if ( $locked_for > 0 ) {
+			return new \WP_Error( 'brain2fa_too_many_attempts', self::get_lockout_message( $locked_for ) );
+		}
+
+		if ( '' === $password || ! wp_check_password( $password, $user->user_pass, $user->ID ) ) {
+			self::record_failed_verification( $user );
+			return new \WP_Error( 'brain2fa_incorrect_password', __( 'The password you entered is incorrect. No changes were made.', 'brain-2fa' ) );
+		}
+
+		return true;
 	}
 
 	/**
@@ -347,7 +402,8 @@ class Utils {
 	 * Email the account owner after their two-factor authentication settings change.
 	 *
 	 * @param \WP_User $user  User whose settings changed.
-	 * @param string   $event One of 'activated', 'deactivated' or 'recovery_codes_regenerated'.
+	 * @param string   $event One of 'activated', 'deactivated', 'recovery_codes_regenerated', 'passkey_added',
+	 *                        'passkey_removed', 'passkeys_revoked' or 'passkey_clone_warning'.
 	 * @return void
 	 */
 	public static function send_factor_change_notification( \WP_User $user, string $event ): void {
@@ -359,6 +415,10 @@ class Utils {
 			'activated'                  => __( 'Two-factor authentication was turned on for your account.', 'brain-2fa' ),
 			'deactivated'                => __( 'Two-factor authentication was turned off for your account.', 'brain-2fa' ),
 			'recovery_codes_regenerated' => __( 'New recovery codes were generated for your account. Your previous recovery codes no longer work.', 'brain-2fa' ),
+			'passkey_added'              => __( 'A new passkey was added to your account. It can be used to sign in without a password.', 'brain-2fa' ),
+			'passkey_removed'            => __( 'A passkey was removed from your account.', 'brain-2fa' ),
+			'passkeys_revoked'           => __( 'An administrator removed the passkeys from your account.', 'brain-2fa' ),
+			'passkey_clone_warning'      => __( 'A sign-in with one of your passkeys was blocked because the passkey may have been copied. Remove it from your account and contact the site administrator.', 'brain-2fa' ),
 		);
 
 		if ( ! isset( $events[ $event ] ) ) {
@@ -409,7 +469,7 @@ class Utils {
 	 *
 	 * @return string Hash of REMOTE_ADDR.
 	 */
-	private static function get_client_ip_hash(): string {
+	public static function get_client_ip_hash(): string {
 		$ip = isset( $_SERVER['REMOTE_ADDR'] ) && is_string( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
 
 		return wp_hash( $ip );

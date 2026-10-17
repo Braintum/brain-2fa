@@ -7,6 +7,7 @@
  */
 namespace Brain_2FA\Auth;
 
+use Brain_2FA\Passkeys\PasskeyLogin;
 use Brain_2FA\Utils;
 
 defined( 'ABSPATH' ) || exit;
@@ -71,6 +72,41 @@ class LoginAssets {
 				'ajax'           => admin_url( 'admin-ajax.php' ),
 				'nonce'          => wp_create_nonce( 'brain2fa_login' ),
 				'rememberDevice' => Utils::is_remember_device_enabled(),
+			)
+		);
+
+		if ( PasskeyLogin::is_enabled() ) {
+			self::enqueue_passkey_login();
+		}
+	}
+
+	/**
+	 * Enqueue the passkey sign-in script.
+	 *
+	 * @return void
+	 */
+	private static function enqueue_passkey_login(): void {
+		$asset_file = BRAIN_2FA_PLUGIN_DIR . 'assets/js/passkey-login.asset.php';
+		$asset_data = file_exists( $asset_file ) ? require $asset_file : array(
+			'dependencies' => array(),
+			'version'      => BRAIN_2FA_VERSION,
+		);
+
+		wp_enqueue_script(
+			'brain2fa-passkey-login',
+			BRAIN_2FA_PLUGIN_URL . 'assets/js/passkey-login.js',
+			$asset_data['dependencies'],
+			$asset_data['version'],
+			true
+		);
+
+		wp_set_script_translations( 'brain2fa-passkey-login', 'brain-2fa', BRAIN_2FA_PLUGIN_DIR . 'languages' );
+
+		wp_localize_script(
+			'brain2fa-passkey-login',
+			'Brain2FAPasskeys',
+			array(
+				'ajax' => admin_url( 'admin-ajax.php' ),
 			)
 		);
 	}

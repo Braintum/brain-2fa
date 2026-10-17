@@ -10,6 +10,10 @@
 
 namespace Brain_2FA\Admin;
 
+use Brain_2FA\Passkeys\PasskeyLogin;
+use Brain_2FA\Passkeys\PasskeyRegistration;
+use Brain_2FA\Passkeys\PasskeyRepository;
+use Brain_2FA\Passkeys\WebAuthnServer;
 use Brain_2FA\TwoFactor\Methods\EmailMethod;
 use Brain_2FA\Utils;
 
@@ -159,6 +163,14 @@ class Settings {
 			'brain2fa_methods_section'
 		);
 
+		add_settings_field(
+			'enable_passkeys',
+			__( 'Enable Passkeys', 'brain-2fa' ),
+			array( $this, 'enable_passkeys_callback' ),
+			'brain-2fa-settings',
+			'brain2fa_methods_section'
+		);
+
 		// Advanced Settings Section.
 		add_settings_section(
 			'brain2fa_advanced_section',
@@ -200,6 +212,7 @@ class Settings {
 		$sanitized['grace_period_days'] = min( 365, absint( $input['grace_period_days'] ?? 14 ) );
 		$sanitized['enable_totp']       = ! empty( $input['enable_totp'] );
 		$sanitized['enable_email']      = ! empty( $input['enable_email'] );
+		$sanitized['enable_passkeys']   = ! empty( $input['enable_passkeys'] );
 		$default_method                 = $input['default_method'] ?? 'totp';
 		$default_method                 = 'email_backup' === $default_method ? 'email' : $default_method;
 		if ( ! in_array( $default_method, array( 'totp', 'email' ), true ) || ( 'totp' === $default_method && ! $sanitized['enable_totp'] ) || ( 'email' === $default_method && ! $sanitized['enable_email'] ) ) {
@@ -346,6 +359,30 @@ class Settings {
 	}
 
 	/**
+	 * Enable passkeys field callback.
+	 *
+	 * @return void
+	 */
+	public function enable_passkeys_callback(): void {
+		$options = get_option( 'brain2fa_settings', array() );
+		$checked = ! empty( $options['enable_passkeys'] );
+		?>
+		<label>
+			<input type="checkbox" name="brain2fa_settings[enable_passkeys]" value="1" <?php checked( $checked ); ?>>
+			<?php esc_html_e( 'Allow users to sign in without a password using passkeys (Face ID, Touch ID, Windows Hello, phones or security keys)', 'brain-2fa' ); ?>
+		</label>
+		<p class="description">
+			<?php esc_html_e( 'A passkey sign-in counts as two-factor authentication. Users add passkeys on their Login Security page.', 'brain-2fa' ); ?>
+		</p>
+		<?php if ( ! WebAuthnServer::is_available() ) : ?>
+			<p class="description" style="color: #d63638;">
+				<?php esc_html_e( 'Passkeys need HTTPS. Your site address does not use HTTPS, so passkeys stay hidden until it does.', 'brain-2fa' ); ?>
+			</p>
+		<?php endif; ?>
+		<?php
+	}
+
+	/**
 	 * Field callbacks.
 	 */
 	public function code_expiry_callback(): void {
@@ -449,11 +486,32 @@ class Settings {
 			// Changing an active factor requires the account password, so a hijacked session cannot do it.
 			if ( in_array( $action, array( 'deactivate', 'regenerate_recovery_codes' ), true ) ) {
 				$password     = isset( $_POST['brain2fa_confirm_password'] ) && is_string( $_POST['brain2fa_confirm_password'] ) ? wp_unslash( $_POST['brain2fa_confirm_password'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Passwords must not be altered before checking.
-				$confirmation = $this->confirm_password( $current_user, $password );
+				$confirmation = Utils::confirm_password( $current_user, $password );
 				if ( is_wp_error( $confirmation ) ) {
 					echo '<div class="notice notice-error"><p>' . esc_html( $confirmation->get_error_message() ) . '</p></div>';
 					$action = '';
 				}
+			}
+
+			if ( in_array( $action, array( 'passkey_remove', 'passkey_rename' ), true ) && PasskeyLogin::is_enabled() ) {
+				$passkey_id = isset( $_POST['brain2fa_passkey_id'] ) ? absint( wp_unslash( $_POST['brain2fa_passkey_id'] ) ) : 0;
+
+				if ( 'passkey_remove' === $action ) {
+					$password = isset( $_POST['brain2fa_confirm_password'] ) && is_string( $_POST['brain2fa_confirm_password'] ) ? wp_unslash( $_POST['brain2fa_confirm_password'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Passwords must not be altered before checking.
+					$result   = PasskeyRegistration::remove( $current_user, $passkey_id, $password );
+					$success  = __( 'The passkey was removed.', 'brain-2fa' );
+				} else {
+					$name    = isset( $_POST['brain2fa_passkey_name'] ) ? sanitize_text_field( wp_unslash( $_POST['brain2fa_passkey_name'] ) ) : '';
+					$result  = PasskeyRegistration::rename( $current_user, $passkey_id, $name );
+					$success = __( 'The passkey was renamed.', 'brain-2fa' );
+				}
+
+				if ( is_wp_error( $result ) ) {
+					echo '<div class="notice notice-error"><p>' . esc_html( $result->get_error_message() ) . '</p></div>';
+				} else {
+					echo '<div class="notice notice-success"><p>' . esc_html( $success ) . '</p></div>';
+				}
+				$action = '';
 			}
 
 			// A new email code replaces the pending one; activation below then sends it.
@@ -540,29 +598,10 @@ class Settings {
 		$role_requires_2fa  = Utils::is_2fa_required_for_user( $current_user );
 		$must_enroll        = Utils::is_enrollment_required( $current_user );
 
+		// Passkeys: only shown when enabled and served over HTTPS; restricted users enroll in a code method first.
+		$passkeys_enabled = PasskeyLogin::is_enabled() && ! $must_enroll;
+		$passkeys         = $passkeys_enabled ? PasskeyRepository::get_for_user( $current_user->ID ) : array();
+
 		include BRAIN_2FA_PLUGIN_DIR . 'includes/Admin/views/login-security-page.php';
-	}
-
-	/**
-	 * Confirm the current user's password before a sensitive two-factor change.
-	 *
-	 * Failed attempts count toward the same lockout as failed login codes.
-	 *
-	 * @param \WP_User $user     The current user.
-	 * @param string   $password The submitted password, unslashed and unsanitized.
-	 * @return true|\WP_Error True when the password is correct.
-	 */
-	private function confirm_password( \WP_User $user, string $password ) {
-		$locked_for = Utils::get_verification_lockout( $user );
-		if ( $locked_for > 0 ) {
-			return new \WP_Error( 'brain2fa_too_many_attempts', Utils::get_lockout_message( $locked_for ) );
-		}
-
-		if ( '' === $password || ! wp_check_password( $password, $user->user_pass, $user->ID ) ) {
-			Utils::record_failed_verification( $user );
-			return new \WP_Error( 'brain2fa_incorrect_password', __( 'The password you entered is incorrect. No changes were made.', 'brain-2fa' ) );
-		}
-
-		return true;
 	}
 }

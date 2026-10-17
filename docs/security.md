@@ -13,6 +13,7 @@ Brain 2FA runs inside the WordPress authentication path. This document lists wha
 - **Database disclosure of long-lived tokens.** Recovery codes and trusted-device tokens are stored only as `wp_hash_password()` hashes.
 - **TOTP code replay.** Each TOTP time step is accepted once per user, and never after a later step (`brain2fa_totp_last_step`), so an intercepted code cannot be reused within its validity window.
 - **Stale trusted devices after account recovery.** Changing or resetting the password revokes all trusted devices.
+- **Phishing and stolen passwords, for passkey users.** A passkey only signs challenges for this site's exact origin, and nothing reusable is sent to the server.
 
 ## Out of scope
 
@@ -39,6 +40,16 @@ Brain 2FA runs inside the WordPress authentication path. This document lists wha
 | Trusted devices capped at 10 per user, with expiry | Limits the impact of stale cookies; tokens are hashed at rest. |
 | `hash_equals()` for email and TOTP codes | Constant-time comparison. |
 | Email code consumed by `delete_transient()` | Only the request whose delete succeeds may use the code, so concurrent submissions cannot both pass. |
+| Passkeys require user verification | A passkey sign-in then proves possession plus a biometric or PIN, so it satisfies 2FA without a code. |
+| Exact origin check before the library | lbuchs/webauthn accepts any origin whose host ends with the RP ID (for example `evilexample.com` for `example.com`). `WebAuthnServer::check_client_data()` compares origins exactly first. |
+| Challenges and login tokens bound to an httponly cookie and consumed with `delete_transient()` | A challenge or token is useless in another browser, and concurrent requests cannot both use it. |
+| Passkey sign-in ends with a normal form submission (token + `authenticate` filter at priority 15) | Core sign-in, redirects, remember-me, other security plugins and restricted mode behave exactly as for password sign-ins, with no separate session-creation code. |
+| Adding or removing a passkey needs the password; admins can revoke; owners are emailed | A passkey is a permanent passwordless sign-in, so planting one is the most valuable thing a hijacked session could do. |
+| A password reset does not delete passkeys | They are independent credentials. An administrator can revoke them after a compromise. |
+| The per-user code lockout does not block passkey sign-in | A passkey cannot be guessed, and an attacker who knows the password should not be able to lock the owner out of their passkey. Failed assertions count toward the IP limit. |
+| Signature counter regression blocks the sign-in and emails the owner | A counter going backwards suggests a copied authenticator. Synced passkeys report 0 and are not affected. |
+| No AAGUID metadata download | Looking up authenticator names would contact a third party. Only the AAGUID is stored. |
+| `vendor/lbuchs/webauthn/_test` is excluded from builds | It contains a web-reachable demo server. `deploy.sh` refuses a build that includes it. |
 | TOTP steps checked explicitly instead of otphp's `verify()` | otphp 11's `verify()` takes a leeway in seconds (not periods) and keeps no record of used codes. `TotpMethod::verify_totp_code()` checks the current step ±1 and stores the last accepted step in user meta (not a transient, which an object cache could evict). |
 
 ## Invariants
@@ -46,10 +57,11 @@ Brain 2FA runs inside the WordPress authentication path. This document lists wha
 1. Every policy rule is enforced in `verify_2fa()`, and it fails closed (returns `WP_Error`) on missing or disabled methods.
 2. The preflight endpoint never authenticates a session.
 3. The lockout is checked before any code is evaluated or any email code is sent. Every failed code or password confirmation calls `Utils::record_failed_verification()`.
-4. No secret, code or recovery code is logged, sent to a remote service, or rendered anywhere except the owning user's Login Security page at setup time.
-5. Long-lived tokens are random (`random_int`, `wp_generate_password`) and hashed at rest.
-6. Every admin state change checks both a capability and a nonce. The Login Security page only acts on `wp_get_current_user()`. Disabling a factor or regenerating recovery codes also requires the account password.
-7. All output is escaped at the point of output, and all input is unslashed and sanitized.
+4. Passkey ceremonies require user verification, an exact origin match and a single-use, cookie-bound challenge; passkey login tokens are single-use, cookie-bound and only accepted on interactive form posts.
+5. No secret, code or recovery code is logged, sent to a remote service, or rendered anywhere except the owning user's Login Security page at setup time.
+6. Long-lived tokens are random (`random_int`, `wp_generate_password`) and hashed at rest.
+7. Every admin state change checks both a capability and a nonce. The Login Security page only acts on `wp_get_current_user()`. Disabling a factor, regenerating recovery codes, and adding or removing a passkey also require the account password.
+8. All output is escaped at the point of output, and all input is unslashed and sanitized.
 
 ## Known gaps and hardening backlog
 
@@ -65,6 +77,8 @@ These were observed in the code on 2026-10-16. Re-check them before relying on t
 
 - **Restricted mode is enforced by redirects** on `admin_init` and `template_redirect`, plus REST and AJAX refusals. Code from other plugins that acts earlier (for example form handlers on `init`) still runs for restricted users.
 - **Application passwords bypass 2FA.** WordPress core validates application passwords for REST requests without the `authenticate` filter, so Brain 2FA does not see them. This is core's intended design for API access; sites that do not need application passwords can disable them with the `wp_is_application_passwords_available` filter.
+- **Passkey data stays after uninstall.** The plugin has no uninstall routine yet, so the `brain2fa_passkeys` table and passkey user meta remain if the plugin is deleted.
+- **Passkeys do not count toward required-role enrollment yet** (phase 2), and there is no passkey second step after a password.
 - **Custom login forms** other than `wp-login.php`, the WooCommerce form and `wp_login_form()` get no code field, and users with 2FA cannot sign in through them (this fails closed).
 
 ## Reporting

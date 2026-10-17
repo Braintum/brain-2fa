@@ -287,6 +287,94 @@ defined( 'ABSPATH' ) || exit;
 					<?php endif; ?>
 				</div>
 			<?php endif; ?>
+
+			<?php if ( $passkeys_enabled ) : ?>
+				<div class="brain2fa-card brain2fa-passkeys-card" id="brain2fa-passkeys">
+					<h2><?php esc_html_e( 'Passkeys', 'brain-2fa' ); ?></h2>
+					<p><?php esc_html_e( 'Sign in without a password using your device screen lock (Face ID, Touch ID, Windows Hello), your phone, or a security key. A passkey sign-in also counts as two-factor authentication.', 'brain-2fa' ); ?></p>
+
+					<?php if ( empty( $passkeys ) ) : ?>
+						<p class="description"><?php esc_html_e( 'You have not added any passkeys yet.', 'brain-2fa' ); ?></p>
+					<?php else : ?>
+						<table class="widefat striped brain2fa-passkeys-table">
+							<thead>
+								<tr>
+									<th scope="col"><?php esc_html_e( 'Name', 'brain-2fa' ); ?></th>
+									<th scope="col"><?php esc_html_e( 'Added', 'brain-2fa' ); ?></th>
+									<th scope="col"><?php esc_html_e( 'Last used', 'brain-2fa' ); ?></th>
+									<th scope="col"><?php esc_html_e( 'Manage', 'brain-2fa' ); ?></th>
+								</tr>
+							</thead>
+							<tbody>
+								<?php foreach ( $passkeys as $passkey ) : ?>
+									<tr>
+										<td>
+											<strong><?php echo esc_html( $passkey->name ); ?></strong>
+											<?php if ( ! empty( $passkey->backed_up ) ) : ?>
+												<br><span class="description"><?php esc_html_e( 'Synced across your devices', 'brain-2fa' ); ?></span>
+											<?php endif; ?>
+										</td>
+										<td><?php echo esc_html( get_date_from_gmt( $passkey->created_at, get_option( 'date_format' ) ) ); ?></td>
+										<td>
+											<?php
+											echo esc_html(
+												$passkey->last_used_at
+													? get_date_from_gmt( $passkey->last_used_at, get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) )
+													: __( 'Never', 'brain-2fa' )
+											);
+											?>
+										</td>
+										<td>
+											<details>
+												<summary><?php esc_html_e( 'Rename or remove', 'brain-2fa' ); ?></summary>
+												<form method="post" action="">
+													<?php wp_nonce_field( 'brain2fa_setup_action', 'brain2fa_setup_nonce' ); ?>
+													<input type="hidden" name="brain2fa_action" value="passkey_rename">
+													<input type="hidden" name="brain2fa_passkey_id" value="<?php echo esc_attr( $passkey->id ); ?>">
+													<p>
+														<label for="brain2fa_passkey_name_<?php echo esc_attr( $passkey->id ); ?>"><?php esc_html_e( 'Name', 'brain-2fa' ); ?></label><br>
+														<input type="text" id="brain2fa_passkey_name_<?php echo esc_attr( $passkey->id ); ?>" name="brain2fa_passkey_name" value="<?php echo esc_attr( $passkey->name ); ?>" maxlength="100" required>
+														<button type="submit" class="button button-secondary"><?php esc_html_e( 'Rename', 'brain-2fa' ); ?></button>
+													</p>
+												</form>
+												<form method="post" action="">
+													<?php wp_nonce_field( 'brain2fa_setup_action', 'brain2fa_setup_nonce' ); ?>
+													<input type="hidden" name="brain2fa_action" value="passkey_remove">
+													<input type="hidden" name="brain2fa_passkey_id" value="<?php echo esc_attr( $passkey->id ); ?>">
+													<p>
+														<label for="brain2fa_passkey_remove_password_<?php echo esc_attr( $passkey->id ); ?>"><?php esc_html_e( 'Confirm your password', 'brain-2fa' ); ?></label><br>
+														<input type="password" id="brain2fa_passkey_remove_password_<?php echo esc_attr( $passkey->id ); ?>" name="brain2fa_confirm_password" autocomplete="current-password" required>
+														<button type="submit" class="button button-secondary brain2fa-button-danger" onclick="return confirm('<?php esc_attr_e( 'Remove this passkey? You will no longer be able to sign in with it.', 'brain-2fa' ); ?>');"><?php esc_html_e( 'Remove', 'brain-2fa' ); ?></button>
+													</p>
+												</form>
+											</details>
+										</td>
+									</tr>
+								<?php endforeach; ?>
+							</tbody>
+						</table>
+					<?php endif; ?>
+
+					<h3><?php esc_html_e( 'Add a passkey', 'brain-2fa' ); ?></h3>
+					<div id="brain2fa-passkey-register">
+						<p>
+							<label for="brain2fa_passkey_new_name"><?php esc_html_e( 'Passkey name', 'brain-2fa' ); ?></label><br>
+							<input type="text" id="brain2fa_passkey_new_name" class="regular-text" maxlength="100" placeholder="<?php esc_attr_e( 'For example: MacBook Touch ID', 'brain-2fa' ); ?>">
+						</p>
+						<p>
+							<label for="brain2fa_passkey_password"><?php esc_html_e( 'Confirm your password', 'brain-2fa' ); ?></label><br>
+							<input type="password" id="brain2fa_passkey_password" class="regular-text" autocomplete="current-password">
+						</p>
+						<p>
+							<button type="button" class="button button-primary" id="brain2fa-passkey-add">
+								<?php esc_html_e( 'Add a passkey', 'brain-2fa' ); ?>
+							</button>
+						</p>
+						<div id="brain2fa-passkey-message" aria-live="polite"></div>
+						<noscript><p class="description"><?php esc_html_e( 'Adding a passkey requires JavaScript.', 'brain-2fa' ); ?></p></noscript>
+					</div>
+				</div>
+			<?php endif; ?>
 		</div>
 
 	</div>

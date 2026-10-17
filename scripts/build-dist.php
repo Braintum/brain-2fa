@@ -15,6 +15,9 @@ $archive     = $dist_dir . '/' . $plugin_slug . '.zip';
 $directories = array( 'assets', 'includes', 'languages', 'vendor' );
 $files       = array( 'brain-2fa.php', 'composer.json', 'composer.lock', 'readme.txt' );
 
+// Paths never shipped: lbuchs/webauthn's _test folder contains a web-reachable demo server.
+$excluded    = array( 'vendor/lbuchs/webauthn/_test' );
+
 /**
  * Remove a known build directory.
  *
@@ -45,11 +48,12 @@ function brain2fa_remove_directory( string $directory ): void {
 /**
  * Copy a file or directory into the staging directory.
  *
- * @param string $source Source path.
- * @param string $destination Destination path.
+ * @param string   $source Source path.
+ * @param string   $destination Destination path.
+ * @param string[] $excluded Absolute paths to skip, with everything below them.
  * @return void
  */
-function brain2fa_copy( string $source, string $destination ): void {
+function brain2fa_copy( string $source, string $destination, array $excluded = array() ): void {
 	if ( is_dir( $source ) ) {
 		mkdir( $destination, 0755, true );
 		$iterator = new RecursiveIteratorIterator(
@@ -58,6 +62,12 @@ function brain2fa_copy( string $source, string $destination ): void {
 		);
 
 		foreach ( $iterator as $item ) {
+			foreach ( $excluded as $excluded_path ) {
+				if ( $item->getPathname() === $excluded_path || str_starts_with( $item->getPathname(), $excluded_path . '/' ) ) {
+					continue 2;
+				}
+			}
+
 			$target = $destination . '/' . $iterator->getSubPathName();
 			if ( $item->isDir() ) {
 				mkdir( $target, 0755, true );
@@ -84,8 +94,10 @@ if ( file_exists( $archive ) ) {
 
 mkdir( $staging_dir, 0755, true );
 
+$excluded_paths = array_map( static fn( string $path ) => $root . '/' . $path, $excluded );
+
 foreach ( $directories as $directory ) {
-	brain2fa_copy( $root . '/' . $directory, $staging_dir . '/' . $directory );
+	brain2fa_copy( $root . '/' . $directory, $staging_dir . '/' . $directory, $excluded_paths );
 }
 
 foreach ( $files as $file ) {

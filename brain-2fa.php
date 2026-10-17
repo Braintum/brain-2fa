@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Brain 2FA
  * Description: Two Factor Authentication (2FA) plugin for WordPress.
- * Version: 1.0.4
+ * Version: 1.1.0
  * Author: Braintum
  * Author URI: https://www.braintum.com/
  * Text Domain: brain-2fa
@@ -24,7 +24,7 @@ if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
 	require_once __DIR__ . '/vendor/autoload.php';
 }
 
-define( 'BRAIN_2FA_VERSION', '1.0.4' );
+define( 'BRAIN_2FA_VERSION', '1.1.0' );
 define( 'BRAIN_2FA_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'BRAIN_2FA_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
@@ -36,6 +36,9 @@ define( 'BRAIN_2FA_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 function brain_2fa(): \Brain_2FA\App {
 	return \Brain_2FA\App::instance();
 }
+
+// Create database tables on activation (updates are handled by Install::maybe_upgrade()).
+register_activation_hook( __FILE__, array( \Brain_2FA\Install::class, 'activate' ) );
 
 // Initialize the plugin.
 brain_2fa();

@@ -6,6 +6,7 @@
   "require": {
     "php": "^8.1",
     "bacon/bacon-qr-code": "^3.1.1",
+    "lbuchs/webauthn": "^2.2",
     "spomky-labs/otphp": "^11.4.3"
   },
   "require-dev": {

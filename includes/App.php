@@ -19,6 +19,9 @@ use Brain_2FA\TwoFactor\Manager;
 use Brain_2FA\TwoFactor\Methods\EmailMethod;
 use Brain_2FA\TwoFactor\Methods\TotpMethod;
 use Brain_2FA\Auth\LoginAssets;
+use Brain_2FA\Passkeys\PasskeyLogin;
+use Brain_2FA\Passkeys\PasskeyRegistration;
+use Brain_2FA\Passkeys\PasskeyRepository;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -168,6 +171,8 @@ final class App {
 	 * @return void
 	 */
 	public function on_plugins_loaded() {
+		Install::maybe_upgrade();
+
 		$this->manager->register_method( new TotpMethod() );
 		$this->manager->register_method( new EmailMethod() );
 
@@ -176,6 +181,12 @@ final class App {
 		LoginAssets::init();
 		AccountEvents::init();
 		EnrollmentGuard::init();
+		PasskeyRepository::init();
+
+		if ( Utils::is_passkeys_enabled() ) {
+			PasskeyLogin::init();
+			PasskeyRegistration::init();
+		}
 
 		// Initialize admin classes.
 		if ( is_admin() ) {

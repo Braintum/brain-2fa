@@ -4,20 +4,21 @@ Tags: two-factor authentication, 2fa, security, authenticator, totp
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 1.0.4
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Add TOTP and email-based two-factor authentication to WordPress accounts.
+Add two-factor authentication and passwordless passkey sign-in to WordPress accounts.
 
 == Description ==
 
-Brain 2FA protects WordPress accounts with a second authentication factor. After entering their password, users confirm their identity with a six-digit code from an authenticator app or from their email inbox.
+Brain 2FA protects WordPress accounts with a second authentication factor. After entering their password, users confirm their identity with a six-digit code from an authenticator app or from their email inbox. Users can also sign in without a password using a passkey.
 
-Codes are generated and verified on your own server. Brain 2FA does not send any data to third-party services.
+Codes are generated and passkeys are verified on your own server. Brain 2FA does not send any data to third-party services.
 
 = Features =
 
+* **Passkeys:** Sign in without a password using Face ID, Touch ID, Windows Hello, a phone or a security key. Passkeys are offered right in the username field, and a passkey sign-in counts as two-factor authentication. Requires HTTPS; turn it on under **Brain 2FA > Settings**.
 * **Authenticator apps (TOTP):** Works with Google Authenticator, Microsoft Authenticator, Authy, 1Password, Bitwarden and any other TOTP-compatible app. Users set it up by scanning a QR code or entering the secret key manually.
 * **Email verification codes:** Sends a one-time code to the account email address, with a configurable expiry time.
 * **Recovery codes:** TOTP users receive one-time recovery codes they can download and regenerate in case they lose their phone.
@@ -62,9 +63,21 @@ Yes. In **Brain 2FA > Settings**, select the roles that must use 2FA and set a g
 
 Yes. The plugin supports the standard WooCommerce My Account login form. Customers can set up two-factor authentication from the link on their My Account dashboard.
 
+= Can users sign in without a password? =
+
+Yes, with passkeys. Enable **Passkeys** under **Brain 2FA > Settings**, then each user adds a passkey on their **Login Security** page (after confirming their password). On the login form they can pick their passkey from the username field or use the **Sign in with a passkey** button. Because a passkey checks the user's fingerprint, face or device PIN, a passkey sign-in does not ask for a separate verification code.
+
+= Do passkeys need HTTPS? =
+
+Yes. Browsers only allow passkeys on secure (HTTPS) sites. On a site without HTTPS, the passkey options stay hidden.
+
+= What if a user loses the device with their passkey? =
+
+They can still sign in with their password (and their two-factor code, if enabled) and remove the lost passkey on their Login Security page. Administrators can remove all of a user's passkeys from the user's profile.
+
 = Does Brain 2FA connect to external services? =
 
-No. Codes, QR codes and recovery codes are generated on your server, and verification emails are sent through your site's normal WordPress mail setup.
+No. Codes, QR codes and recovery codes are generated on your server, passkeys are verified on your server, and verification emails are sent through your site's normal WordPress mail setup.
 
 = Where can I get support? =
 
@@ -87,6 +100,13 @@ https://github.com/Braintum/brain-2fa
 The JavaScript files in `assets/js/` are generated from the source files in `src/js/`.
 
 == Changelog ==
+
+= 1.1.0 =
+
+* New: Passkeys for passwordless sign-in (Face ID, Touch ID, Windows Hello, phones and security keys). Passkeys are offered in the username field's autofill and through a "Sign in with a passkey" button on the WordPress and WooCommerce login forms. Off by default; requires HTTPS.
+* New: Users add, rename and remove passkeys on their Login Security page. Adding or removing a passkey requires the account password, and users are emailed about each change.
+* New: Administrators can remove all of a user's passkeys from the user's profile.
+* Security: A passkey sign-in requires the device's biometric or PIN check and counts as two-factor authentication. A passkey that appears to have been copied is blocked, and the owner is notified.
 
 = 1.0.4 =
 
@@ -122,6 +142,10 @@ The JavaScript files in `assets/js/` are generated from the source files in `src
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.1.0 =
+
+Adds passkeys for passwordless sign-in. Off by default: enable it under Brain 2FA > Settings (requires HTTPS).
 
 = 1.0.4 =
 

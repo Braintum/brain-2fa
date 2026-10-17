@@ -179,6 +179,9 @@ if [ "$ASSETS_ONLY" -eq 0 ]; then
 	for forbidden in node_modules src .git .wordpress-org scripts package.json webpack.config.js phpcs.xml.dist AGENTS.md CLAUDE.md .claude docs; do
 		[ ! -e "$BUILD_DIR/$forbidden" ] || die "The build must not contain $forbidden."
 	done
+	if [ -e "$BUILD_DIR/vendor/lbuchs/webauthn/_test" ]; then
+		die "The build contains vendor/lbuchs/webauthn/_test (a demo server). Check the exclusions in scripts/build-dist.php."
+	fi
 	if [ -d "$BUILD_DIR/vendor/squizlabs" ] || [ -d "$BUILD_DIR/vendor/wp-coding-standards" ]; then
 		die "The build contains Composer dev dependencies. Run 'npm run package' to rebuild without them."
 	fi
