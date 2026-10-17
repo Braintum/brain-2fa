@@ -1,6 +1,6 @@
 {
   "name": "braintum/brain-2fa",
-  "description": "Brain 2FA plugin for WordPress — TOTP + email based two factor authentication.",
+  "description": "Brain 2FA: two-factor authentication (authenticator app, email codes) and passkey sign-in for WordPress.",
   "license": "GPL-2.0-or-later",
   "type": "wordpress-plugin",
   "require": {

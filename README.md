@@ -57,6 +57,7 @@ npm ci
 | `npm run lint` / `npm run lint:fix` | ESLint (`eslint-config-wordpress`) |
 | `composer phpcs` / `composer phpcbf` | WordPress Coding Standards (WordPress-Extra + WordPress-Docs) and PHP 8.1+ compatibility |
 | `npm run make-pot` | Regenerate `languages/brain-2fa.pot` after changing strings |
+| `npm run test:wp` | WP-CLI integration checks in `tests/wp-cli/` against your local site (development sites only) |
 | `bash scripts/check-versions.sh` | Check that the version, requirements and changelog agree |
 | `npm run package` | Build the production plugin in `dist/brain-2fa` |
 
@@ -79,6 +80,7 @@ brain-2fa/
 ├── assets/              # Compiled assets (generated)
 ├── languages/           # POT file (generated)
 ├── docs/                # Architecture, security model, release process
+├── tests/               # WP-CLI integration checks (npm run test:wp)
 └── scripts/             # Build, deploy and check scripts
 ```
 

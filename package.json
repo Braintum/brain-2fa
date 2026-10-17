@@ -12,10 +12,11 @@
     "dist": "npm run build && npm run make-pot && npm run package",
     "lint": "eslint src/js",
     "lint:fix": "eslint src/js --fix",
+    "test:wp": "bash tests/run-wp-cli.sh",
     "deploy": "bash scripts/deploy.sh",
     "deploy:dry": "bash scripts/deploy.sh --dry-run",
     "deploy:assets": "bash scripts/deploy.sh --assets-only",
-    "make-pot": "wp i18n make-pot . languages/brain-2fa.pot --slug=brain-2fa --domain=brain-2fa --exclude=node_modules,vendor,assets,languages,dist,docs,scripts,.claude,.wordpress-org,src/js/examples.js"
+    "make-pot": "wp i18n make-pot . languages/brain-2fa.pot --slug=brain-2fa --domain=brain-2fa --exclude=node_modules,vendor,assets,languages,dist,docs,scripts,tests,.claude,.wordpress-org,src/js/examples.js"
   },
   "devDependencies": {
     "@babel/core": "^7.23.7",

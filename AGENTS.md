@@ -18,6 +18,7 @@ Keep production changes inside this plugin. Do not modify WordPress core or `ven
 - `includes/Admin/UserProfile.php` owns profile status, grace extensions, and Dashboard notices.
 - `includes/Admin/UserListColumns.php` shows 2FA, setup-deadline, and grace-expiry status in Users.
 - `includes/Emails/` holds every outgoing email: `EmailRegistry` (definitions, placeholders, default text, stored customizations in the `brain2fa_emails` option) and `Mailer` (renders and sends). Send plugin emails only through `Mailer::send( $id, $user, $context )` or, for alerts, `Utils::send_factor_change_notification()`; never call `wp_mail()` directly. A new email needs a definition in `EmailRegistry::get_definitions()` so admins can edit it.
+- `tests/wp-cli/` holds WP-CLI integration checks (see Validation); they are not shipped.
 - `uninstall.php` removes all plugin data when the plugin is deleted: per-site options, transients and the passkeys table (every site on multisite), then the user meta. It lists the user meta keys explicitly, so add any new `brain2fa_*` user meta key there. `BRAIN2FA_KEEP_DATA_ON_UNINSTALL` in `wp-config.php` keeps the data.
 - `includes/Utils.php` is the shared policy layer for enablement, role enforcement, and grace deadlines.
 
@@ -65,7 +66,7 @@ php wp-cli.phar eval 'echo Brain_2FA\Utils::get_grace_period_days();'
 
 CI (`.github/workflows/ci.yml`) runs these checks plus PHP syntax on 8.1–8.4 and WordPress.org Plugin Check on every push to `master` and every pull request. The plugin is live on WordPress.org, so keep it green.
 
-There is no PHPUnit configuration in this plugin. For login changes, test a required user with no 2FA during the grace window and after expiry (restricted mode, including a 0-day grace period), a user with active TOTP through both the JavaScript-assisted path and a no-JavaScript submission (the server-rendered `brain2fa_code_fallback` field), and a WooCommerce customer on the My Account login form. For email changes, capture mail with the `pre_wp_mail` filter and check the rendered subject, body, recipient and sender.
+There is no PHPUnit configuration in this plugin. `npm run test:wp` (`tests/run-wp-cli.sh`) runs the WP-CLI checks in `tests/wp-cli/` against the local site: tab-scoped settings saves, Login Security page states, the code-method lockout warning, editable emails and uninstall. They create throwaway users, capture mail and restore every option they touch, but run them on development sites only. Run one with `bash tests/run-wp-cli.sh emails`. Add a check there when you change behaviour they cover: use `b2_`-prefixed helpers, `$GLOBALS` for counters (top-level variables are local inside `wp eval-file`), and end with `WP_CLI::halt( 1 )` on failure. Not everything can be checked this way. For login changes, test a required user with no 2FA during the grace window and after expiry (restricted mode, including a 0-day grace period), a user with active TOTP through both the JavaScript-assisted path and a no-JavaScript submission (the server-rendered `brain2fa_code_fallback` field), and a WooCommerce customer on the My Account login form. For email changes, capture mail with the `pre_wp_mail` filter and check the rendered subject, body, recipient and sender.
 
 ## Coding Standards
 

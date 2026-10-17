@@ -5,11 +5,15 @@ Brain 2FA is a WordPress plugin (PHP 8.1+, WordPress 6.4+) that adds a second au
 ## Bootstrap
 
 1. `brain-2fa.php` defines `BRAIN_2FA_VERSION`, `BRAIN_2FA_PLUGIN_DIR` and `BRAIN_2FA_PLUGIN_URL`, loads Composer's autoloader and instantiates the `Brain_2FA\App` singleton through `brain_2fa()`.
+   It also registers `Install::activate()` as the activation hook, which creates the passkeys table.
 2. `App` hooks `on_plugins_loaded()` to `plugins_loaded` at `PHP_INT_MAX`. That method:
+   - runs `Install::maybe_upgrade()`, which updates the passkeys table when `brain2fa_db_version` differs from `Install::DB_VERSION`;
    - registers `TotpMethod` and `EmailMethod` with `TwoFactor\Manager`;
-   - calls `LoginController::init()` and `LoginAssets::init()` on every request;
-   - in wp-admin only, instantiates `Settings`, `UserProfile`, `Assets` and `UserListColumns`;
+   - calls `LoginController::init()`, `LoginAssets::init()`, `AccountEvents::init()`, `EnrollmentGuard::init()` and `PasskeyRepository::init()` on every request;
+   - calls `PasskeyLogin::init()` and `PasskeyRegistration::init()` only while passkeys are turned on (`Utils::is_passkeys_enabled()`);
+   - in wp-admin only, instantiates `Settings`, `UserProfile`, `Assets` and `UserListColumns`, and calls `EmailSettings::init()`;
    - fires the `brain_2fa_loaded` action.
+3. Deleting the plugin runs `uninstall.php` (see "Uninstall" under Data model). WordPress loads it without the plugin's bootstrap.
 
 ## Components
 

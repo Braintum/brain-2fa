@@ -66,4 +66,4 @@ phpunit.xml
 
 # Deployment
 *.zip
-release/
+/release/
