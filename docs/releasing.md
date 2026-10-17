@@ -27,7 +27,7 @@ WordPress.org SVN is a release system, not a development repository. Only push v
 | `screenshot-N.png` | any | Screenshots. The caption is line N of `== Screenshots ==` in readme.txt. |
 | `blueprints/blueprint.json` | — | Live Preview in WordPress Playground. |
 
-`.wordpress-org/source/` keeps the original, unedited screenshots. The deploy script uploads only the file names in the table above. Screenshot 4 is a redacted copy (a placeholder replaces the real email address); keep personal data out of every screenshot.
+`.wordpress-org/source/` keeps the original, unedited screenshots and `banner.html`, the source of both banners (the render commands are at the top of the file). The deploy script uploads only the file names in the table above. Screenshot 6 is a redacted copy (a placeholder replaces the real email address); keep personal data out of every screenshot.
 
 ## Releasing a new version
 

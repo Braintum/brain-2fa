@@ -1,0 +1,123 @@
+<!doctype html>
+<!--
+	Source of the WordPress.org banners. Render both sizes from the plugin directory:
+
+	CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+	"$CHROME" --headless=new --hide-scrollbars --virtual-time-budget=5000 --force-device-scale-factor=1 --window-size=772,250 --screenshot=.wordpress-org/banner-772x250.png "file://$PWD/.wordpress-org/source/banner.html"
+	"$CHROME" --headless=new --hide-scrollbars --virtual-time-budget=5000 --force-device-scale-factor=2 --window-size=772,250 --screenshot=.wordpress-org/banner-1544x500.png "file://$PWD/.wordpress-org/source/banner.html"
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Brain 2FA banner</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=block">
+<style>
+	* { box-sizing: border-box; margin: 0; padding: 0; }
+	html, body { width: 772px; height: 250px; overflow: hidden; }
+	body {
+		position: relative;
+		font-family: Inter, -apple-system, sans-serif;
+		color: #1d2327;
+		background:
+			radial-gradient(circle, #c9ced6 0.7px, transparent 0.9px) 0 0 / 12px 12px,
+			linear-gradient(135deg, #f8f9fb 0%, #eef0f5 100%);
+		-webkit-font-smoothing: antialiased;
+	}
+	body::after {
+		content: "";
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		height: 4px;
+		background: linear-gradient(90deg, #2ea043, #d93a2b);
+	}
+	.logo { position: absolute; left: 50px; top: 46px; width: 136px; }
+	.text { position: absolute; left: 218px; top: 54px; }
+	h1 { font-size: 44px; font-weight: 800; letter-spacing: -0.5px; line-height: 1; }
+	.tagline { margin-top: 12px; font-size: 14px; color: #50575e; }
+	.pills { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 7px 6px; width: 320px; }
+	.pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
+		height: 21px;
+		padding: 0 10px 0 9px;
+		border: 1px solid #d0d5dc;
+		border-radius: 11px;
+		background: #fff;
+		font-size: 9.5px;
+		font-weight: 500;
+		color: #2c3338;
+	}
+	.pill::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: #2ea043; }
+	.card {
+		position: absolute;
+		left: 553px;
+		top: 34px;
+		width: 178px;
+		padding: 15px 16px 16px;
+		border: 1px solid #d0d5dc;
+		border-radius: 9px;
+		background: #fff;
+		box-shadow: 0 6px 18px rgba(16, 24, 40, 0.06);
+	}
+	.label { font-size: 10px; font-weight: 500; }
+	.digits { margin-top: 8px; display: flex; gap: 4px; }
+	.digits span {
+		flex: 1;
+		height: 28px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border: 1px solid #8c8f94;
+		border-radius: 4px;
+		font-size: 15px;
+		font-weight: 600;
+	}
+	.digits span:nth-child(4) { margin-left: 3px; }
+	.digits span:last-child { border-color: #3858e9; box-shadow: 0 0 0 0.5px #3858e9; }
+	.button {
+		margin-top: 10px;
+		height: 26px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 6px;
+		border-radius: 3px;
+		background: #3858e9;
+		color: #fff;
+		font-size: 10px;
+		font-weight: 500;
+	}
+	.or { margin-top: 9px; display: flex; align-items: center; gap: 8px; font-size: 8.5px; color: #8c8f94; }
+	.or::before, .or::after { content: ""; flex: 1; height: 1px; background: #e2e4e7; }
+	.button.passkey { margin-top: 9px; background: #fff; border: 1px solid #3858e9; color: #2145e6; }
+	.button svg { width: 12px; height: 12px; }
+</style>
+</head>
+<body>
+	<img class="logo" src="banner-logo.png" alt="">
+	<div class="text">
+		<h1>Brain 2FA</h1>
+		<p class="tagline">Passkeys and two-factor authentication</p>
+		<div class="pills">
+			<span class="pill">Passkeys &amp; passwordless sign-in</span>
+			<span class="pill">Authenticator apps</span>
+			<span class="pill">Email codes</span>
+			<span class="pill">Recovery codes</span>
+			<span class="pill">Trusted devices</span>
+		</div>
+	</div>
+	<div class="card">
+		<div class="label">Verification Code</div>
+		<div class="digits"><span>4</span><span>8</span><span>2</span><span>9</span><span>1</span><span>7</span></div>
+		<div class="button">Verify &amp; Log In</div>
+		<div class="or">or</div>
+		<div class="button passkey">
+			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="4.5"/><path d="M10.7 12.3 20 3M16.5 6.5l2.5 2.5M14 9l2 2"/></svg>
+			Sign in with a passkey
+		</div>
+	</div>
+</body>
+</html>

@@ -106,12 +106,18 @@ Visit [https://www.braintum.com/support/](https://www.braintum.com/support/).
 
 == Screenshots ==
 
-1. Site-wide settings: enable 2FA, require it for selected roles, set the setup grace period and choose the available methods.
-2. Authenticator app setup: scan the QR code or enter the secret key manually, then confirm with a code.
-3. Two-factor authentication active, with one-time recovery codes to download and store safely.
-4. Email authentication setup: verification codes are sent to the account email address.
-5. The verification code step on the WordPress login form, with the "Remember this device" option.
-6. An example verification code email.
+1. Authentication Methods settings: turn on two-factor authentication, the authenticator app and email codes, with a status summary at the top.
+2. Passkey settings: passkey sign-in, passkeys as a second factor, optional passkey-only accounts and the default code method.
+3. Enrollment Requirements: choose the roles that must set up two-factor authentication and how many days they have to do it.
+4. Trusted Devices: let users skip the code on a trusted browser for a set number of days.
+5. Emails: the sign-in code email and nine security alerts, each with editable text.
+6. Editing an email: subject and text with placeholders, a live preview and a test email.
+7. The Login Security page: a summary of your sign-in protection and your passkeys.
+8. Authenticator app setup: scan the QR code or enter the key manually, then confirm with a code.
+9. Passkey-only sign-in: turn off password sign-in for your own account.
+10. The WordPress login form with the "Sign in with a passkey" button.
+11. A passkey as the second step after the password.
+12. Authenticator app active, with one-time recovery codes to download and store safely.
 
 == Development ==
 
