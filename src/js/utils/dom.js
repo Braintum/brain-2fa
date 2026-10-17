@@ -114,25 +114,41 @@ export function show2FAField( form, method = 'email', showRememberDevice = false
 }
 
 /**
+ * Get the paragraph (or button) that holds the form's submit button.
+ *
+ * @param {HTMLFormElement} form - The login form
+ * @return {HTMLElement|null} Submit row, or null when not found
+ */
+function getSubmitRow( form ) {
+	const submitButton = form.querySelector( 'p.submit, button[type="submit"]' );
+	return submitButton?.closest( 'p' ) || submitButton || null;
+}
+
+/**
  * Show the passkey option for the second step after a password.
  *
- * @param {HTMLFormElement} form          - The login form
- * @param {boolean}         hasCodeField  - Whether a code field is also shown
- * @param {Function}        onUsePasskey  - Starts the passkey ceremony
+ * Replaces any passkey step already shown, so it can be redrawn when the
+ * available options change (for example, after an email code was sent).
+ *
+ * @param {HTMLFormElement} form                       - The login form
+ * @param {Object}          options                    - Step options
+ * @param {boolean}         options.hasCodeField       - Whether a code field is also shown
+ * @param {Function}        options.onUsePasskey       - Starts the passkey ceremony
+ * @param {Function|null}   options.onRequestEmailCode - Asks for an email code, or null to hide that option
  */
-export function showPasskeyStep( form, hasCodeField, onUsePasskey ) {
-	if ( form.querySelector( '.brain2fa-passkey-step' ) ) {
-		return;
-	}
+export function showPasskeyStep( form, { hasCodeField, onUsePasskey, onRequestEmailCode = null }) {
+	form.querySelector( '.brain2fa-passkey-step' )?.remove();
 
-	const submitButton = form.querySelector( 'p.submit, button[type="submit"]' );
-	const submitRow = submitButton?.closest( 'p' ) || submitButton;
+	const submitRow = getSubmitRow( form );
 	if ( ! submitRow?.parentNode ) {
 		return;
 	}
 
 	const wrapper = document.createElement( 'p' );
 	wrapper.className = 'brain2fa-passkey-step';
+
+	// Without a code field there is nothing to submit; the passkey completes sign-in.
+	submitRow.style.display = hasCodeField ? '' : 'none';
 
 	if ( ! hasCodeField ) {
 		const description = document.createElement( 'span' );
@@ -141,9 +157,6 @@ export function showPasskeyStep( form, hasCodeField, onUsePasskey ) {
 		description.style.marginBottom = '8px';
 		description.textContent = __( 'Confirm it\'s you with your passkey.', 'brain-2fa' );
 		wrapper.appendChild( description );
-
-		// Without a code field there is nothing to submit; the passkey completes sign-in.
-		submitRow.style.display = 'none';
 	}
 
 	const button = document.createElement( 'button' );
@@ -154,7 +167,41 @@ export function showPasskeyStep( form, hasCodeField, onUsePasskey ) {
 	button.addEventListener( 'click', onUsePasskey );
 	wrapper.appendChild( button );
 
+	if ( onRequestEmailCode ) {
+		const emailButton = document.createElement( 'button' );
+		emailButton.type = 'button';
+		emailButton.className = 'button button-secondary';
+		emailButton.style.width = '100%';
+		emailButton.style.marginTop = '8px';
+		emailButton.textContent = __( 'Email me a code instead', 'brain-2fa' );
+		emailButton.addEventListener( 'click', onRequestEmailCode );
+		wrapper.appendChild( emailButton );
+	}
+
 	submitRow.parentNode.insertBefore( wrapper, hasCodeField ? submitRow.nextSibling : submitRow );
+}
+
+/**
+ * Undo hideFormFields() and remove the second-step fields, so the user can start over.
+ *
+ * @param {HTMLFormElement} form - The login form
+ */
+export function restoreFormFields( form ) {
+	const fields = [
+		form.querySelector( '#user_login, #username, [name="log"], [name="username"]' )?.closest( 'p, .form-row' ),
+		form.querySelector( '#user_pass, #password, [name="pwd"], [name="password"]' )?.closest( '.user-pass-wrap, .form-row' ),
+		form.querySelector( '#rememberme, [name="rememberme"]' )?.closest( '.forgetmenot, .woocommerce-form__label-for-checkbox' ),
+		getSubmitRow( form )
+	];
+
+	fields.forEach( ( field ) => {
+		if ( field ) {
+			field.style.display = '';
+		}
+	});
+
+	form.querySelector( '.brain2fa-passkey-step' )?.remove();
+	document.getElementById( 'brain2fa_code' )?.closest( 'p' )?.remove();
 }
 
 /**

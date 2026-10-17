@@ -125,14 +125,28 @@ async function signIn( form, autofill ) {
  * Called by login.js. The options come from the login preflight and only allow
  * the passkeys of the user who entered the password.
  *
+ * The server consumes the challenge on every verification attempt, so after
+ * 'failed' the caller needs new options before trying again.
+ *
  * @param {HTMLFormElement} form        - Login form.
  * @param {Object}          optionsJSON - WebAuthn request options from the preflight.
- * @return {Promise<boolean>} True when the form is being submitted.
+ * @return {Promise<string>} 'submitted' when the form is being submitted, 'failed' when the
+ *                           server rejected the passkey (challenge used), or 'cancelled'
+ *                           when the browser prompt did not complete (challenge unused).
  */
 async function runSecondStep( form, optionsJSON ) {
-	try {
-		const credential = await startAuthentication({ optionsJSON });
+	let credential;
 
+	try {
+		credential = await startAuthentication({ optionsJSON });
+	} catch ( error ) {
+		if ( 'NotAllowedError' !== error?.name && 'AbortError' !== error?.name ) {
+			showError( __( 'Passkey sign-in failed. Please try again.', 'brain-2fa' ) );
+		}
+		return 'cancelled';
+	}
+
+	try {
 		removeError();
 		const result = await post({
 			action: 'brain2fa_passkey_auth_verify',
@@ -141,16 +155,14 @@ async function runSecondStep( form, optionsJSON ) {
 
 		if ( ! result.success ) {
 			showError( result.data?.message || __( 'Passkey sign-in failed. Please try again.', 'brain-2fa' ) );
-			return false;
+			return 'failed';
 		}
 
 		submitWithToken( form, result.data );
-		return true;
+		return 'submitted';
 	} catch ( error ) {
-		if ( 'NotAllowedError' !== error?.name && 'AbortError' !== error?.name ) {
-			showError( __( 'Passkey sign-in failed. Please try again.', 'brain-2fa' ) );
-		}
-		return false;
+		showError( __( 'Passkey sign-in failed. Please try again.', 'brain-2fa' ) );
+		return 'failed';
 	}
 }
 

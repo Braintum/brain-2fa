@@ -108,9 +108,12 @@ class LoginController {
 			define( 'BRAIN_2FA_AUTHENTICATION_CHECK', true );
 		}
 
+		// Users who can also use a passkey get their email code only when they ask for it.
+		$send_email_code = isset( $_POST['brain2fa_send_email_code'] ) && '1' === $_POST['brain2fa_send_email_code']; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Same preflight as above; the password is verified again.
+
 		$user = wp_authenticate( $username, $password );
 		if ( is_object( $user ) && ( $user instanceof WP_User ) ) {
-			$response = self::get_preflight_response( $user );
+			$response = self::get_preflight_response( $user, $send_email_code );
 
 			if ( $response['success'] ) {
 				wp_send_json_success( $response['data'] );
@@ -301,10 +304,14 @@ class LoginController {
 	 * The response tells login.js whether to submit the form directly or to ask
 	 * for a second factor: a code ('method'), a passkey ('passkey' options), or both.
 	 *
-	 * @param WP_User $user User who entered a correct password.
+	 * Email users who can also use a passkey are not sent a code unless they ask
+	 * for one ($send_email_code); the response then has 'email_on_request'.
+	 *
+	 * @param WP_User $user            User who entered a correct password.
+	 * @param bool    $send_email_code Send the email code even when a passkey is offered.
 	 * @return array{success:bool,data:array} Response for wp_send_json_success() or wp_send_json_error().
 	 */
-	public static function get_preflight_response( WP_User $user ): array {
+	public static function get_preflight_response( WP_User $user, bool $send_email_code = false ): array {
 		$error = static fn( string $message ) => array(
 			'success' => false,
 			'data'    => array(
@@ -353,6 +360,10 @@ class LoginController {
 				if ( ! $has_passkey ) {
 					return $error( __( 'Your configured two-factor authentication method is unavailable. Please contact an administrator.', 'brain-2fa' ) );
 				}
+			} elseif ( 'email' === $method_id && $has_passkey && ! $send_email_code ) {
+				// The user may finish with their passkey, so the code is emailed only on request.
+				$data['method']           = $method_id;
+				$data['email_on_request'] = true;
 			} elseif ( 'email' === $method_id && ! $method->send_challenge( $user ) ) {
 				if ( ! $has_passkey ) {
 					return $error( __( 'Unable to send your email authentication code. Please try again or contact an administrator.', 'brain-2fa' ) );

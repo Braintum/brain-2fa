@@ -590,7 +590,11 @@ class Utils {
 			return $expires_at;
 		}
 
-		$expires_at = time() + ( self::get_grace_period_days() * DAY_IN_SECONDS );
+		// Stored passkeys that no longer count (passkeys turned off, or no HTTPS) were this user's
+		// enrollment, so they get no new grace period: restricted setup mode applies right away.
+		$expires_at = \Brain_2FA\Passkeys\PasskeyRepository::count_for_user( $user->ID ) > 0
+			? time()
+			: time() + ( self::get_grace_period_days() * DAY_IN_SECONDS );
 		update_user_meta( $user->ID, self::GRACE_PERIOD_EXPIRY_META_KEY, $expires_at );
 
 		return $expires_at;

@@ -380,6 +380,27 @@ class Settings {
 				<?php esc_html_e( 'Passkeys need HTTPS. Your site address does not use HTTPS, so passkeys stay hidden until it does.', 'brain-2fa' ); ?>
 			</p>
 		<?php endif; ?>
+		<?php
+		$passkey_only_users = $checked ? PasskeyRepository::count_users_without_code_method() : 0;
+		if ( $passkey_only_users > 0 ) :
+			?>
+			<p class="description" style="color: #d63638;">
+				<?php
+				echo esc_html(
+					sprintf(
+						/* translators: %s: number of users */
+						_n(
+							'%s user has a passkey as their only second factor. If you turn passkeys off, they sign in with their password alone, and users in roles that require 2FA must set up another method at their next sign-in.',
+							'%s users have a passkey as their only second factor. If you turn passkeys off, they sign in with their password alone, and users in roles that require 2FA must set up another method at their next sign-in.',
+							$passkey_only_users,
+							'brain-2fa'
+						),
+						number_format_i18n( $passkey_only_users )
+					)
+				);
+				?>
+			</p>
+		<?php endif; ?>
 		<p style="margin-top: 10px;">
 			<label>
 				<input type="checkbox" name="brain2fa_settings[allow_passkey_only]" value="1" <?php checked( ! empty( $options['allow_passkey_only'] ) ); ?>>

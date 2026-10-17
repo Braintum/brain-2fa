@@ -218,6 +218,26 @@ class PasskeyRepository {
 	}
 
 	/**
+	 * Count users whose only second factor is passkeys (no TOTP or email method).
+	 *
+	 * These users lose two-factor protection when passkeys are turned off.
+	 *
+	 * @return int Number of users.
+	 */
+	public static function count_users_without_code_method(): int {
+		global $wpdb;
+
+		return (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(DISTINCT p.user_id) FROM %i p LEFT JOIN %i m ON m.user_id = p.user_id AND m.meta_key = %s WHERE m.meta_value IS NULL OR m.meta_value IN ( '', '0' )",
+				self::table_name(),
+				$wpdb->usermeta,
+				'brain2fa_enabled'
+			)
+		);
+	}
+
+	/**
 	 * Delete one of a user's passkeys.
 	 *
 	 * @param int $id      Passkey ID.
