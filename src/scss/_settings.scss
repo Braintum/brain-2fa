@@ -1,0 +1,186 @@
+/**
+ * Site Settings Page
+ *
+ * Tabs, cards and the status summary on Brain 2FA > Settings.
+ *
+ * @package Brain_2FA
+ */
+
+@use 'variables' as *;
+
+$settings-max-width: 860px;
+
+// Status summary
+.brain2fa-summary {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: $spacing-base;
+	max-width: $settings-max-width;
+	margin: $spacing-lg 0 $spacing-base;
+}
+
+.brain2fa-summary-item {
+	background: $white;
+	border: 1px solid $gray-200;
+	border-radius: $border-radius;
+	padding: 12px $spacing-base;
+	box-shadow: $shadow-sm;
+
+	p {
+		margin: $spacing-sm 0 0;
+		color: $gray-700;
+	}
+}
+
+.brain2fa-summary-name {
+	font-weight: 600;
+	margin-right: $spacing-sm;
+	color: $gray-900;
+}
+
+// Text status, never color alone.
+.brain2fa-pill {
+	display: inline-block;
+	padding: 2px $spacing-sm;
+	border-radius: 999px;
+	font-size: $font-size-sm;
+	font-weight: 600;
+	line-height: 1.6;
+	vertical-align: middle;
+}
+
+.brain2fa-status-on {
+	background: $success-bg;
+	color: $success-text;
+}
+
+.brain2fa-status-off {
+	background: $gray-100;
+	color: $gray-900;
+}
+
+.brain2fa-status-warning {
+	background: $warning-bg;
+	color: #6e4e00;
+	box-shadow: inset 0 0 0 1px $warning-color;
+}
+
+// Tabs and form
+.brain2fa-tabs {
+	max-width: $settings-max-width;
+	margin-bottom: $spacing-lg;
+}
+
+// Shared by the settings form and the Login Security page.
+.brain2fa-settings-form,
+.brain2fa-login-security {
+	max-width: $settings-max-width;
+
+	> .notice.inline {
+		margin: 0 0 $spacing-lg;
+	}
+
+	.brain2fa-card {
+		margin-bottom: $spacing-base;
+	}
+
+	.brain2fa-card .notice.inline {
+		margin: $spacing-base 0;
+	}
+
+	.description {
+		color: $gray-700;
+
+		p {
+			margin: 0 0 $spacing-sm;
+			color: inherit;
+		}
+	}
+}
+
+.brain2fa-settings-form {
+	// Dependent controls stay in the form (so their values are kept) but hide while their parent is off.
+	&:has(#brain2fa_enable_email:not(:checked)) #brain2fa-email-options,
+	&:has(#brain2fa_enable_passkeys:not(:checked)) #brain2fa-passkey-options,
+	&:has(#brain2fa_remember_device:not(:checked)) #brain2fa-card-duration-section {
+		display: none;
+	}
+}
+
+.brain2fa-card-title {
+	margin: 0 0 $spacing-sm;
+	font-size: $font-size-lg;
+	font-weight: 600;
+	color: $gray-900;
+}
+
+.brain2fa-card .brain2fa-card-intro {
+	margin: 0 0 $spacing-base;
+	color: $gray-700;
+}
+
+.brain2fa-field {
+	margin: 0;
+	padding: 0;
+	border: 0;
+
+	+ .brain2fa-field {
+		margin-top: $spacing-base;
+	}
+
+	> label {
+		display: block;
+		font-weight: 600;
+		margin-bottom: $spacing-xs;
+	}
+
+	// Checkbox labels read as options, not field names.
+	> label:has(> input[type="checkbox"]) {
+		font-weight: 400;
+	}
+
+	.description {
+		margin: $spacing-xs 0 0;
+	}
+}
+
+.brain2fa-card .brain2fa-dependent {
+	margin-top: $spacing-base;
+	padding-left: $spacing-base;
+	border-left: 3px solid $gray-100;
+}
+
+.brain2fa-role-list {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+	gap: $spacing-sm $spacing-base;
+	margin-bottom: $spacing-base;
+
+	> label {
+		font-weight: 400;
+		margin: 0;
+	}
+}
+
+.brain2fa-definitions {
+	margin: 0 0 $spacing-base;
+
+	dt {
+		font-weight: 600;
+		color: $gray-900;
+	}
+
+	dd {
+		margin: 2px 0 $spacing-md;
+		color: $gray-700;
+	}
+}
+
+.brain2fa-settings-footer {
+	max-width: $settings-max-width;
+	color: $gray-700;
+
+	span {
+		margin: 0 $spacing-xs;
+	}
+}

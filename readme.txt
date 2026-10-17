@@ -118,6 +118,10 @@ The JavaScript files in `assets/js/` are generated from the source files in `src
 * New: Passkeys count toward required two-factor setup: users in required roles can enroll with a passkey alone.
 * New: Optional passkey-only accounts. When allowed under Brain 2FA > Settings, users can turn off password sign-in; administrators can turn it back on from the user's profile.
 * Security: A passkey sign-in requires the device's biometric or PIN check and counts as two-factor authentication. A passkey that appears to have been copied is blocked, and the owner is notified.
+* Improvement: Brain 2FA > Settings is organized into three tabs: Authentication Methods, Enrollment Requirements and Trusted Devices. Each tab saves on its own without changing the others, and a summary at the top shows whether two-factor authentication and passkeys are in effect.
+* Improvement: The settings page warns before you turn off the authenticator app or email codes while users rely on them, with the number of users who could no longer sign in with their password.
+* Improvement: The Login Security page starts with a summary of your sign-in protection, followed by separate sections for passkeys, two-factor codes, recovery codes and password sign-in. Errors appear next to the form that caused them.
+* Fix: Entering a wrong code while setting up an authenticator app no longer replaces the QR code you already scanned.
 
 = 1.0.4 =
 

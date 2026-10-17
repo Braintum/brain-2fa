@@ -1,252 +1,96 @@
 /**
  * Brain 2FA Admin JavaScript
  *
- * Handles admin settings page functionality
+ * Settings page: unsaved-change warning, and confirmations before turning off a code method
+ * that users depend on or requiring 2FA for more roles.
+ * Dependent fields are shown and hidden with CSS, so the page works without JavaScript.
+ * Login Security page: recovery code download.
  *
  * @package Brain2FA
  * @since 1.0.0
  */
 
-import { __ } from '@wordpress/i18n';
-import { getElement, getAllElements } from './utils/dom';
+import { __, _n, sprintf } from '@wordpress/i18n';
+import { getElement } from './utils/dom';
+
+const ROLE_SELECTOR = 'input[name="brain2fa_settings[force_2fa_roles][]"]';
 
 /**
- * Initialize admin functionality
+ * Get the roles currently ticked in the settings form.
+ *
+ * @param {HTMLFormElement} form - The settings form.
+ * @return {string[]} Role slugs.
  */
-function initAdmin() {
-	bindEvents();
-	conditionalFields();
+function getCheckedRoles( form ) {
+	return Array.from( form.querySelectorAll( `${ROLE_SELECTOR}:checked` ) ).map( ( input ) => input.value );
 }
 
 /**
- * Bind events
+ * Warn before leaving the settings page with unsaved edits, and confirm before
+ * requiring two-factor authentication for roles that did not require it.
+ *
+ * @param {HTMLFormElement} form - The settings form.
  */
-function bindEvents() {
+function initSettingsForm( form ) {
+	const initialRoles = getCheckedRoles( form );
 
-	// Toggle remember device duration field
-	const rememberCheckbox = getElement( 'input[name="brain2fa_settings[remember_device]"]' );
-	if ( rememberCheckbox ) {
-		rememberCheckbox.addEventListener( 'change', ( e ) => {
-			toggleRememberDuration( e.target );
-		});
-	}
+	// Code methods that are on and have users who could not sign in without them.
+	const guardedMethods = Array.from( form.querySelectorAll( 'input[data-brain2fa-blocked-users]' ) )
+		.filter( ( input ) => input.checked && 0 < parseInt( input.dataset.brain2faBlockedUsers, 10 ) );
+	let isDirty = false;
 
-	// Force 2FA warning
-	const forceCheckboxes = getAllElements( 'input[name="brain2fa_settings[force_2fa_roles][]"]' );
-	forceCheckboxes.forEach( ( checkbox ) => {
-		checkbox.addEventListener( 'change', () => {
-			handleForceWarning();
-		});
+	const markDirty = () => {
+		isDirty = true;
+	};
+
+	form.addEventListener( 'input', markDirty );
+	form.addEventListener( 'change', markDirty );
+
+	form.addEventListener( 'submit', ( e ) => {
+		const turnedOff = guardedMethods.filter( ( input ) => ! input.checked );
+		if ( 0 < turnedOff.length ) {
+			const blocked = turnedOff.reduce( ( sum, input ) => sum + parseInt( input.dataset.brain2faBlockedUsers, 10 ), 0 );
+			const message = sprintf(
+
+				/* translators: %d: number of users */
+				_n(
+					'%d user will not be able to sign in with their password, because the code method they use is being turned off and they have no passkey. Continue?',
+					'%d users will not be able to sign in with their password, because the code method they use is being turned off and they have no passkey. Continue?',
+					blocked,
+					'brain-2fa'
+				),
+				blocked
+			);
+
+			if ( ! window.confirm( message ) ) {
+				e.preventDefault();
+				return;
+			}
+		}
+
+		const addedRoles = getCheckedRoles( form ).filter( ( role ) => ! initialRoles.includes( role ) );
+
+		if ( 0 < addedRoles.length ) {
+			const message = __(
+				'Users in the newly selected roles must set up two-factor authentication. Make sure your own account has a method set up first. Continue?',
+				'brain-2fa'
+			);
+
+			if ( ! window.confirm( message ) ) {
+				e.preventDefault();
+				return;
+			}
+		}
+
+		isDirty = false;
 	});
 
-	// Confirm settings save if force 2FA is enabled
-	const form = getElement( 'form' );
-	if ( form ) {
-		form.addEventListener( 'submit', ( e ) => {
-			handleFormSubmit( e );
-		});
-	}
-}
-
-/**
- * Toggle remember device duration field
- *
- * @param {HTMLInputElement} checkbox - The checkbox element
- */
-function toggleRememberDuration( checkbox ) {
-	const td = checkbox.closest( 'td' );
-	if ( ! td ) {
-return;
-}
-
-	const durationField = td.querySelector( 'input[name="brain2fa_settings[remember_duration]"]' );
-	if ( ! durationField ) {
-return;
-}
-
-	const durationDiv = durationField.closest( 'div' );
-	if ( durationDiv ) {
-		if ( checkbox.checked ) {
-			slideDown( durationDiv, 200 );
-		} else {
-			slideUp( durationDiv, 200 );
-		}
-	}
-}
-
-/**
- * Handle force 2FA warning display
- */
-function handleForceWarning() {
-	const checkedBoxes = getAllElements( 'input[name="brain2fa_settings[force_2fa_roles][]"]:checked' );
-
-	if ( 0 < checkedBoxes.length ) {
-		showForceWarning();
-	} else {
-		hideForceWarning();
-	}
-}
-
-/**
- * Handle form submission
- *
- * @param {Event} e - Submit event
- */
-function handleFormSubmit( e ) {
-	const forceCheckboxes = getAllElements( 'input[name="brain2fa_settings[force_2fa_roles][]"]:checked' );
-
-	if ( 0 < forceCheckboxes.length ) {
-		const message = __(
-			'You are about to require 2FA for selected user roles. Make sure administrators have set up 2FA before proceeding. Continue?',
-			'brain-2fa'
-		);
-
-		if ( ! confirm( message ) ) {
+	window.addEventListener( 'beforeunload', ( e ) => {
+		if ( isDirty ) {
 			e.preventDefault();
-			return false;
+			e.returnValue = '';
 		}
-	}
-}
-
-/**
- * Handle conditional field visibility
- */
-function conditionalFields() {
-
-	// Show/hide remember device duration on page load
-	const rememberCheckbox = getElement( 'input[name="brain2fa_settings[remember_device]"]' );
-	if ( ! rememberCheckbox ) {
-return;
-}
-
-	const td = rememberCheckbox.closest( 'td' );
-	if ( ! td ) {
-return;
-}
-
-	const durationField = td.querySelector( 'input[name="brain2fa_settings[remember_duration]"]' );
-	if ( ! durationField ) {
-return;
-}
-
-	const durationDiv = durationField.closest( 'div' );
-	if ( durationDiv ) {
-		durationDiv.style.display = rememberCheckbox.checked ? 'block' : 'none';
-	}
-}
-
-/**
- * Show force 2FA warning
- */
-function showForceWarning() {
-
-	// Check if warning already exists
-	if ( getElement( '.brain2fa-force-warning' ) ) {
-		return;
-	}
-
-	const warningHtml = `
-		<div class="brain2fa-warning notice notice-warning inline" style="margin-top: 10px;">
-			<p>
-				<span class="dashicons dashicons-warning"></span>
-				<strong>${__( 'Warning:', 'brain-2fa' )}</strong>
-				${__( 'Users in selected roles will be required to set up 2FA on their next login.', 'brain-2fa' )}
-			</p>
-		</div>
-	`;
-
-	const firstCheckbox = getElement( 'input[name="brain2fa_settings[force_2fa_roles][]"]' );
-	if ( ! firstCheckbox ) {
-return;
-}
-
-	const fieldset = firstCheckbox.closest( 'fieldset' );
-	if ( ! fieldset ) {
-return;
-}
-
-	const wrapper = document.createElement( 'div' );
-	wrapper.className = 'brain2fa-force-warning';
-	wrapper.innerHTML = warningHtml;
-
-	fieldset.parentNode.insertBefore( wrapper, fieldset.nextSibling );
-}
-
-/**
- * Hide force 2FA warning
- */
-function hideForceWarning() {
-	const warning = getElement( '.brain2fa-force-warning' );
-	if ( warning ) {
-		warning.remove();
-	}
-}
-
-/**
- * Slide down animation
- *
- * @param {HTMLElement} element - Element to slide down
- * @param {number} duration - Animation duration in ms
- */
-function slideDown( element, duration = 200 ) {
-	element.style.removeProperty( 'display' );
-	let display = window.getComputedStyle( element ).display;
-	if ( 'none' === display ) {
-display = 'block';
-}
-	element.style.display = display;
-
-	const height = element.offsetHeight;
-	element.style.overflow = 'hidden';
-	element.style.height = '0';
-	element.style.paddingTop = '0';
-	element.style.paddingBottom = '0';
-	element.style.marginTop = '0';
-	element.style.marginBottom = '0';
-	element.offsetHeight; // Force reflow
-
-	element.style.transition = `all ${duration}ms ease-in-out`;
-	element.style.height = height + 'px';
-	element.style.removeProperty( 'padding-top' );
-	element.style.removeProperty( 'padding-bottom' );
-	element.style.removeProperty( 'margin-top' );
-	element.style.removeProperty( 'margin-bottom' );
-
-	setTimeout( () => {
-		element.style.removeProperty( 'height' );
-		element.style.removeProperty( 'overflow' );
-		element.style.removeProperty( 'transition' );
-	}, duration );
-}
-
-/**
- * Slide up animation
- *
- * @param {HTMLElement} element - Element to slide up
- * @param {number} duration - Animation duration in ms
- */
-function slideUp( element, duration = 200 ) {
-	element.style.height = element.offsetHeight + 'px';
-	element.offsetHeight; // Force reflow
-
-	element.style.overflow = 'hidden';
-	element.style.transition = `all ${duration}ms ease-in-out`;
-	element.style.height = '0';
-	element.style.paddingTop = '0';
-	element.style.paddingBottom = '0';
-	element.style.marginTop = '0';
-	element.style.marginBottom = '0';
-
-	setTimeout( () => {
-		element.style.display = 'none';
-		element.style.removeProperty( 'height' );
-		element.style.removeProperty( 'padding-top' );
-		element.style.removeProperty( 'padding-bottom' );
-		element.style.removeProperty( 'margin-top' );
-		element.style.removeProperty( 'margin-bottom' );
-		element.style.removeProperty( 'overflow' );
-		element.style.removeProperty( 'transition' );
-	}, duration );
+	});
 }
 
 /**
@@ -256,8 +100,8 @@ function slideUp( element, duration = 200 ) {
 function initRecoveryCodeDownload() {
 	const btn = document.getElementById( 'brain2fa-download-codes' );
 	if ( ! btn ) {
-return;
-}
+		return;
+	}
 
 	btn.addEventListener( 'click', () => {
 		let codes = [];
@@ -301,10 +145,10 @@ return;
  * Initialize on DOM ready
  */
 document.addEventListener( 'DOMContentLoaded', () => {
-
-	// Initialize based on current page
-	if ( getElement( '.brain2fa-settings-wrap' ) ) {
-		initAdmin();
-		initRecoveryCodeDownload();
+	const settingsForm = getElement( '.brain2fa-settings-form' );
+	if ( settingsForm ) {
+		initSettingsForm( settingsForm );
 	}
+
+	initRecoveryCodeDownload();
 });

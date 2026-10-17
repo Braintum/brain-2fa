@@ -1,0 +1,230 @@
+/**
+ * Login Security Page
+ *
+ * Summary, passkey list, setup steps, recovery codes and disclosures.
+ *
+ * @package Brain_2FA
+ */
+
+@use 'variables' as *;
+
+.brain2fa-login-security {
+	.brain2fa-card-title .brain2fa-pill {
+		margin-left: $spacing-sm;
+	}
+
+	.brain2fa-field {
+		> input[type="text"],
+		> input[type="password"] {
+			max-width: 100%;
+		}
+
+		// Inline action button next to its input.
+		> input + .button {
+			margin-left: $spacing-xs;
+			vertical-align: top;
+		}
+	}
+}
+
+.brain2fa-enroll-notice .button {
+	margin: 0 $spacing-sm $spacing-xs 0;
+}
+
+// Summary
+.brain2fa-summary-list {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+	gap: $spacing-base;
+	margin: 0;
+
+	dt {
+		color: $gray-700;
+		font-size: $font-size-sm;
+	}
+
+	dd {
+		margin: 2px 0 0;
+		font-weight: 600;
+		color: $gray-900;
+	}
+}
+
+.brain2fa-method-status {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: $spacing-sm;
+}
+
+.brain2fa-empty-state {
+	color: $gray-700;
+}
+
+.brain2fa-subheading {
+	margin: $spacing-lg 0 $spacing-md;
+	font-size: $font-size-md;
+}
+
+.brain2fa-section-notice {
+	margin: $spacing-md 0;
+}
+
+// Passkeys
+.brain2fa-passkey-list {
+	margin: 0;
+	border-top: 1px solid $gray-100;
+}
+
+.brain2fa-passkey {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: $spacing-sm $spacing-base;
+	margin: 0;
+	padding: 12px 0;
+	border-bottom: 1px solid $gray-100;
+
+	> .brain2fa-disclosure[open] {
+		flex-basis: 100%;
+	}
+}
+
+.brain2fa-passkey-details {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: $spacing-xs $spacing-sm;
+}
+
+.brain2fa-passkey-meta {
+	flex-basis: 100%;
+	color: $gray-700;
+}
+
+// Disclosures (native <details>, no JavaScript)
+.brain2fa-disclosure {
+	margin-top: $spacing-base;
+
+	> summary {
+		display: inline-block;
+		cursor: pointer;
+		color: $primary-color;
+		text-decoration: underline;
+
+		&:hover {
+			color: $primary-hover;
+		}
+
+		&:focus-visible {
+			outline: 2px solid $primary-color;
+			outline-offset: 2px;
+			border-radius: 2px;
+		}
+	}
+
+	&[open] > summary {
+		margin-bottom: $spacing-md;
+	}
+}
+
+.brain2fa-passkey > .brain2fa-disclosure {
+	margin-top: 0;
+}
+
+.brain2fa-disclosure-body {
+	padding: $spacing-base;
+	background: $gray-50;
+	border: 1px solid $gray-100;
+	border-radius: $border-radius;
+
+	> p:first-child {
+		margin-top: 0;
+	}
+}
+
+.brain2fa-inline-form + .brain2fa-inline-form {
+	margin-top: $spacing-base;
+}
+
+// Setup steps
+.brain2fa-steps {
+	margin: 0 0 0 $spacing-lg;
+
+	> li {
+		margin-bottom: $spacing-lg;
+		padding-left: $spacing-xs;
+	}
+
+	.brain2fa-step-title {
+		display: block;
+		margin-bottom: $spacing-sm;
+		font-weight: 600;
+		color: $gray-900;
+	}
+
+	.brain2fa-step-pending .brain2fa-step-title {
+		color: $gray-700;
+		font-weight: 400;
+	}
+
+	.brain2fa-step-done .brain2fa-step-title::after {
+		content: " \2713";
+		color: $success-text;
+	}
+
+	.brain2fa-qr-container {
+		margin: 0 0 $spacing-md;
+	}
+
+	.brain2fa-secret-code {
+		margin: 0;
+		overflow-wrap: anywhere;
+		text-align: left;
+	}
+}
+
+// Recovery codes
+.brain2fa-recovery-codes-display {
+	margin: $spacing-base 0;
+	padding: $spacing-base;
+	background: $gray-50;
+	border: 1px solid $gray-200;
+	border-radius: $border-radius;
+}
+
+.brain2fa-recovery-codes-warning {
+	margin-top: 0;
+	color: $danger-color;
+}
+
+.brain2fa-recovery-codes-list {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: $spacing-xs $spacing-lg;
+	margin: 0 0 $spacing-base;
+	padding: $spacing-base;
+	background: $white;
+	border: 1px solid $gray-200;
+	border-radius: $border-radius;
+
+	li {
+		margin: 0;
+	}
+
+	code {
+		background: none;
+		font-size: $font-size-md;
+	}
+}
+
+.brain2fa-low-codes {
+	color: $danger-color;
+	font-weight: 600;
+}
+
+.brain2fa-consequences {
+	margin-left: $spacing-lg;
+	list-style: disc;
+}

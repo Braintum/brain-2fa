@@ -29,7 +29,8 @@ Brain 2FA is a WordPress plugin (PHP 8.1+, WordPress 6.4+) that adds a second au
 | `TwoFactor\Methods\TotpMethod` | TOTP secret generation (otphp, with an internal HOTP fallback), local QR rendering (bacon-qr-code + GD, logo in the centre), verification of the current time step ±1 with per-user replay protection, and hashed single-use recovery codes. |
 | `TwoFactor\Methods\EmailMethod` | Six-digit email codes stored in a transient for the configured expiry. Sending is filterable. |
 | `Utils` | Shared policy: site-wide and per-method enablement, default method, role enforcement, grace-period deadlines, trusted devices, verification lockouts and change notifications. |
-| `Admin\Settings` | The Brain 2FA menu, the site settings page (Settings API, `brain2fa_settings`), and the per-user Login Security page (setup, and password-confirmed deactivate and recovery-code regeneration). |
+| `Admin\Settings` | The Brain 2FA menu and the site settings page. It registers the Login Security page and hands it to `Admin\LoginSecurityPage`. The settings page saves `brain2fa_settings` through the Settings API. It has three server-rendered tabs (`?tab=methods`, `requirements` and `trusted-devices`; unknown values fall back to `methods`), each a separate form rendered from `views/settings/tab-*.php` and saved on its own. Dependent fields hide with CSS `:has()` while their parent box is off, and stay in the form so their values are kept. The Authentication Methods tab counts the users of each code method who have no usable passkey (`PasskeyRepository::count_code_method_users()`). A method turned off for the site fails closed at sign-in, so these users would be unable to sign in with their password. The count appears as a warning while the method is on, and as an error if it is already off. `src/js/admin.js` adds the unsaved-changes warning, a confirmation before turning off a method that has such users, and a confirmation when more roles are made to require 2FA. |
+| `Admin\LoginSecurityPage` | The per-user Login Security page. `handle_post()` runs the submitted action for the current user (code setup, password-confirmed deactivation and recovery-code regeneration, passkey rename and removal, passkey-only changes) and records each result for the page section it belongs to. The page then reads its state fresh and renders a protection summary and the Passkeys, Two-factor codes, Recovery codes and Password sign-in cards from `views/login-security/*.php`. A form that failed reopens its `<details>` disclosure with the error inside it. Newly generated recovery codes exist only in the POST response. After a wrong setup code, the authenticator secret that was already scanned is shown again (`TotpMethod::get_setup_data()` accepts it only if it is base32). |
 | `Admin\UserProfile` | 2FA status on profile screens, the admin-only grace-period extension, and the Dashboard deadline notice. |
 | `Admin\UserListColumns` | Sortable 2FA status column in Users, showing setup deadlines and expiry. |
 | `Admin\Assets` | Admin CSS/JS for the plugin screens. |
@@ -115,7 +116,9 @@ Because the final step is a normal form submission, `wp_signon()`, remember-me, 
 
 ## Data model
 
-**Option** `brain2fa_settings` (sanitized by `Settings::sanitize_settings()`):
+**Option** `brain2fa_settings` (sanitized by `Settings::sanitize_settings()`). Read it through `Utils::get_settings()`, which fills missing keys from `Utils::SETTINGS_DEFAULTS`, the only place defaults are defined. Nothing is stored on install, so a site that has never saved settings runs on these defaults.
+
+A save that carries `_tab` (`methods`, `requirements` or `trusted-devices`, see `Settings::TAB_FIELDS`) changes only that tab's keys. A key the tab owns but the input lacks counts as an unchecked box, and every other key keeps its stored value. An unknown tab changes nothing and adds a settings error. A save without `_tab` is treated as the full form, where every missing checkbox means off. Either way the sanitizer returns the complete array, so WordPress's second sanitize pass when it first adds the option changes nothing.
 
 | Key | Type | Default | Notes |
 | --- | --- | --- | --- |
@@ -123,7 +126,7 @@ Because the final step is a normal form submission, `wp_signon()`, remember-me, 
 | `force_2fa_roles` | string[] | `[]` | Validated against registered roles. |
 | `grace_period_days` | int 0–365 | 14 | `0` puts unenrolled required users in restricted setup mode at their first sign-in. |
 | `default_method` | `totp` \| `email` | `totp` | Falls back to an enabled method. The legacy value `email_backup` maps to `email`. |
-| `enable_totp`, `enable_email` | bool | true when unset | Method availability. |
+| `enable_totp`, `enable_email` | bool | true | Method availability. |
 | `enable_passkeys` | bool | false | Passkey registration, passwordless sign-in and passkeys as a second factor (needs HTTPS). |
 | `allow_passkey_only` | bool | false | Users may turn off password sign-in for their account. |
 | `code_expiry` | int 1–60 minutes | 10 | Email code lifetime. |

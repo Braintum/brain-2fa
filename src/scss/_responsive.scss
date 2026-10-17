@@ -6,20 +6,31 @@
 
 @use 'variables' as *;
 
-@media screen and (max-width: $breakpoint-tablet) {
-	.brain2fa-settings-container {
-		flex-direction: column;
-	}
-
-	.brain2fa-settings-sidebar {
-		width: 100%;
-	}
-}
-
 @media screen and (max-width: $breakpoint-mobile) {
 	.brain2fa-users-container table {
 		display: block;
 		overflow-x: auto;
 		white-space: nowrap;
+	}
+
+	.brain2fa-summary {
+		grid-template-columns: 1fr;
+	}
+
+	.brain2fa-settings-form .brain2fa-card,
+	.brain2fa-login-security .brain2fa-card {
+		padding: $spacing-base;
+	}
+
+	.brain2fa-summary-list {
+		grid-template-columns: 1fr;
+	}
+
+	.brain2fa-passkey {
+		flex-direction: column;
+	}
+
+	.brain2fa-recovery-codes-list {
+		grid-template-columns: 1fr;
 	}
 }

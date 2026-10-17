@@ -10,11 +10,8 @@
 
 namespace Brain_2FA\Admin;
 
-use Brain_2FA\Passkeys\PasskeyLogin;
-use Brain_2FA\Passkeys\PasskeyRegistration;
 use Brain_2FA\Passkeys\PasskeyRepository;
 use Brain_2FA\Passkeys\WebAuthnServer;
-use Brain_2FA\TwoFactor\Methods\EmailMethod;
 use Brain_2FA\Utils;
 
 defined( 'ABSPATH' ) || exit;
@@ -32,6 +29,19 @@ class Settings {
 	 * @var Settings|null
 	 */
 	protected static $instance = null;
+
+	/**
+	 * Settings keys owned by each settings tab.
+	 *
+	 * A tab save changes only its own keys and keeps every other stored value.
+	 *
+	 * @var array<string, string[]>
+	 */
+	public const TAB_FIELDS = array(
+		'methods'         => array( 'enable_2fa', 'enable_totp', 'enable_email', 'code_expiry', 'enable_passkeys', 'allow_passkey_only', 'default_method' ),
+		'requirements'    => array( 'force_2fa_roles', 'grace_period_days' ),
+		'trusted-devices' => array( 'remember_device', 'remember_duration' ),
+	);
 
 	/**
 	 * Get singleton instance.
@@ -98,111 +108,39 @@ class Settings {
 			'brain2fa_settings',
 			array( $this, 'sanitize_settings' )
 		);
-
-		// General Settings Section.
-		add_settings_section(
-			'brain2fa_general_section',
-			__( 'General Settings', 'brain-2fa' ),
-			array( $this, 'general_section_callback' ),
-			'brain-2fa-settings'
-		);
-
-		add_settings_field(
-			'enable_2fa',
-			__( 'Enable Two-Factor Authentication', 'brain-2fa' ),
-			array( $this, 'enable_2fa_callback' ),
-			'brain-2fa-settings',
-			'brain2fa_general_section'
-		);
-
-		add_settings_field(
-			'force_2fa',
-			__( 'Force 2FA for Roles', 'brain-2fa' ),
-			array( $this, 'force_2fa_callback' ),
-			'brain-2fa-settings',
-			'brain2fa_general_section'
-		);
-
-		add_settings_field(
-			'grace_period',
-			__( '2FA Setup Grace Period', 'brain-2fa' ),
-			array( $this, 'grace_period_callback' ),
-			'brain-2fa-settings',
-			'brain2fa_general_section'
-		);
-
-		add_settings_field(
-			'default_method',
-			__( 'Default Authentication Method', 'brain-2fa' ),
-			array( $this, 'default_method_callback' ),
-			'brain-2fa-settings',
-			'brain2fa_general_section'
-		);
-
-		// Method Settings Section.
-		add_settings_section(
-			'brain2fa_methods_section',
-			__( 'Authentication Methods', 'brain-2fa' ),
-			array( $this, 'methods_section_callback' ),
-			'brain-2fa-settings'
-		);
-
-		add_settings_field(
-			'enable_totp',
-			__( 'Enable TOTP (Authenticator App)', 'brain-2fa' ),
-			array( $this, 'enable_totp_callback' ),
-			'brain-2fa-settings',
-			'brain2fa_methods_section'
-		);
-
-		add_settings_field(
-			'enable_email',
-			__( 'Enable Email Authentication', 'brain-2fa' ),
-			array( $this, 'enable_email_callback' ),
-			'brain-2fa-settings',
-			'brain2fa_methods_section'
-		);
-
-		add_settings_field(
-			'enable_passkeys',
-			__( 'Enable Passkeys', 'brain-2fa' ),
-			array( $this, 'enable_passkeys_callback' ),
-			'brain-2fa-settings',
-			'brain2fa_methods_section'
-		);
-
-		// Advanced Settings Section.
-		add_settings_section(
-			'brain2fa_advanced_section',
-			__( 'Advanced Settings', 'brain-2fa' ),
-			array( $this, 'advanced_section_callback' ),
-			'brain-2fa-settings'
-		);
-
-		add_settings_field(
-			'code_expiry',
-			__( 'Email Code Expiry (minutes)', 'brain-2fa' ),
-			array( $this, 'code_expiry_callback' ),
-			'brain-2fa-settings',
-			'brain2fa_advanced_section'
-		);
-
-		add_settings_field(
-			'remember_device',
-			__( 'Remember Device', 'brain-2fa' ),
-			array( $this, 'remember_device_callback' ),
-			'brain-2fa-settings',
-			'brain2fa_advanced_section'
-		);
 	}
 
 	/**
 	 * Sanitize settings.
 	 *
+	 * Input carrying a `_tab` identifier is a tab save: only that tab's keys come
+	 * from the input, where a missing key means an unchecked box, and all other keys
+	 * keep their stored values. Input without one is treated as the full form.
+	 * The result is always the complete settings array, so a second pass over it
+	 * (WordPress sanitizes again when it adds a new option) changes nothing.
+	 *
 	 * @param array $input Raw input data.
 	 * @return array Sanitized settings.
 	 */
 	public function sanitize_settings( $input ): array {
+		$input = is_array( $input ) ? $input : array();
+
+		if ( isset( $input['_tab'] ) ) {
+			$tab = is_string( $input['_tab'] ) ? sanitize_key( $input['_tab'] ) : '';
+
+			if ( ! isset( self::TAB_FIELDS[ $tab ] ) ) {
+				add_settings_error(
+					'brain2fa_messages',
+					'brain2fa_invalid_tab',
+					__( 'Settings were not saved because the settings section was not recognized.', 'brain-2fa' )
+				);
+				$input = Utils::get_settings();
+			} else {
+				$owned = array_flip( self::TAB_FIELDS[ $tab ] );
+				$input = array_merge( array_diff_key( Utils::get_settings(), $owned ), array_intersect_key( $input, $owned ) );
+			}
+		}
+
 		$sanitized = array();
 
 		$sanitized['enable_2fa']         = ! empty( $input['enable_2fa'] );
@@ -228,240 +166,6 @@ class Settings {
 	}
 
 	/**
-	 * Section callbacks.
-	 */
-	public function general_section_callback(): void {
-		echo '<p>' . esc_html__( 'Configure the basic two-factor authentication settings.', 'brain-2fa' ) . '</p>';
-	}
-
-	/**
-	 * Section callbacks.
-	 */
-	public function methods_section_callback(): void {
-		echo '<p>' . esc_html__( 'Enable or disable specific authentication methods.', 'brain-2fa' ) . '</p>';
-	}
-
-	/**
-	 * Section callbacks.
-	 */
-	public function advanced_section_callback(): void {
-		echo '<p>' . esc_html__( 'Advanced configuration options for two-factor authentication.', 'brain-2fa' ) . '</p>';
-	}
-
-	/**
-	 * Field callbacks.
-	 */
-	public function enable_2fa_callback(): void {
-		$options = get_option( 'brain2fa_settings', array() );
-		$checked = ! empty( $options['enable_2fa'] );
-		?>
-		<label>
-			<input type="checkbox" name="brain2fa_settings[enable_2fa]" value="1" <?php checked( $checked ); ?>>
-			<?php esc_html_e( 'Enable two-factor authentication for the site', 'brain-2fa' ); ?>
-		</label>
-		<p class="description">
-			<?php esc_html_e( 'Master switch to enable/disable 2FA functionality site-wide.', 'brain-2fa' ); ?>
-		</p>
-		<?php
-	}
-
-	/**
-	 * Field callbacks.
-	 */
-	public function force_2fa_callback(): void {
-		$options        = get_option( 'brain2fa_settings', array() );
-		$selected_roles = $options['force_2fa_roles'] ?? array();
-		$roles          = wp_roles()->roles;
-		?>
-		<fieldset>
-			<?php foreach ( $roles as $role_key => $role_data ) : ?>
-				<label style="display: block; margin-bottom: 5px;">
-					<input type="checkbox" 
-						name="brain2fa_settings[force_2fa_roles][]" 
-						value="<?php echo esc_attr( $role_key ); ?>"
-						<?php checked( in_array( $role_key, $selected_roles, true ) ); ?>>
-					<?php echo esc_html( $role_data['name'] ); ?>
-				</label>
-			<?php endforeach; ?>
-		</fieldset>
-		<p class="description">
-			<?php esc_html_e( 'Select user roles that are required to use 2FA.', 'brain-2fa' ); ?>
-		</p>
-		<?php
-	}
-
-	/**
-	 * Field callbacks.
-	 */
-	public function grace_period_callback(): void {
-		$options = get_option( 'brain2fa_settings', array() );
-		$days    = isset( $options['grace_period_days'] ) ? min( 365, absint( $options['grace_period_days'] ) ) : 14;
-		?>
-		<input type="number"
-			name="brain2fa_settings[grace_period_days]"
-			value="<?php echo esc_attr( $days ); ?>"
-			min="0"
-			max="365"
-			step="1">
-		<p class="description">
-			<?php esc_html_e( 'Allow users in required roles this many days to set up 2FA. Set to 0 to require setup immediately.', 'brain-2fa' ); ?>
-		</p>
-		<?php
-	}
-
-	/**
-	 * Field callbacks.
-	 */
-	public function default_method_callback(): void {
-		$options = get_option( 'brain2fa_settings', array() );
-		$method  = $options['default_method'] ?? 'totp';
-		$method  = 'email_backup' === $method ? 'email' : $method;
-		?>
-		<select name="brain2fa_settings[default_method]">
-			<option value="totp" <?php selected( $method, 'totp' ); ?>>
-				<?php esc_html_e( 'TOTP (Authenticator App)', 'brain-2fa' ); ?>
-			</option>
-			<option value="email" <?php selected( $method, 'email' ); ?>>
-				<?php esc_html_e( 'Email Authentication', 'brain-2fa' ); ?>
-			</option>
-		</select>
-		<p class="description">
-			<?php esc_html_e( 'Default authentication method for new users.', 'brain-2fa' ); ?>
-		</p>
-		<?php
-	}
-
-	/**
-	 * Field callbacks.
-	 */
-	public function enable_totp_callback(): void {
-		$options = get_option( 'brain2fa_settings', array() );
-		$checked = $options['enable_totp'] ?? true;
-		?>
-		<label>
-			<input type="checkbox" name="brain2fa_settings[enable_totp]" value="1" <?php checked( $checked ); ?>>
-			<?php esc_html_e( 'Allow users to use TOTP authenticator apps (Google Authenticator, Authy, etc.)', 'brain-2fa' ); ?>
-		</label>
-		<?php
-	}
-
-	/**
-	 * Field callbacks.
-	 */
-	public function enable_email_callback(): void {
-		$options = get_option( 'brain2fa_settings', array() );
-		$checked = $options['enable_email'] ?? true;
-		?>
-		<label>
-			<input type="checkbox" name="brain2fa_settings[enable_email]" value="1" <?php checked( $checked ); ?>>
-			<?php esc_html_e( 'Allow users to receive authentication codes via email', 'brain-2fa' ); ?>
-		</label>
-		<?php
-	}
-
-	/**
-	 * Enable passkeys field callback.
-	 *
-	 * @return void
-	 */
-	public function enable_passkeys_callback(): void {
-		$options = get_option( 'brain2fa_settings', array() );
-		$checked = ! empty( $options['enable_passkeys'] );
-		?>
-		<label>
-			<input type="checkbox" name="brain2fa_settings[enable_passkeys]" value="1" <?php checked( $checked ); ?>>
-			<?php esc_html_e( 'Allow users to sign in without a password using passkeys (Face ID, Touch ID, Windows Hello, phones or security keys)', 'brain-2fa' ); ?>
-		</label>
-		<p class="description">
-			<?php esc_html_e( 'A passkey sign-in counts as two-factor authentication. Users add passkeys on their Login Security page.', 'brain-2fa' ); ?>
-		</p>
-		<?php if ( ! WebAuthnServer::is_available() ) : ?>
-			<p class="description" style="color: #d63638;">
-				<?php esc_html_e( 'Passkeys need HTTPS. Your site address does not use HTTPS, so passkeys stay hidden until it does.', 'brain-2fa' ); ?>
-			</p>
-		<?php endif; ?>
-		<?php
-		$passkey_only_users = $checked ? PasskeyRepository::count_users_without_code_method() : 0;
-		if ( $passkey_only_users > 0 ) :
-			?>
-			<p class="description" style="color: #d63638;">
-				<?php
-				echo esc_html(
-					sprintf(
-						/* translators: %s: number of users */
-						_n(
-							'%s user has a passkey as their only second factor. If you turn passkeys off, they sign in with their password alone, and users in roles that require 2FA must set up another method at their next sign-in.',
-							'%s users have a passkey as their only second factor. If you turn passkeys off, they sign in with their password alone, and users in roles that require 2FA must set up another method at their next sign-in.',
-							$passkey_only_users,
-							'brain-2fa'
-						),
-						number_format_i18n( $passkey_only_users )
-					)
-				);
-				?>
-			</p>
-		<?php endif; ?>
-		<p style="margin-top: 10px;">
-			<label>
-				<input type="checkbox" name="brain2fa_settings[allow_passkey_only]" value="1" <?php checked( ! empty( $options['allow_passkey_only'] ) ); ?>>
-				<?php esc_html_e( 'Let users turn off password sign-in for their account (passkey-only)', 'brain-2fa' ); ?>
-			</label>
-		</p>
-		<p class="description">
-			<?php esc_html_e( 'Passkey-only accounts cannot be phished with a password. If such a user loses all their passkeys, an administrator restores password sign-in from their profile.', 'brain-2fa' ); ?>
-		</p>
-		<?php
-	}
-
-	/**
-	 * Field callbacks.
-	 */
-	public function code_expiry_callback(): void {
-		$options = get_option( 'brain2fa_settings', array() );
-		$expiry  = $options['code_expiry'] ?? 10;
-		?>
-		<input type="number" 
-			name="brain2fa_settings[code_expiry]" 
-			value="<?php echo esc_attr( $expiry ); ?>" 
-			min="1" 
-			max="60" 
-			step="1">
-		<p class="description">
-			<?php esc_html_e( 'How long email codes remain valid (in minutes).', 'brain-2fa' ); ?>
-		</p>
-		<?php
-	}
-
-	/**
-	 * Field callbacks.
-	 */
-	public function remember_device_callback(): void {
-		$options  = get_option( 'brain2fa_settings', array() );
-		$checked  = $options['remember_device'] ?? false;
-		$duration = $options['remember_duration'] ?? 30;
-		?>
-		<label>
-			<input type="checkbox" name="brain2fa_settings[remember_device]" value="1" <?php checked( $checked ); ?>>
-			<?php esc_html_e( 'Allow users to remember their device', 'brain-2fa' ); ?>
-		</label>
-		<p class="description">
-			<?php esc_html_e( 'Users can skip 2FA on trusted devices.', 'brain-2fa' ); ?>
-		</p>
-		<div style="margin-top: 10px;">
-			<label>
-				<?php esc_html_e( 'Remember for (days):', 'brain-2fa' ); ?>
-				<input type="number" 
-					name="brain2fa_settings[remember_duration]" 
-					value="<?php echo esc_attr( $duration ); ?>" 
-					min="1" 
-					max="365" 
-					step="1">
-			</label>
-		</div>
-		<?php
-	}
-
-	/**
 	 * Render settings page.
 	 *
 	 * @return void
@@ -471,186 +175,139 @@ class Settings {
 			return;
 		}
 
-		// Check if settings were saved.
-		if ( isset( $_GET['settings-updated'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- This query parameter only controls an administrative notice.
+		$tabs       = self::get_tabs();
+		$active_tab = self::get_active_tab();
+		$settings   = Utils::get_settings();
+
+		// Saving redirects back here; errors from the sanitizer replace the success notice.
+		if ( isset( $_GET['settings-updated'] ) && ! get_settings_errors( 'brain2fa_messages' ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- This query parameter only controls an administrative notice.
 			add_settings_error(
 				'brain2fa_messages',
 				'brain2fa_message',
-				__( 'Settings saved successfully.', 'brain-2fa' ),
+				__( 'Settings saved.', 'brain-2fa' ),
 				'updated'
 			);
+		}
+
+		// Header summary: what is in effect right now, from the stored settings.
+		$code_methods_enabled = Utils::is_method_enabled( 'totp' ) || Utils::is_method_enabled( 'email' );
+		$passkeys_available   = WebAuthnServer::is_available();
+		$role_names           = wp_roles()->get_names();
+		$required_role_names  = array_map( 'translate_user_role', array_values( array_intersect_key( $role_names, array_flip( $settings['force_2fa_roles'] ) ) ) );
+
+		// Only the Authentication Methods tab shows the passkey impact warning, so only it pays for the count.
+		$passkey_only_users = 'methods' === $active_tab && ! empty( $settings['enable_passkeys'] ) ? PasskeyRepository::count_users_without_code_method() : 0;
+
+		// Users of a code method that is turned off cannot sign in with their password, so warn before that happens.
+		$method_impact = array();
+		if ( 'methods' === $active_tab ) {
+			$passkeys_usable = ! empty( $settings['enable_passkeys'] ) && $passkeys_available;
+			foreach ( array( 'totp', 'email' ) as $method_id ) {
+				$method_impact[ $method_id ] = self::get_method_impact( $method_id, ! empty( $settings[ 'enable_' . $method_id ] ), $passkeys_usable );
+			}
 		}
 
 		include BRAIN_2FA_PLUGIN_DIR . 'includes/Admin/views/settings-page.php';
 	}
 
 	/**
-	 * Render two factor page.
+	 * Describe what turning a code method off does to the users who rely on it.
+	 *
+	 * A method turned off for the site fails closed at sign-in, so its users can only
+	 * sign in with a usable passkey (or from a trusted device).
+	 *
+	 * @param string $method_id       Code method ID: totp or email.
+	 * @param bool   $enabled         Whether the method is turned on for the site.
+	 * @param bool   $passkeys_usable Whether passkeys are on and served over HTTPS.
+	 * @return array{blocked: int, type: string, message: string} Users who cannot sign in without the method, and a notice ('' when nobody is affected).
+	 */
+	private static function get_method_impact( string $method_id, bool $enabled, bool $passkeys_usable ): array {
+		$users   = PasskeyRepository::count_code_method_users( $method_id, false );
+		$blocked = $passkeys_usable ? PasskeyRepository::count_code_method_users( $method_id, true ) : $users;
+		$impact  = array(
+			'blocked' => $blocked,
+			'type'    => '',
+			'message' => '',
+		);
+
+		if ( 0 === $users ) {
+			return $impact;
+		}
+
+		$count = number_format_i18n( $blocked );
+
+		if ( ! $enabled && $blocked > 0 ) {
+			$impact['type']    = 'error';
+			$impact['message'] = 'totp' === $method_id
+				/* translators: %s: number of users */
+				? sprintf( _n( '%s user is set up with the authenticator app, which is turned off, and has no passkey to sign in with. They cannot sign in with their password until you turn it back on.', '%s users are set up with the authenticator app, which is turned off, and have no passkey to sign in with. They cannot sign in with their password until you turn it back on.', $blocked, 'brain-2fa' ), $count )
+				/* translators: %s: number of users */
+				: sprintf( _n( '%s user is set up with email codes, which are turned off, and has no passkey to sign in with. They cannot sign in with their password until you turn email codes back on.', '%s users are set up with email codes, which are turned off, and have no passkey to sign in with. They cannot sign in with their password until you turn email codes back on.', $blocked, 'brain-2fa' ), $count );
+		} elseif ( $enabled && $blocked > 0 ) {
+			$impact['type']    = 'warning';
+			$impact['message'] = 'totp' === $method_id
+				/* translators: %s: number of users */
+				? sprintf( _n( '%s user relies on the authenticator app and has no passkey. If you turn it off, they cannot sign in with their password until it is turned back on. Recovery codes do not help, because they belong to this method.', '%s users rely on the authenticator app and have no passkey. If you turn it off, they cannot sign in with their password until it is turned back on. Recovery codes do not help, because they belong to this method.', $blocked, 'brain-2fa' ), $count )
+				/* translators: %s: number of users */
+				: sprintf( _n( '%s user relies on email codes and has no passkey. If you turn email codes off, they cannot sign in with their password until they are turned back on.', '%s users rely on email codes and have no passkey. If you turn email codes off, they cannot sign in with their password until they are turned back on.', $blocked, 'brain-2fa' ), $count );
+		} elseif ( $enabled ) {
+			$impact['type']    = 'info';
+			$impact['message'] = 'totp' === $method_id
+				/* translators: %s: number of users */
+				? sprintf( _n( '%s user uses the authenticator app. They also have a passkey, so turning the app off leaves them signing in with their passkey.', '%s users use the authenticator app. They all have a passkey, so turning the app off leaves them signing in with their passkeys.', $users, 'brain-2fa' ), number_format_i18n( $users ) )
+				/* translators: %s: number of users */
+				: sprintf( _n( '%s user uses email codes. They also have a passkey, so turning email codes off leaves them signing in with their passkey.', '%s users use email codes. They all have a passkey, so turning email codes off leaves them signing in with their passkeys.', $users, 'brain-2fa' ), number_format_i18n( $users ) );
+		}
+
+		return $impact;
+	}
+
+	/**
+	 * Get the settings tabs.
+	 *
+	 * @return array<string, string> Tab labels keyed by tab identifier, in display order.
+	 */
+	public static function get_tabs(): array {
+		return array(
+			'methods'         => __( 'Authentication Methods', 'brain-2fa' ),
+			'requirements'    => __( 'Enrollment Requirements', 'brain-2fa' ),
+			'trusted-devices' => __( 'Trusted Devices', 'brain-2fa' ),
+		);
+	}
+
+	/**
+	 * Get the settings tab requested in the URL, or the first tab.
+	 *
+	 * @return string Allow-listed tab identifier.
+	 */
+	public static function get_active_tab(): string {
+		$tab = isset( $_GET['tab'] ) && is_string( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only navigation; the value is checked against an allow-list.
+
+		return isset( self::TAB_FIELDS[ $tab ] ) ? $tab : 'methods';
+	}
+
+	/**
+	 * Get the settings page URL for a tab.
+	 *
+	 * @param string $tab Tab identifier.
+	 * @return string Admin URL.
+	 */
+	public static function get_tab_url( string $tab ): string {
+		return add_query_arg(
+			array(
+				'page' => 'brain-2fa-settings',
+				'tab'  => $tab,
+			),
+			admin_url( 'admin.php' )
+		);
+	}
+
+	/**
+	 * Render the Login Security page.
 	 *
 	 * @return void
 	 */
 	public function render_login_security_page(): void {
-		if ( ! current_user_can( 'read' ) ) {
-			return;
-		}
-
-		// Get current user.
-		$current_user = wp_get_current_user();
-
-		// Check if 2FA is enabled for current user.
-		$is_2fa_enabled = get_user_meta( $current_user->ID, 'brain2fa_enabled', true );
-		$current_method = get_user_meta( $current_user->ID, 'brain2fa_method', true );
-
-		// Get authentication method instances.
-		$totp_method     = brain_2fa()->manager->get_method( 'totp' );
-		$setup_method_id = Utils::get_default_method();
-		$setup_method    = brain_2fa()->manager->get_method( $setup_method_id );
-
-		// Get fresh recovery codes after regeneration.
-		$fresh_recovery_codes = array();
-
-		// Handle form submission.
-		if ( isset( $_POST['brain2fa_action'] ) && check_admin_referer( 'brain2fa_setup_action', 'brain2fa_setup_nonce' ) ) {
-			$action            = sanitize_text_field( wp_unslash( $_POST['brain2fa_action'] ) );
-			$has_active_factor = $is_2fa_enabled && brain_2fa()->manager->get_method( (string) $current_method );
-
-			// Changing an active factor requires the account password, so a hijacked session cannot do it.
-			if ( in_array( $action, array( 'deactivate', 'regenerate_recovery_codes' ), true ) ) {
-				$password     = isset( $_POST['brain2fa_confirm_password'] ) && is_string( $_POST['brain2fa_confirm_password'] ) ? wp_unslash( $_POST['brain2fa_confirm_password'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Passwords must not be altered before checking.
-				$confirmation = Utils::confirm_password( $current_user, $password );
-				if ( is_wp_error( $confirmation ) ) {
-					echo '<div class="notice notice-error"><p>' . esc_html( $confirmation->get_error_message() ) . '</p></div>';
-					$action = '';
-				}
-			}
-
-			if ( 'passkey_only' === $action && PasskeyLogin::is_enabled() ) {
-				$enable   = isset( $_POST['brain2fa_passkey_only'] ) && '1' === sanitize_key( wp_unslash( $_POST['brain2fa_passkey_only'] ) );
-				$password = isset( $_POST['brain2fa_confirm_password'] ) && is_string( $_POST['brain2fa_confirm_password'] ) ? wp_unslash( $_POST['brain2fa_confirm_password'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Passwords must not be altered before checking.
-				$result   = PasskeyRegistration::set_passkey_only( $current_user, $enable, $password );
-
-				if ( is_wp_error( $result ) ) {
-					echo '<div class="notice notice-error"><p>' . esc_html( $result->get_error_message() ) . '</p></div>';
-				} elseif ( $enable ) {
-					echo '<div class="notice notice-success"><p>' . esc_html__( 'Password sign-in is now off. Sign in with your passkey from now on.', 'brain-2fa' ) . '</p></div>';
-				} else {
-					echo '<div class="notice notice-success"><p>' . esc_html__( 'Password sign-in is turned back on.', 'brain-2fa' ) . '</p></div>';
-				}
-				$action = '';
-			}
-
-			if ( in_array( $action, array( 'passkey_remove', 'passkey_rename' ), true ) && PasskeyLogin::is_enabled() ) {
-				$passkey_id = isset( $_POST['brain2fa_passkey_id'] ) ? absint( wp_unslash( $_POST['brain2fa_passkey_id'] ) ) : 0;
-
-				if ( 'passkey_remove' === $action ) {
-					$password = isset( $_POST['brain2fa_confirm_password'] ) && is_string( $_POST['brain2fa_confirm_password'] ) ? wp_unslash( $_POST['brain2fa_confirm_password'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Passwords must not be altered before checking.
-					$result   = PasskeyRegistration::remove( $current_user, $passkey_id, $password );
-					$success  = __( 'The passkey was removed.', 'brain-2fa' );
-				} else {
-					$name    = isset( $_POST['brain2fa_passkey_name'] ) ? sanitize_text_field( wp_unslash( $_POST['brain2fa_passkey_name'] ) ) : '';
-					$result  = PasskeyRegistration::rename( $current_user, $passkey_id, $name );
-					$success = __( 'The passkey was renamed.', 'brain-2fa' );
-				}
-
-				if ( is_wp_error( $result ) ) {
-					echo '<div class="notice notice-error"><p>' . esc_html( $result->get_error_message() ) . '</p></div>';
-				} else {
-					echo '<div class="notice notice-success"><p>' . esc_html( $success ) . '</p></div>';
-				}
-				$action = '';
-			}
-
-			// A new email code replaces the pending one; activation below then sends it.
-			if ( 'resend_email_code' === $action && ! $has_active_factor && $setup_method instanceof EmailMethod ) {
-				$setup_method->clear_pending_code( $current_user );
-				$action = 'activate';
-			}
-
-			if ( 'activate' === $action && $has_active_factor ) {
-				echo '<div class="notice notice-error"><p>' . esc_html__( 'Two-factor authentication is already active. Deactivate it before setting up a new method.', 'brain-2fa' ) . '</p></div>';
-			} elseif ( 'activate' === $action && $setup_method && Utils::is_method_enabled( $setup_method_id ) ) {
-				$code = isset( $_POST['brain2fa_code'] ) ? sanitize_text_field( wp_unslash( $_POST['brain2fa_code'] ) ) : '';
-				$data = 'totp' === $setup_method_id ? array(
-					'secret' => isset( $_POST['brain2fa_secret'] ) ? sanitize_text_field( wp_unslash( $_POST['brain2fa_secret'] ) ) : '',
-					'code'   => $code,
-				) : array( 'code' => $code );
-
-				$result = $setup_method->save_setup( $current_user, $data );
-
-				if ( is_array( $result ) && ! empty( $result['code_sent'] ) ) {
-					printf(
-						'<div class="notice notice-info"><p>%s</p></div>',
-						esc_html(
-							sprintf(
-								/* translators: %s: account email address */
-								__( 'A verification code was sent to %s. Enter it below to finish setting up email authentication.', 'brain-2fa' ),
-								$current_user->user_email
-							)
-						)
-					);
-				} elseif ( true === $result || ( is_array( $result ) && ! empty( $result['success'] ) ) ) {
-					update_user_meta( $current_user->ID, 'brain2fa_method', $setup_method_id );
-					Utils::clear_grace_period( $current_user->ID );
-					$is_2fa_enabled = true;
-					$current_method = $setup_method_id;
-					Utils::send_factor_change_notification( $current_user, 'activated' );
-
-					// Capture fresh recovery codes if they were generated.
-					if ( is_array( $result ) && ! empty( $result['recovery_codes'] ) ) {
-						$fresh_recovery_codes = $result['recovery_codes'];
-						echo '<div class="notice notice-success"><p>' . esc_html__( 'Two-Factor Authentication has been activated successfully! Please save your recovery codes below.', 'brain-2fa' ) . '</p></div>';
-					} else {
-						echo '<div class="notice notice-success"><p>' . esc_html__( 'Two-Factor Authentication has been activated successfully!', 'brain-2fa' ) . '</p></div>';
-					}
-				} elseif ( is_wp_error( $result ) ) {
-					echo '<div class="notice notice-error"><p>' . esc_html( $result->get_error_message() ) . '</p></div>'; // phpcs:ignore
-				}
-			} elseif ( 'deactivate' === $action ) {
-				$current_method_instance = brain_2fa()->manager->get_method( $current_method );
-				$deactivate_data         = array( 'brain2fa_deactivate' => '1' );
-				if ( $current_method_instance ) {
-					$current_method_instance->save_setup( $current_user, $deactivate_data );
-				}
-				delete_user_meta( $current_user->ID, 'brain2fa_method' );
-				$is_2fa_enabled = false;
-				$current_method = '';
-				Utils::send_factor_change_notification( $current_user, 'deactivated' );
-
-				// Users whose role requires 2FA go straight back to setup instead of getting a new grace period,
-				// unless their passkeys still count as a second factor.
-				if ( Utils::is_2fa_required_for_user( $current_user ) && ! Utils::is_2fa_enabled_for_user( $current_user->ID ) ) {
-					Utils::require_enrollment_now( $current_user );
-					echo '<div class="notice notice-warning"><p>' . esc_html__( 'Two-Factor Authentication has been deactivated. Your role requires it, so set up a new method below to continue using the site.', 'brain-2fa' ) . '</p></div>';
-				} else {
-					echo '<div class="notice notice-success"><p>' . esc_html__( 'Two-Factor Authentication has been deactivated.', 'brain-2fa' ) . '</p></div>';
-				}
-			} elseif ( 'regenerate_recovery_codes' === $action && $totp_method && $is_2fa_enabled ) {
-				$fresh_recovery_codes = $totp_method->generate_recovery_codes( $current_user );
-				Utils::send_factor_change_notification( $current_user, 'recovery_codes_regenerated' );
-				echo '<div class="notice notice-success"><p>' . esc_html__( 'Recovery codes have been regenerated. Please save them securely.', 'brain-2fa' ) . '</p></div>';
-			}
-		}
-
-		// Get setup data if not enabled.
-		$setup_data = array();
-		if ( ! $is_2fa_enabled && $setup_method && Utils::is_method_enabled( $setup_method_id ) ) {
-			$setup_data = $setup_method->get_setup_data( $current_user );
-		}
-
-		// Get recovery codes count.
-		$recovery_codes_count = $is_2fa_enabled && $totp_method ? $totp_method->get_recovery_codes_count( $current_user ) : 0;
-
-		// State for the view: pending email code, role requirement and restricted setup mode.
-		$email_code_pending = ! $is_2fa_enabled && $setup_method instanceof EmailMethod && $setup_method->has_pending_code( $current_user );
-		$role_requires_2fa  = Utils::is_2fa_required_for_user( $current_user );
-		$must_enroll        = Utils::is_enrollment_required( $current_user );
-
-		// Passkeys: only shown when enabled and served over HTTPS. Restricted users may enroll with a passkey.
-		$passkeys_enabled     = PasskeyLogin::is_enabled();
-		$passkeys             = $passkeys_enabled ? PasskeyRepository::get_for_user( $current_user->ID ) : array();
-		$passkey_only_allowed = $passkeys_enabled && Utils::is_passkey_only_allowed();
-		$passkey_only         = Utils::is_passkey_only( $current_user );
-
-		include BRAIN_2FA_PLUGIN_DIR . 'includes/Admin/views/login-security-page.php';
+		LoginSecurityPage::render();
 	}
 }

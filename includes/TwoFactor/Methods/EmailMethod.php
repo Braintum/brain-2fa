@@ -162,8 +162,8 @@ class EmailMethod implements TwoFactorMethodInterface {
 		$code = str_pad( (string) random_int( 0, 999999 ), 6, '0', STR_PAD_LEFT );
 
 		// Read expiry from plugin settings (falls back to 10 minutes).
-		$settings   = get_option( 'brain2fa_settings', array() );
-		$expiry_min = isset( $settings['code_expiry'] ) ? absint( $settings['code_expiry'] ) : 10;
+		$settings   = Utils::get_settings();
+		$expiry_min = absint( $settings['code_expiry'] );
 		if ( $expiry_min < 1 ) {
 			$expiry_min = 10;
 		}

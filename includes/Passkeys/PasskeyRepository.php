@@ -238,6 +238,45 @@ class PasskeyRepository {
 	}
 
 	/**
+	 * Count users with an active code method, optionally only those without a passkey.
+	 *
+	 * Turning a method off for the site makes password sign-in fail for its users
+	 * (verification fails closed), so only users with a usable passkey can still sign in.
+	 *
+	 * @param string $method_id       Code method ID: totp or email.
+	 * @param bool   $without_passkey Count only users who have no stored passkey.
+	 * @return int Number of users.
+	 */
+	public static function count_code_method_users( string $method_id, bool $without_passkey ): int {
+		global $wpdb;
+
+		if ( $without_passkey ) {
+			return (int) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(DISTINCT e.user_id) FROM %i e INNER JOIN %i m ON m.user_id = e.user_id AND m.meta_key = %s AND m.meta_value = %s LEFT JOIN %i p ON p.user_id = e.user_id WHERE e.meta_key = %s AND e.meta_value NOT IN ( '', '0' ) AND p.id IS NULL",
+					$wpdb->usermeta,
+					$wpdb->usermeta,
+					'brain2fa_method',
+					$method_id,
+					self::table_name(),
+					'brain2fa_enabled'
+				)
+			);
+		}
+
+		return (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(DISTINCT e.user_id) FROM %i e INNER JOIN %i m ON m.user_id = e.user_id AND m.meta_key = %s AND m.meta_value = %s WHERE e.meta_key = %s AND e.meta_value NOT IN ( '', '0' )",
+				$wpdb->usermeta,
+				$wpdb->usermeta,
+				'brain2fa_method',
+				$method_id,
+				'brain2fa_enabled'
+			)
+		);
+	}
+
+	/**
 	 * Delete one of a user's passkeys.
 	 *
 	 * @param int $id      Passkey ID.

@@ -14,7 +14,7 @@ Keep production changes inside this plugin. Do not modify WordPress core or `ven
 - `includes/Auth/EnrollmentGuard.php` restricts users who must enroll to the setup page, and opens that page to WooCommerce customers.
 - `includes/Auth/LoginAssets.php` loads the browser login script on `wp-login.php`.
 - `includes/TwoFactor/Methods/TotpMethod.php` owns TOTP setup, verification, and recovery codes.
-- `includes/Admin/Settings.php` owns site-wide settings and the Login Security page.
+- `includes/Admin/Settings.php` owns site-wide settings (three tabbed forms in `views/settings/`). `includes/Admin/LoginSecurityPage.php` owns the per-user Login Security page (views in `views/login-security/`).
 - `includes/Admin/UserProfile.php` owns profile status, grace extensions, and Dashboard notices.
 - `includes/Admin/UserListColumns.php` shows 2FA, setup-deadline, and grace-expiry status in Users.
 - `includes/Utils.php` is the shared policy layer for enablement, role enforcement, and grace deadlines.

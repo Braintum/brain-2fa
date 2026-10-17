@@ -86,7 +86,9 @@ class TotpMethod implements TwoFactorMethodInterface {
 	 * Generates a new TOTP secret and corresponding QR code image for the user
 	 * to scan with their authenticator app during the setup process.
 	 *
-	 * @param WP_User $user The WordPress user object to generate setup data for.
+	 * @param WP_User $user           The WordPress user object to generate setup data for.
+	 * @param string  $pending_secret Secret from a failed activation attempt. Reusing it keeps the
+	 *                                QR code the user already scanned. Ignored unless it is base32.
 	 *
 	 * @return array An associative array containing:
 	 *               - 'secret': The TOTP secret key.
@@ -94,9 +96,12 @@ class TotpMethod implements TwoFactorMethodInterface {
 	 *
 	 * @since 1.0.0
 	 */
-	public function get_setup_data( WP_User $user ): array {
+	public function get_setup_data( WP_User $user, string $pending_secret = '' ): array {
 		// Show setup form for new users.
 		$secret = get_user_meta( $user->ID, 'brain2fa_secret', true );
+		if ( ! $secret && 1 === preg_match( '/^[A-Z2-7]{16,128}$/', $pending_secret ) ) {
+			$secret = $pending_secret;
+		}
 		if ( ! $secret ) {
 			if ( class_exists( '\OTPHP\\TOTP' ) ) {
 				$t      = \OTPHP\TOTP::create();

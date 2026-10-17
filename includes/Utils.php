@@ -55,6 +55,39 @@ class Utils {
 	public const PASSKEY_ONLY_META_KEY = 'brain2fa_passkey_only';
 
 	/**
+	 * Values used for site settings that have never been saved.
+	 *
+	 * The only source of settings defaults. A key missing from the stored option
+	 * takes its value from here, so code readers and the settings form agree.
+	 *
+	 * @var array
+	 */
+	public const SETTINGS_DEFAULTS = array(
+		'enable_2fa'         => false,
+		'force_2fa_roles'    => array(),
+		'grace_period_days'  => 14,
+		'enable_totp'        => true,
+		'enable_email'       => true,
+		'enable_passkeys'    => false,
+		'allow_passkey_only' => false,
+		'default_method'     => 'totp',
+		'code_expiry'        => 10,
+		'remember_device'    => false,
+		'remember_duration'  => 30,
+	);
+
+	/**
+	 * Get the site settings with defaults filled in for missing keys.
+	 *
+	 * @return array Plugin settings.
+	 */
+	public static function get_settings(): array {
+		$plugin_settings = get_option( 'brain2fa_settings', array() );
+
+		return array_merge( self::SETTINGS_DEFAULTS, is_array( $plugin_settings ) ? $plugin_settings : array() );
+	}
+
+	/**
 	 * Check whether 2FA is enabled for a specific user.
 	 *
 	 * @param int|string $user_id User ID.
@@ -92,7 +125,7 @@ class Utils {
 	 * @return bool True when passkey-only accounts are allowed.
 	 */
 	public static function is_passkey_only_allowed(): bool {
-		$plugin_settings = get_option( 'brain2fa_settings', array() );
+		$plugin_settings = self::get_settings();
 		return self::is_passkeys_enabled() && ! empty( $plugin_settings['allow_passkey_only'] );
 	}
 
@@ -117,7 +150,7 @@ class Utils {
 	 * @return bool True when sitewide 2FA is enabled, false otherwise.
 	 */
 	public static function is_2fa_enabled_sitewide(): bool {
-		$plugin_settings = get_option( 'brain2fa_settings', array() );
+		$plugin_settings = self::get_settings();
 		return ! empty( $plugin_settings['enable_2fa'] );
 	}
 
@@ -128,14 +161,14 @@ class Utils {
 	 * @return bool True when the method is enabled.
 	 */
 	public static function is_method_enabled( string $method_id ): bool {
-		$plugin_settings = get_option( 'brain2fa_settings', array() );
+		$plugin_settings = self::get_settings();
 
 		if ( 'totp' === $method_id ) {
-			return ! isset( $plugin_settings['enable_totp'] ) || ! empty( $plugin_settings['enable_totp'] );
+			return ! empty( $plugin_settings['enable_totp'] );
 		}
 
 		if ( 'email' === $method_id ) {
-			return ! isset( $plugin_settings['enable_email'] ) || ! empty( $plugin_settings['enable_email'] );
+			return ! empty( $plugin_settings['enable_email'] );
 		}
 
 		return false;
@@ -149,7 +182,7 @@ class Utils {
 	 * @return bool True when the site owner enabled passkeys.
 	 */
 	public static function is_passkeys_enabled(): bool {
-		$plugin_settings = get_option( 'brain2fa_settings', array() );
+		$plugin_settings = self::get_settings();
 		return ! empty( $plugin_settings['enable_passkeys'] );
 	}
 
@@ -159,7 +192,7 @@ class Utils {
 	 * @return string Authentication method ID.
 	 */
 	public static function get_default_method(): string {
-		$plugin_settings = get_option( 'brain2fa_settings', array() );
+		$plugin_settings = self::get_settings();
 		$method          = $plugin_settings['default_method'] ?? 'totp';
 
 		if ( 'email_backup' === $method ) {
@@ -179,7 +212,7 @@ class Utils {
 	 * @return bool True when users may remember their devices.
 	 */
 	public static function is_remember_device_enabled(): bool {
-		$plugin_settings = get_option( 'brain2fa_settings', array() );
+		$plugin_settings = self::get_settings();
 		return ! empty( $plugin_settings['remember_device'] );
 	}
 
@@ -189,7 +222,7 @@ class Utils {
 	 * @return int Number of days, between 1 and 365.
 	 */
 	public static function get_remember_device_duration(): int {
-		$plugin_settings = get_option( 'brain2fa_settings', array() );
+		$plugin_settings = self::get_settings();
 		return min( 365, max( 1, absint( $plugin_settings['remember_duration'] ?? 30 ) ) );
 	}
 
@@ -552,7 +585,7 @@ class Utils {
 			return false;
 		}
 
-		$plugin_settings = get_option( 'brain2fa_settings', array() );
+		$plugin_settings = self::get_settings();
 		$required_roles  = $plugin_settings['force_2fa_roles'] ?? array();
 
 		if ( empty( $required_roles ) || ! is_array( $required_roles ) ) {
@@ -568,7 +601,7 @@ class Utils {
 	 * @return int Number of grace-period days.
 	 */
 	public static function get_grace_period_days(): int {
-		$plugin_settings = get_option( 'brain2fa_settings', array() );
+		$plugin_settings = self::get_settings();
 		$days            = absint( $plugin_settings['grace_period_days'] ?? 14 );
 
 		return min( 365, $days );
