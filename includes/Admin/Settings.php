@@ -272,6 +272,7 @@ class Settings {
 			'methods'         => __( 'Authentication Methods', 'brain-2fa' ),
 			'requirements'    => __( 'Enrollment Requirements', 'brain-2fa' ),
 			'trusted-devices' => __( 'Trusted Devices', 'brain-2fa' ),
+			'emails'          => __( 'Emails', 'brain-2fa' ),
 		);
 	}
 
@@ -283,7 +284,7 @@ class Settings {
 	public static function get_active_tab(): string {
 		$tab = isset( $_GET['tab'] ) && is_string( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only navigation; the value is checked against an allow-list.
 
-		return isset( self::TAB_FIELDS[ $tab ] ) ? $tab : 'methods';
+		return isset( self::get_tabs()[ $tab ] ) ? $tab : 'methods';
 	}
 
 	/**

@@ -205,7 +205,7 @@ class PasskeyLogin {
 		if ( is_wp_error( $verified ) ) {
 			Utils::record_failed_ip_attempt();
 			if ( 'brain2fa_passkey_cloned' === $verified->get_error_code() ) {
-				Utils::send_factor_change_notification( $user, 'passkey_clone_warning' );
+				Utils::send_factor_change_notification( $user, 'passkey_clone_warning', array( 'passkey_name' => (string) $passkey->name ) );
 			}
 			return $verified;
 		}

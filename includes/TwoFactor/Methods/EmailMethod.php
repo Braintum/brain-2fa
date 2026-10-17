@@ -4,6 +4,7 @@ declare( strict_types=1 );
 
 namespace Brain_2FA\TwoFactor\Methods;
 
+use Brain_2FA\Emails\Mailer;
 use Brain_2FA\Utils;
 use Brain_2FA\TwoFactor\Interfaces\TwoFactorMethodInterface;
 use WP_User;
@@ -173,24 +174,14 @@ class EmailMethod implements TwoFactorMethodInterface {
 		$email_sent = apply_filters( 'brain2fa_send_backup_code', false, $user, $code );
 
 		if ( ! $email_sent ) {
-			$site_name = get_bloginfo( 'name' );
-			$subject   = sprintf(
-				/* translators: %s: site name */
-				__( '[%s] Your two-factor authentication code', 'brain-2fa' ),
-				$site_name
+			$email_sent = Mailer::send(
+				'sign_in_code',
+				$user,
+				array(
+					'code'           => $code,
+					'expiry_minutes' => $expiry_min,
+				)
 			);
-			$message = sprintf(
-				/* translators: 1: user display name, 2: 6-digit code, 3: expiry in minutes, 4: site name */
-				__(
-					"Hi %1\$s,\n\nYour two-factor authentication code is:\n\n%2\$s\n\nThis code expires in %3\$d minute(s).\n\nIf you did not request this code, please ignore this email.\n\n-- %4\$s",
-					'brain-2fa'
-				),
-				$user->display_name,
-				$code,
-				$expiry_min,
-				$site_name
-			);
-			$email_sent = wp_mail( $email, $subject, $message );
 		}
 
 		if ( $email_sent ) {

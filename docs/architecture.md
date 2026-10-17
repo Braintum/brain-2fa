@@ -27,9 +27,12 @@ Brain 2FA is a WordPress plugin (PHP 8.1+, WordPress 6.4+) that adds a second au
 | `TwoFactor\Manager` | Registry of methods keyed by ID (`totp`, `email`). |
 | `TwoFactor\Interfaces\TwoFactorMethodInterface` | Contract for a method: setup data, save/deactivate, send challenge, verify, recovery codes. |
 | `TwoFactor\Methods\TotpMethod` | TOTP secret generation (otphp, with an internal HOTP fallback), local QR rendering (bacon-qr-code + GD, logo in the centre), verification of the current time step ±1 with per-user replay protection, and hashed single-use recovery codes. |
-| `TwoFactor\Methods\EmailMethod` | Six-digit email codes stored in a transient for the configured expiry. Sending is filterable. |
-| `Utils` | Shared policy: site-wide and per-method enablement, default method, role enforcement, grace-period deadlines, trusted devices, verification lockouts and change notifications. |
-| `Admin\Settings` | The Brain 2FA menu and the site settings page. It registers the Login Security page and hands it to `Admin\LoginSecurityPage`. The settings page saves `brain2fa_settings` through the Settings API. It has three server-rendered tabs (`?tab=methods`, `requirements` and `trusted-devices`; unknown values fall back to `methods`), each a separate form rendered from `views/settings/tab-*.php` and saved on its own. Dependent fields hide with CSS `:has()` while their parent box is off, and stay in the form so their values are kept. The Authentication Methods tab counts the users of each code method who have no usable passkey (`PasskeyRepository::count_code_method_users()`). A method turned off for the site fails closed at sign-in, so these users would be unable to sign in with their password. The count appears as a warning while the method is on, and as an error if it is already off. `src/js/admin.js` adds the unsaved-changes warning, a confirmation before turning off a method that has such users, and a confirmation when more roles are made to require 2FA. |
+| `TwoFactor\Methods\EmailMethod` | Six-digit email codes stored in a transient for the configured expiry. Sends them through `Emails\Mailer` (`sign_in_code`); sending is filterable. |
+| `Emails\EmailRegistry` | The catalogue of plugin emails (ID, group, label, placeholders, required placeholders, whether it can be turned off, default subject and body) and the stored customizations in `brain2fa_emails`: read, validate, save and reset templates and the sender. |
+| `Emails\Mailer` | Renders an email for a user (placeholder values, `strtr`) and sends it as plain text with `wp_mail()`, with the configured sender applied only to that one email. |
+| `Utils` | Shared policy: site-wide and per-method enablement, default method, role enforcement, grace-period deadlines, trusted devices, verification lockouts and change notifications (`send_factor_change_notification()` sends an `alerts` email through `Emails\Mailer`). |
+| `Admin\Settings` | The Brain 2FA menu and the site settings page. It registers the Login Security page and hands it to `Admin\LoginSecurityPage`. The settings page saves `brain2fa_settings` through the Settings API. It has four server-rendered tabs (`?tab=methods`, `requirements`, `trusted-devices` and `emails`; unknown values fall back to `methods`). The first three are separate forms rendered from `views/settings/tab-*.php` and saved on its own. Dependent fields hide with CSS `:has()` while their parent box is off, and stay in the form so their values are kept. The Authentication Methods tab counts the users of each code method who have no usable passkey (`PasskeyRepository::count_code_method_users()`). A method turned off for the site fails closed at sign-in, so these users would be unable to sign in with their password. The count appears as a warning while the method is on, and as an error if it is already off. `src/js/admin.js` adds the unsaved-changes warning, a confirmation before turning off a method that has such users, and a confirmation when more roles are made to require 2FA. |
+| `Admin\EmailSettings` | The Emails tab. `handle_post()` runs on `load-toplevel_page_brain-2fa-settings` (before output) and handles saving a template, resetting it, sending a test to the current user and saving the sender, each behind `manage_options` and the `brain2fa_email_settings` nonce. Success redirects back with a notice; a validation error re-renders the editor with the submitted values and the error next to its field. `render_tab()` shows the email list (`views/settings/tab-emails.php`) or, with `?email=<id>`, the editor (`views/settings/email-edit.php`), where `src/js/admin.js` inserts placeholders at the cursor and updates a preview with sample values. |
 | `Admin\LoginSecurityPage` | The per-user Login Security page. `handle_post()` runs the submitted action for the current user (code setup, password-confirmed deactivation and recovery-code regeneration, passkey rename and removal, passkey-only changes) and records each result for the page section it belongs to. The page then reads its state fresh and renders a protection summary and the Passkeys, Two-factor codes, Recovery codes and Password sign-in cards from `views/login-security/*.php`. A form that failed reopens its `<details>` disclosure with the error inside it. Newly generated recovery codes exist only in the POST response. After a wrong setup code, the authenticator secret that was already scanned is shown again (`TotpMethod::get_setup_data()` accepts it only if it is base32). |
 | `Admin\UserProfile` | 2FA status on profile screens, the admin-only grace-period extension, and the Dashboard deadline notice. |
 | `Admin\UserListColumns` | Sortable 2FA status column in Users, showing setup deadlines and expiry. |
@@ -79,6 +82,24 @@ XML-RPC and REST logins have no setup page, so `verify_2fa()` keeps rejecting th
 ## Email setup
 
 Email authentication is enabled only after the user enters a code sent to their address: the first activation request sends a code (`save_setup()` returns `code_sent`), the second verifies it. "Send a new code" discards the pending code and sends another.
+
+## Emails
+
+The plugin sends ten emails, all plain text and all editable under **Brain 2FA > Settings > Emails**:
+
+| ID | Group | When | Can be turned off |
+| --- | --- | --- | --- |
+| `sign_in_code` | Sign-in | An email code is requested at sign-in or during email setup. Must contain `{code}`. | No |
+| `activated`, `deactivated` | Alerts | Two-factor authentication turned on or off. | Yes |
+| `recovery_codes_regenerated` | Alerts | New recovery codes generated. | Yes |
+| `passkey_added`, `passkey_removed` | Alerts | A passkey added or removed by the user. | Yes |
+| `passkeys_revoked` | Alerts | An administrator removed all of the user's passkeys. | Yes |
+| `passkey_only_enabled`, `passkey_only_disabled` | Alerts | Password sign-in turned off or back on. | Yes |
+| `passkey_clone_warning` | Alerts | A passkey sign-in was blocked because the passkey appears to have been copied. | Yes (the editor warns against it) |
+
+Every email gets the common placeholders `{user_display_name}`, `{user_first_name}` (falls back to the display name), `{user_login}`, `{user_email}`, `{site_name}`, `{site_url}`, `{login_url}`, `{login_security_url}` and `{date_time}` (site date and time formats). `sign_in_code` adds `{code}` and `{expiry_minutes}`; the passkey alerts that concern one passkey add `{passkey_name}`. Callers pass these extra values as `$context` to `Mailer::send( $id, $user, $context )`. Placeholders are replaced with `strtr()`, so a value is never scanned again for placeholders, and an unknown `{name}` is left as typed.
+
+Only what differs from the default is stored, so an untouched subject or body keeps following the translation of the default. A template's subject is sanitized with `sanitize_text_field()` (single line, at most 255 characters) and its body with `sanitize_textarea_field()` (at most 10,000 characters), after normalizing line endings. A template that is missing a required placeholder is rejected. At send time the subject is forced onto one line again, after placeholders and the `brain2fa_email_content` filter, so a placeholder value or a filter cannot inject mail headers. The sender name and address apply through `wp_mail_from_name` / `wp_mail_from` at priority 999 and are removed after the email is sent; when empty, the site's mail settings apply.
 
 ## Passkeys (passwordless sign-in)
 
@@ -133,6 +154,8 @@ A save that carries `_tab` (`methods`, `requirements` or `trusted-devices`, see 
 | `remember_device` | bool | false | Trusted devices on or off. |
 | `remember_duration` | int 1–365 days | 30 | Trusted device lifetime. |
 
+**Option** `brain2fa_emails` (not autoloaded, absent until something is customized): `from_name`, `from_address` and `templates`, keyed by email ID. Each template stores only `subject` and `body` when they differ from the default, and `enabled => false` when an alert is turned off. Read it through `EmailRegistry::get_stored()` and `EmailRegistry::get_template()`.
+
 **User meta:** `brain2fa_enabled`, `brain2fa_method`, `brain2fa_secret` (TOTP, base32), `brain2fa_recovery_codes` (array of `wp_hash_password` hashes), `brain2fa_grace_expires_at` (Unix time, created lazily), `brain2fa_totp_last_step` (last accepted TOTP time step, for replay protection), `brain2fa_remembered_devices` (list of `{token: hash, expires_at}`, max 10), `brain2fa_failed_attempts` (`{count, last_failure, locked_until}`).
 
 **Transients:** `brain2fa_rate_{wp_hash(ip)}` (preflight attempt counter, 60 s), `brain2fa_backup_code_{user_id}` (pending email code), `brain2fa_ip_failures_{wp_hash(ip)}` (failed verifications per IP, `{count, expires_at}`).
@@ -156,7 +179,9 @@ A save that carries `_tab` (`methods`, `requirements` or `trusted-devices`, see 
 | `brain2fa_lockout_duration` | filter | Lockout length and per-IP window in seconds (default 900). |
 | `brain2fa_passkey_allowed_origins` | filter | Exact origins accepted for passkey ceremonies (default: the origins of `home_url()` and `site_url()`). |
 | `brain2fa_passkey_options_per_minute` | filter | Passkey challenge requests allowed per IP per minute (default 30). |
-| `brain2fa_send_change_notification` | filter | Return `false` to skip the email sent after 2FA is turned on or off or recovery codes are regenerated. Args: `true`, `WP_User`, `string $event`. |
+| `brain2fa_send_change_notification` | filter | Return `false` to skip a security alert email. Args: `true`, `WP_User`, `string $event` (the email ID, such as `activated` or `passkey_added`). An alert turned off on the Emails tab is not sent, whatever this filter returns. |
+| `brain2fa_email_placeholders` | filter | Placeholder values for an email, keyed by name without braces. Add a key to support a new placeholder. Args: `array $values`, `string $id`, `WP_User`, `array $context`. |
+| `brain2fa_email_content` | filter | The rendered email just before sending: `array( 'subject' => ..., 'body' => ... )`. Args: `array $email`, `string $id`, `WP_User`, `array $context`. The subject is made single-line afterwards. |
 | `login_errors` | filter (core) | Applied to preflight credential errors, as on `wp-login.php`. |
 
 ## Front-end build
@@ -166,5 +191,7 @@ A save that carries `_tab` (`methods`, `requirements` or `trusted-devices`, see 
 - `assets/js/` and `assets/css/` are gitignored and produced by `npm run build`. Release builds include them.
 
 ## Release build
+
+CI (`.github/workflows/ci.yml`) runs on every push to `master` and every pull request: PHP syntax on 8.1 to 8.4, `composer phpcs`, `npm run lint` and `npm run build`, `scripts/check-versions.sh`, POT freshness, and WordPress.org Plugin Check against `dist/brain-2fa` from `npm run package`.
 
 `npm run dist` runs: webpack production build, then POT generation (`wp i18n make-pot`), then `composer install --no-dev`, then `scripts/build-dist.php` (skips `vendor/lbuchs/webauthn/_test`, a demo server; copies `assets`, `includes`, `languages`, `vendor`, `brain-2fa.php`, `composer.json`, `composer.lock` and `readme.txt` into `dist/brain-2fa/` and zips it), then restores dev dependencies. `scripts/deploy.sh` publishes `dist/brain-2fa/` to SVN. See `docs/releasing.md`.

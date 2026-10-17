@@ -84,6 +84,11 @@ if ( empty( $settings['enable_passkeys'] ) ) {
 		<?php endforeach; ?>
 	</nav>
 
+	<?php if ( 'emails' === $active_tab ) : ?>
+		<div class="brain2fa-emails">
+			<?php Brain_2FA\Admin\EmailSettings::render_tab(); ?>
+		</div>
+	<?php else : ?>
 	<form action="options.php" method="post" class="brain2fa-settings-form" data-brain2fa-tab="<?php echo esc_attr( $active_tab ); ?>">
 		<?php settings_fields( 'brain2fa_settings_group' ); ?>
 		<input type="hidden" name="brain2fa_settings[_tab]" value="<?php echo esc_attr( $active_tab ); ?>">
@@ -100,6 +105,7 @@ if ( empty( $settings['enable_passkeys'] ) ) {
 
 		<?php submit_button( __( 'Save Changes', 'brain-2fa' ) ); ?>
 	</form>
+	<?php endif; ?>
 
 	<p class="brain2fa-settings-footer">
 		<a href="https://www.braintum.com/support/" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Documentation', 'brain-2fa' ); ?></a>

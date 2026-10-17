@@ -487,53 +487,27 @@ class Utils {
 	/**
 	 * Email the account owner after their two-factor authentication settings change.
 	 *
-	 * @param \WP_User $user  User whose settings changed.
-	 * @param string   $event One of 'activated', 'deactivated', 'recovery_codes_regenerated', 'passkey_added',
-	 *                        'passkey_removed', 'passkeys_revoked', 'passkey_only_enabled',
-	 *                        'passkey_only_disabled' or 'passkey_clone_warning'.
+	 * The text comes from the email templates (Brain 2FA > Settings > Emails), where
+	 * administrators can also turn individual alerts off.
+	 *
+	 * @param \WP_User $user    User whose settings changed.
+	 * @param string   $event   One of 'activated', 'deactivated', 'recovery_codes_regenerated', 'passkey_added',
+	 *                          'passkey_removed', 'passkeys_revoked', 'passkey_only_enabled',
+	 *                          'passkey_only_disabled' or 'passkey_clone_warning'.
+	 * @param array    $context Values for the email's placeholders, such as passkey_name.
 	 * @return void
 	 */
-	public static function send_factor_change_notification( \WP_User $user, string $event ): void {
-		if ( ! is_email( $user->user_email ) || ! apply_filters( 'brain2fa_send_change_notification', true, $user, $event ) ) {
+	public static function send_factor_change_notification( \WP_User $user, string $event, array $context = array() ): void {
+		$definition = \Brain_2FA\Emails\EmailRegistry::get_definitions()[ $event ] ?? null;
+		if ( ! $definition || 'alerts' !== $definition['group'] || ! is_email( $user->user_email ) ) {
 			return;
 		}
 
-		$events = array(
-			'activated'                  => __( 'Two-factor authentication was turned on for your account.', 'brain-2fa' ),
-			'deactivated'                => __( 'Two-factor authentication was turned off for your account.', 'brain-2fa' ),
-			'recovery_codes_regenerated' => __( 'New recovery codes were generated for your account. Your previous recovery codes no longer work.', 'brain-2fa' ),
-			'passkey_added'              => __( 'A new passkey was added to your account. It can be used to sign in without a password.', 'brain-2fa' ),
-			'passkey_removed'            => __( 'A passkey was removed from your account.', 'brain-2fa' ),
-			'passkeys_revoked'           => __( 'An administrator removed the passkeys from your account.', 'brain-2fa' ),
-			'passkey_only_enabled'       => __( 'Password sign-in was turned off for your account. You can now only sign in with a passkey.', 'brain-2fa' ),
-			'passkey_only_disabled'      => __( 'Password sign-in was turned back on for your account.', 'brain-2fa' ),
-			'passkey_clone_warning'      => __( 'A sign-in with one of your passkeys was blocked because the passkey may have been copied. Remove it from your account and contact the site administrator.', 'brain-2fa' ),
-		);
-
-		if ( ! isset( $events[ $event ] ) ) {
+		if ( ! apply_filters( 'brain2fa_send_change_notification', true, $user, $event ) ) {
 			return;
 		}
 
-		$site_name = wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES );
-		$subject   = sprintf(
-			/* translators: %s: site name */
-			__( '[%s] Your two-factor authentication settings changed', 'brain-2fa' ),
-			$site_name
-		);
-		$message = sprintf(
-			/* translators: 1: user display name, 2: description of the change, 3: date and time of the change, 4: site name, 5: site URL */
-			__(
-				"Hi %1\$s,\n\n%2\$s\n\nTime: %3\$s\n\nIf you did not make this change, reset your password immediately and contact the site administrator.\n\n-- %4\$s\n%5\$s",
-				'brain-2fa'
-			),
-			$user->display_name,
-			$events[ $event ],
-			wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) ),
-			$site_name,
-			home_url( '/' )
-		);
-
-		wp_mail( $user->user_email, $subject, $message );
+		\Brain_2FA\Emails\Mailer::send( $event, $user, $context );
 	}
 
 	/**

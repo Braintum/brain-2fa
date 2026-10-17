@@ -1,286 +1,118 @@
 # Brain 2FA
 
-A modern, secure Two-Factor Authentication (2FA) plugin for WordPress with support for TOTP authenticator apps and email-based verification.
+Two-factor authentication and passwordless passkey sign-in for WordPress. Users confirm their sign-in with a code from an authenticator app or their inbox, or skip the password entirely with a passkey. Everything runs on your own server: no third-party services.
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/braintum/brain-2fa)
-[![License](https://img.shields.io/badge/license-GPLv2+-green.svg)](LICENSE)
-[![WordPress](https://img.shields.io/badge/wordpress-5.0+-blue.svg)](https://wordpress.org)
+[![CI](https://github.com/Braintum/brain-2fa/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/Braintum/brain-2fa/actions/workflows/ci.yml)
+[![WordPress.org](https://img.shields.io/wordpress/plugin/v/brain-2fa.svg)](https://wordpress.org/plugins/brain-2fa/)
+[![License: GPLv2 or later](https://img.shields.io/badge/license-GPLv2%2B-green.svg)](https://www.gnu.org/licenses/gpl-2.0.html)
+
+Install it from the [WordPress.org plugin directory](https://wordpress.org/plugins/brain-2fa/). This repository holds the development source.
 
 ## Features
 
-- 🔐 **TOTP Support** - Compatible with Google Authenticator, Authy, and other authenticator apps
-- 📧 **Email-Based 2FA** - Alternative verification via email codes
-- 🎨 **Modern UI** - Clean, user-friendly interface for settings and setup
-- 🔄 **Backup Codes** - Generate emergency backup codes for account recovery
-- 👥 **Role-Based Enforcement** - Require 2FA for specific user roles
-- 📱 **QR Code Generation** - Easy setup with QR codes for authenticator apps
-- 🌐 **Internationalization Ready** - Fully translatable (i18n)
-- ⚡ **Performance Optimized** - Lightweight with modern JavaScript architecture
-- 🎯 **WordPress Standards** - Follows WordPress coding standards and best practices
+- **Passkeys:** passwordless sign-in with Face ID, Touch ID, Windows Hello, a phone or a security key; also usable as the second step after a password, and optionally as the only way into an account. Requires HTTPS; off by default.
+- **Authenticator apps (TOTP):** any TOTP app, set up with a QR code or a secret key, with one-time recovery codes.
+- **Email codes:** a one-time code sent to the account address, with a configurable expiry.
+- **Role-based enforcement:** require 2FA for selected roles, with a setup grace period. After the deadline, users can sign in but only reach the setup page.
+- **Trusted devices:** optional, expiring, hashed "remember this device" tokens.
+- **Editable emails:** every email the plugin sends (sign-in code and nine security alerts) can be edited with placeholders, previewed, test-sent and reset under **Brain 2FA > Settings > Emails**.
+- **WooCommerce:** the My Account login form is protected, and customers manage 2FA from their dashboard.
+- **Works without JavaScript**, and is fully translatable.
 
 ## Requirements
 
-- **WordPress**: 5.0 or higher
-- **PHP**: 8.1 or higher
-- **Node.js**: 18.0 or higher (for development)
-- **npm**: 9.0 or higher (for development)
+- WordPress 6.4 or later
+- PHP 8.1 or later
+- For development: Composer, Node.js (version in `.nvmrc`) and WP-CLI
 
-## Installation
+## Using the plugin
 
-### Via WordPress Admin
+1. Activate the plugin, then open **Brain 2FA > Settings**.
+2. **Authentication Methods:** turn on two-factor authentication and choose the methods (authenticator app, email codes, passkeys).
+3. **Enrollment Requirements:** choose the roles that must use 2FA and their grace period.
+4. **Trusted Devices:** allow "remember this device" and set how long it lasts.
+5. **Emails:** adjust the wording of the emails and the sender, if you like.
 
-1. Download the latest release
-2. Navigate to **Plugins > Add New** in WordPress admin
-3. Click **Upload Plugin** and select the downloaded zip file
-4. Click **Install Now** and then **Activate**
+Each user sets up their own sign-in protection under **Brain 2FA > Login Security** (WooCommerce customers use the link on their My Account dashboard). Administrators can extend setup deadlines, remove a user's passkeys and turn password sign-in back on from the user's profile.
 
-### Manual Installation
+### Email placeholders
 
-1. Download and extract the plugin files
-2. Upload the `brain-2fa` folder to `/wp-content/plugins/`
-3. Activate the plugin through the **Plugins** menu in WordPress
+All emails support `{user_display_name}`, `{user_first_name}`, `{user_login}`, `{user_email}`, `{site_name}`, `{site_url}`, `{login_url}`, `{login_security_url}` and `{date_time}`. The sign-in code email adds `{code}` (required) and `{expiry_minutes}`; passkey alerts add `{passkey_name}`. Unknown placeholders are left as typed.
 
-### Composer Installation
-
-```bash
-composer require braintum/brain-2fa
-```
-
-## Configuration
-
-### Basic Setup
-
-1. Navigate to **Settings > Brain 2FA** in WordPress admin
-2. Configure your preferred 2FA method (Authenticator App or Email)
-3. Optionally enable force 2FA for specific user roles
-4. Save settings
-
-### User Setup
-
-Users can set up 2FA from their profile page:
-
-1. Go to **Users > Profile**
-2. Scroll to the **Brain 2FA** section
-3. Enable 2FA and follow the setup instructions
-4. Save backup codes in a secure location
+Developers can add placeholders with `brain2fa_email_placeholders` and change a rendered email with `brain2fa_email_content`. See [docs/architecture.md](docs/architecture.md#extension-points) for all hooks.
 
 ## Development
 
-### Setup
-
-```bash
-# Clone the repository
-git clone https://github.com/braintum/brain-2fa.git
+```sh
+git clone https://github.com/Braintum/brain-2fa.git
 cd brain-2fa
-
-# Install PHP dependencies
 composer install
-
-# Install JavaScript dependencies
-npm install
+npm ci
 ```
 
-### Build Assets
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Rebuild `assets/` from `src/` on every change |
+| `npm run build` | Production build of `src/js` and `src/scss` into `assets/` |
+| `npm run lint` / `npm run lint:fix` | ESLint (`eslint-config-wordpress`) |
+| `composer phpcs` / `composer phpcbf` | WordPress Coding Standards (WordPress-Extra + WordPress-Docs) |
+| `npm run make-pot` | Regenerate `languages/brain-2fa.pot` after changing strings |
+| `bash scripts/check-versions.sh` | Check that the version, requirements and changelog agree |
+| `npm run package` | Build the production plugin in `dist/brain-2fa` |
 
-```bash
-# Development mode (watch for changes)
-npm run dev
+Edit sources only: `src/js/`, `src/scss/` and the PHP in `includes/`. `assets/`, `languages/*.pot`, `vendor/` and `dist/` are generated.
 
-# Production build
-npm run build
-
-# Development build (unminified)
-npm run build:dev
-
-# Lint JavaScript
-npm run lint
-npm run lint:fix
-```
-
-### Project Structure
+### Project structure
 
 ```
 brain-2fa/
-├── assets/              # Compiled assets (auto-generated)
-│   ├── css/            # Compiled CSS
-│   └── js/             # Compiled JavaScript
-├── includes/           # PHP classes (PSR-4)
-│   ├── Admin/         # Admin functionality
-│   ├── Auth/          # Authentication logic
-│   ├── TwoFactor/     # 2FA implementations
-│   └── App.php        # Main application class
-├── languages/         # Translation files
-├── src/               # Source files (development)
-│   ├── js/           # JavaScript source
-│   │   ├── components/
-│   │   └── utils/
-│   └── scss/         # SCSS source
-│       ├── _variables.scss
-│       ├── _components.scss
-│       └── ...
-├── vendor/           # Composer dependencies
-├── webpack.config.js # Webpack configuration
-├── package.json      # NPM dependencies
-└── composer.json     # Composer configuration
+├── brain-2fa.php        # Plugin header and bootstrap
+├── includes/            # PHP, PSR-4 namespace Brain_2FA\
+│   ├── Admin/           # Settings page, Login Security page, user profile and list
+│   ├── Auth/            # Login flow, enrollment guard, account events
+│   ├── Emails/          # Email templates, placeholders and the mailer
+│   ├── Passkeys/        # WebAuthn registration, sign-in and storage
+│   ├── TwoFactor/       # TOTP and email code methods
+│   ├── App.php          # Wires everything up
+│   └── Utils.php        # Shared 2FA policy
+├── src/                 # JavaScript and SCSS sources
+├── assets/              # Compiled assets (generated)
+├── languages/           # POT file (generated)
+├── docs/                # Architecture, security model, release process
+└── scripts/             # Build, deploy and check scripts
 ```
 
-### JavaScript Architecture
+### Documentation
 
-The plugin uses a modern JavaScript build system:
+- [docs/architecture.md](docs/architecture.md): components, login flow, data model, extension hooks and build.
+- [docs/security.md](docs/security.md): threat model, design decisions and invariants.
+- [docs/releasing.md](docs/releasing.md): WordPress.org release process.
+- [README-JAVASCRIPT.md](README-JAVASCRIPT.md): JavaScript build details.
+- [AGENTS.md](AGENTS.md): conventions for contributors and coding agents.
 
-- **Webpack 5** for bundling
-- **Babel** for ES6+ transpilation
-- **ESLint** for code quality
-- **Sass** for styling
-- **WordPress i18n** for translations
-- **Functional programming** approach (no classes)
+### Continuous integration
 
-See [README-JAVASCRIPT.md](README-JAVASCRIPT.md) for detailed JavaScript development documentation.
-
-### Coding Standards
-
-The plugin follows:
-
-- [WordPress PHP Coding Standards](https://developer.wordpress.org/coding-standards/wordpress-coding-standards/php/)
-- [WordPress JavaScript Coding Standards](https://developer.wordpress.org/coding-standards/wordpress-coding-standards/javascript/)
-- PSR-4 autoloading for PHP classes
-
-## Translation
-
-### Generate POT file
-
-```bash
-wp i18n make-pot . languages/brain2fa.pot --domain=brain2fa
-```
-
-### Create translations
-
-1. Use [Poedit](https://poedit.net/) or similar tool to create `.po` files
-2. Compile to `.mo` files
-3. For JavaScript translations, generate JSON files:
-
-```bash
-wp i18n make-json languages --no-purge
-```
-
-## Security
-
-### Reporting Vulnerabilities
-
-If you discover a security vulnerability, please email security@braintum.com. All security vulnerabilities will be promptly addressed.
-
-### Security Features
-
-- Secure TOTP implementation using industry-standard algorithms
-- Rate limiting on login attempts
-- Password-hashed storage of recovery codes and trusted-device tokens
-- Secure random generation for backup codes
-- CSRF protection on all forms
+Every push to `master` and every pull request runs [`.github/workflows/ci.yml`](.github/workflows/ci.yml): PHP syntax on 8.1 to 8.4, PHPCS, ESLint and the production build, the version check, POT freshness and WordPress.org [Plugin Check](https://wordpress.org/plugins/plugin-check/) on the production package. Pull requests must be green.
 
 ## Contributing
 
-We welcome contributions! Please follow these steps:
+1. Fork the repository and create a branch from `master`.
+2. Follow the WordPress Coding Standards; `composer phpcs` and `npm run lint` must stay clean. Do not silence security sniffs with `phpcs:ignore`.
+3. Run `npm run build` and `npm run make-pot` when you change sources or strings.
+4. Update the docs and the `readme.txt` changelog in the same change.
+5. Open a pull request.
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes following WordPress coding standards
-4. Test thoroughly
-5. Commit your changes (`git commit -m 'Add amazing feature'`)
-6. Push to the branch (`git push origin feature/amazing-feature`)
-7. Open a Pull Request
+## Security
 
-### Development Guidelines
-
-- Write clean, documented code
-- Follow WordPress and PSR-4 standards
-- Add translations for all user-facing strings
-- Test on multiple WordPress versions
-- Update documentation as needed
-
-## Testing
-
-```bash
-# Run PHP tests (if available)
-composer test
-
-# Run JavaScript linting
-npm run lint
-
-# Check for WordPress coding standards
-composer phpcs
-```
-
-## Changelog
-
-### Version 1.0.0
-- Initial release
-- TOTP authenticator app support
-- Email-based 2FA
-- QR code generation
-- Backup codes
-- Role-based enforcement
-- Modern JavaScript architecture
-- i18n support
-
-## FAQ
-
-### How do I reset 2FA for a user?
-
-As an administrator, you can disable 2FA for any user from their profile page in WordPress admin.
-
-### What happens if I lose my authenticator app?
-
-Use one of your backup codes to log in, then set up 2FA again with a new device.
-
-### Can I use this plugin on multisite?
-
-Yes, Brain 2FA is compatible with WordPress multisite installations.
-
-### Which authenticator apps are supported?
-
-Any TOTP-compatible app works, including:
-- Google Authenticator
-- Microsoft Authenticator
-- Authy
-- 1Password
-- Bitwarden
+This plugin sits in the authentication path. Please report vulnerabilities privately to security@braintum.com rather than opening a public issue.
 
 ## Support
 
-- **Documentation**: [README-JAVASCRIPT.md](README-JAVASCRIPT.md)
-- **Issues**: [GitHub Issues](https://github.com/braintum/brain-2fa/issues)
-- **Support**: [https://www.braintum.com/support/](https://www.braintum.com/support/)
-- **Website**: [https://www.braintum.com/](https://www.braintum.com/)
+- WordPress.org support forum: <https://wordpress.org/support/plugin/brain-2fa/>
+- Braintum support: <https://www.braintum.com/support/>
 
 ## License
 
-This plugin is licensed under the GPLv2 (or later).
+GPLv2 or later. Copyright (C) 2026 Braintum.
 
-```
-Brain 2FA - Two Factor Authentication for WordPress
-Copyright (C) 2026 Braintum
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-```
-
-## Credits
-
-Built with ❤️ by [Braintum](https://www.braintum.com/)
-
-### Dependencies
-
-- [OTPHP](https://github.com/Spomky-Labs/otphp) - TOTP implementation
-- [BaconQrCode](https://github.com/Bacon/BaconQrCode) - QR code generation
-- [WordPress i18n](https://developer.wordpress.org/block-editor/reference-guides/packages/packages-i18n/) - Internationalization
-
----
-
-**Made with modern JavaScript and WordPress best practices** 🚀
+Built with [spomky-labs/otphp](https://github.com/Spomky-Labs/otphp), [bacon/bacon-qr-code](https://github.com/Bacon/BaconQrCode) and [lbuchs/webauthn](https://github.com/lbuchs/WebAuthn).

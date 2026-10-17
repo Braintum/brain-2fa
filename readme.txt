@@ -24,6 +24,7 @@ Codes are generated and passkeys are verified on your own server. Brain 2FA does
 * **Recovery codes:** TOTP users receive one-time recovery codes they can download and regenerate in case they lose their phone.
 * **Role-based enforcement:** Require two-factor authentication for selected user roles, such as Administrator, Editor or Shop manager.
 * **Setup grace period:** Give users in required roles a set number of days to enable 2FA. After the deadline, they can sign in but only reach the setup page until 2FA is enabled. Administrators can see deadlines in the Users list and extend them from a user's profile.
+* **Editable emails:** Change the subject and text of every email the plugin sends, from the sign-in code to security alerts, under **Brain 2FA > Settings > Emails**. Personalize them with placeholders such as `{user_display_name}`, `{site_name}` and `{date_time}`, preview them as you type, send yourself a test, and reset any email to its default. You can also turn off individual alerts and set the sender name and address.
 * **Trusted devices:** Users can optionally skip the code on devices they trust, using expiring, password-hashed tokens.
 * **Consistent enforcement:** The 2FA policy applies to every sign-in, including direct submissions of the login form, not only the JavaScript-assisted flow. The credential check before the code step is rate limited per IP address.
 * **WooCommerce support:** Works with the default WordPress login form and the WooCommerce My Account login form. Customers can set up and manage 2FA from a link on their My Account dashboard.
@@ -83,6 +84,14 @@ Yes, if you allow it under **Brain 2FA > Settings**. Users with a passkey can th
 
 Unless they turned off password sign-in, they can still sign in with their password (and a two-factor code, if they have one) and remove the lost passkey on their Login Security page. Administrators can remove all of a user's passkeys from the user's profile, which also turns password sign-in back on.
 
+= Can I change the emails the plugin sends? =
+
+Yes. Open **Brain 2FA > Settings > Emails** to edit the subject and text of the sign-in code email and of each security alert (for example "Two-factor authentication turned on" or "Passkey added"). Click a placeholder such as `{user_first_name}`, `{site_name}` or `{login_security_url}` to insert it; the preview shows the result with sample values. Use **Send Test Email** to see it in your inbox, and **Reset to Default** to undo your changes. Emails you have not edited keep following the plugin's translations.
+
+The sign-in code email cannot be turned off and must contain `{code}`, so users can always receive their code. The security alerts can be turned off one by one, but we recommend keeping them: they tell users when someone changes their sign-in settings.
+
+Emails are sent as plain text. Under **Sender** you can set the From name and address; leave them empty to use your site's normal mail settings.
+
 = Does Brain 2FA connect to external services? =
 
 No. Codes, QR codes and recovery codes are generated on your server, passkeys are verified on your server, and verification emails are sent through your site's normal WordPress mail setup.
@@ -117,8 +126,12 @@ The JavaScript files in `assets/js/` are generated from the source files in `src
 * New: A passkey can be the second step after a password, as an alternative to a code or as the only second factor.
 * New: Passkeys count toward required two-factor setup: users in required roles can enroll with a passkey alone.
 * New: Optional passkey-only accounts. When allowed under Brain 2FA > Settings, users can turn off password sign-in; administrators can turn it back on from the user's profile.
+* New: Every email the plugin sends is editable under Brain 2FA > Settings > Emails: the sign-in code email and nine security alerts. Personalize them with placeholders (user name, site name, sign-in links, date and time, passkey name and more), preview changes as you type, send a test to yourself and reset to the default at any time.
+* New: Security alerts can be turned off individually, and the sender name and address can be set for plugin emails.
+* New: Developers can add placeholders with the `brain2fa_email_placeholders` filter and change any email before it is sent with `brain2fa_email_content`.
 * Security: A passkey sign-in requires the device's biometric or PIN check and counts as two-factor authentication. A passkey that appears to have been copied is blocked, and the owner is notified.
-* Improvement: Brain 2FA > Settings is organized into three tabs: Authentication Methods, Enrollment Requirements and Trusted Devices. Each tab saves on its own without changing the others, and a summary at the top shows whether two-factor authentication and passkeys are in effect.
+* Improvement: Brain 2FA > Settings is organized into tabs: Authentication Methods, Enrollment Requirements, Trusted Devices and Emails. Each tab saves on its own without changing the others, and a summary at the top shows whether two-factor authentication and passkeys are in effect.
+* Improvement: Passkey alerts now name the passkey that was added, removed or blocked.
 * Improvement: The settings page warns before you turn off the authenticator app or email codes while users rely on them, with the number of users who could no longer sign in with their password.
 * Improvement: The Login Security page starts with a summary of your sign-in protection, followed by separate sections for passkeys, two-factor codes, recovery codes and password sign-in. Errors appear next to the form that caused them.
 * Fix: Entering a wrong code while setting up an authenticator app no longer replaces the QR code you already scanned.
@@ -160,7 +173,7 @@ The JavaScript files in `assets/js/` are generated from the source files in `src
 
 = 1.1.0 =
 
-Adds passkeys: passwordless sign-in, passkeys as a second factor, and optional passkey-only accounts. Off by default: enable it under Brain 2FA > Settings (requires HTTPS).
+Adds passkeys (passwordless sign-in, passkeys as a second factor, optional passkey-only accounts; off by default, requires HTTPS), editable emails with placeholders, and a reorganized settings page.
 
 = 1.0.4 =
 

@@ -1,0 +1,189 @@
+/**
+ * Emails Tab
+ *
+ * Email list, sender form and the template editor.
+ *
+ * @package Brain_2FA
+ */
+
+@use 'variables' as *;
+
+.brain2fa-emails {
+	max-width: 1200px;
+
+	> .notice.inline {
+		margin: 0 0 $spacing-lg;
+	}
+
+	.brain2fa-card {
+		margin-bottom: $spacing-base;
+	}
+
+	.description {
+		color: $gray-700;
+	}
+}
+
+.brain2fa-emails-intro,
+.brain2fa-back-link {
+	max-width: 860px;
+	margin-top: 0;
+}
+
+.brain2fa-emails > .brain2fa-card,
+.brain2fa-emails > .brain2fa-emails-intro {
+	max-width: 860px;
+}
+
+// Email list
+.brain2fa-email-table {
+	border: 0;
+	box-shadow: none;
+
+	td {
+		vertical-align: middle;
+	}
+
+	td:first-child .description {
+		display: block;
+		margin-top: 2px;
+	}
+
+	.brain2fa-email-actions {
+		text-align: right;
+		white-space: nowrap;
+	}
+}
+
+// Editor layout: form on the left, placeholders and preview on the right.
+.brain2fa-email-editor {
+	display: grid;
+	grid-template-columns: minmax(0, 3fr) minmax(260px, 2fr);
+	gap: $spacing-base;
+	align-items: start;
+}
+
+.brain2fa-email-form .brain2fa-field + .brain2fa-field {
+	margin-top: $spacing-base;
+}
+
+.brain2fa-email-form .submit,
+.brain2fa-email-main .submit {
+	margin: $spacing-base 0 0;
+	padding: 0;
+}
+
+.brain2fa-email-main textarea {
+	font-family: $font-family-mono;
+	font-size: $font-size-base;
+	line-height: 1.5;
+}
+
+.brain2fa-field-error {
+	margin: $spacing-xs 0 0;
+	color: $danger-color;
+	font-weight: 600;
+}
+
+.brain2fa-emails [aria-invalid="true"] {
+	border-color: $danger-color;
+	box-shadow: 0 0 0 1px $danger-color;
+}
+
+// Placeholders
+.brain2fa-placeholder-list {
+	margin: 0;
+
+	li {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 2px $spacing-sm;
+		margin: 0 0 $spacing-sm;
+	}
+
+	.description {
+		flex: 1 1 160px;
+		font-size: $font-size-sm;
+	}
+}
+
+.brain2fa-placeholder {
+	padding: 0;
+	border: 0;
+	background: none;
+	cursor: pointer;
+
+	code {
+		display: inline-block;
+		padding: 2px 6px;
+		border: 1px solid $gray-200;
+		border-radius: $border-radius-sm;
+		background: $gray-50;
+		color: $primary-color;
+	}
+
+	&:hover code {
+		border-color: $primary-color;
+	}
+
+	&:focus-visible {
+		outline: 2px solid $primary-color;
+		outline-offset: 2px;
+		border-radius: $border-radius-sm;
+	}
+}
+
+// Preview
+.brain2fa-email-preview {
+	padding: $spacing-base;
+	border: 1px solid $gray-200;
+	border-radius: $border-radius;
+	background: $gray-50;
+}
+
+.brain2fa-email-preview-subject {
+	margin: 0 0 $spacing-md;
+	padding-bottom: $spacing-md;
+	border-bottom: 1px solid $gray-200;
+	overflow-wrap: anywhere;
+}
+
+.brain2fa-email-preview-body {
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+	font-size: $font-size-base;
+	line-height: 1.6;
+}
+
+@media screen and (max-width: $breakpoint-tablet) {
+	.brain2fa-email-editor {
+		grid-template-columns: 1fr;
+	}
+}
+
+@media screen and (max-width: $breakpoint-mobile) {
+	// Stack the email table rows like WordPress list tables do.
+	.brain2fa-email-table {
+		thead {
+			display: none;
+		}
+
+		tr,
+		td {
+			display: block;
+		}
+
+		td {
+			padding: $spacing-xs $spacing-md;
+		}
+
+		tr {
+			padding: $spacing-sm 0;
+		}
+
+		.brain2fa-email-actions {
+			text-align: left;
+		}
+	}
+}

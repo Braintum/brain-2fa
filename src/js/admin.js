@@ -2,7 +2,8 @@
  * Brain 2FA Admin JavaScript
  *
  * Settings page: unsaved-change warning, and confirmations before turning off a code method
- * that users depend on or requiring 2FA for more roles.
+ * that users depend on or requiring 2FA for more roles. Emails tab: placeholder insertion
+ * and live preview in the email editor.
  * Dependent fields are shown and hidden with CSS, so the page works without JavaScript.
  * Login Security page: recovery code download.
  *
@@ -25,9 +26,37 @@ function getCheckedRoles( form ) {
 	return Array.from( form.querySelectorAll( `${ROLE_SELECTOR}:checked` ) ).map( ( input ) => input.value );
 }
 
+const dirtyForms = new Set();
+
 /**
- * Warn before leaving the settings page with unsaved edits, and confirm before
- * requiring two-factor authentication for roles that did not require it.
+ * Remember that a form has unsaved edits until it is submitted.
+ *
+ * Register this after any submit handler that may cancel the submission.
+ *
+ * @param {HTMLFormElement} form - Form to track.
+ */
+function trackUnsavedChanges( form ) {
+	const markDirty = () => dirtyForms.add( form );
+
+	form.addEventListener( 'input', markDirty );
+	form.addEventListener( 'change', markDirty );
+	form.addEventListener( 'submit', ( e ) => {
+		if ( ! e.defaultPrevented ) {
+			dirtyForms.clear();
+		}
+	});
+}
+
+window.addEventListener( 'beforeunload', ( e ) => {
+	if ( 0 < dirtyForms.size ) {
+		e.preventDefault();
+		e.returnValue = '';
+	}
+});
+
+/**
+ * Confirm before turning off a code method that users depend on, or requiring
+ * two-factor authentication for roles that did not require it.
  *
  * @param {HTMLFormElement} form - The settings form.
  */
@@ -37,14 +66,6 @@ function initSettingsForm( form ) {
 	// Code methods that are on and have users who could not sign in without them.
 	const guardedMethods = Array.from( form.querySelectorAll( 'input[data-brain2fa-blocked-users]' ) )
 		.filter( ( input ) => input.checked && 0 < parseInt( input.dataset.brain2faBlockedUsers, 10 ) );
-	let isDirty = false;
-
-	const markDirty = () => {
-		isDirty = true;
-	};
-
-	form.addEventListener( 'input', markDirty );
-	form.addEventListener( 'change', markDirty );
 
 	form.addEventListener( 'submit', ( e ) => {
 		const turnedOff = guardedMethods.filter( ( input ) => ! input.checked );
@@ -78,18 +99,65 @@ function initSettingsForm( form ) {
 
 			if ( ! window.confirm( message ) ) {
 				e.preventDefault();
-				return;
 			}
 		}
-
-		isDirty = false;
 	});
 
-	window.addEventListener( 'beforeunload', ( e ) => {
-		if ( isDirty ) {
-			e.preventDefault();
-			e.returnValue = '';
+	trackUnsavedChanges( form );
+}
+
+/**
+ * Email editor: insert placeholders at the cursor and keep the preview current.
+ *
+ * @param {HTMLElement} editor - The .brain2fa-email-editor element.
+ */
+function initEmailEditor( editor ) {
+	const subject = document.getElementById( 'brain2fa_email_subject' );
+	const body = document.getElementById( 'brain2fa_email_body' );
+	const previewSubject = document.getElementById( 'brain2fa-preview-subject' );
+	const previewBody = document.getElementById( 'brain2fa-preview-body' );
+
+	if ( ! subject || ! body ) {
+		return;
+	}
+
+	let values = {};
+	try {
+		values = JSON.parse( editor.dataset.brain2faPlaceholders || '{}' );
+	} catch ( e ) {
+		values = {};
+	}
+
+	const fill = ( text ) => Object.keys( values ).reduce( ( result, key ) => result.split( key ).join( values[ key ]), text );
+
+	const updatePreview = () => {
+		if ( previewSubject ) {
+			previewSubject.textContent = fill( subject.value ).replace( /[\r\n\t]+/g, ' ' ).trim();
 		}
+		if ( previewBody ) {
+			previewBody.textContent = fill( body.value );
+		}
+	};
+
+	// Placeholders go into the field the user last worked in; the email text by default.
+	let target = body;
+	[ subject, body ].forEach( ( field ) => {
+		field.addEventListener( 'focus', () => {
+			target = field;
+		});
+		field.addEventListener( 'input', updatePreview );
+	});
+
+	editor.querySelectorAll( '.brain2fa-placeholder' ).forEach( ( button ) => {
+		button.addEventListener( 'click', () => {
+			const text = button.dataset.placeholder || '';
+			const start = target.selectionStart ?? target.value.length;
+			const end = target.selectionEnd ?? target.value.length;
+
+			target.setRangeText( text, start, end, 'end' );
+			target.focus();
+			target.dispatchEvent( new Event( 'input', { bubbles: true }) );
+		});
 	});
 }
 
@@ -148,6 +216,13 @@ document.addEventListener( 'DOMContentLoaded', () => {
 	const settingsForm = getElement( '.brain2fa-settings-form' );
 	if ( settingsForm ) {
 		initSettingsForm( settingsForm );
+	}
+
+	document.querySelectorAll( '.brain2fa-email-form' ).forEach( trackUnsavedChanges );
+
+	const emailEditor = getElement( '.brain2fa-email-editor' );
+	if ( emailEditor ) {
+		initEmailEditor( emailEditor );
 	}
 
 	initRecoveryCodeDownload();

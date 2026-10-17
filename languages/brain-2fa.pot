@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-17T17:30:23+00:00\n"
+"POT-Creation-Date: 2026-10-17T18:00:48+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.10.0\n"
 "X-Domain: brain-2fa\n"
@@ -33,6 +33,35 @@ msgstr ""
 #. Author URI of the plugin
 #: brain-2fa.php
 msgid "https://www.braintum.com/"
+msgstr ""
+
+#: includes/Admin/EmailSettings.php:237
+msgid "MacBook Touch ID"
+msgstr ""
+
+#: includes/Admin/EmailSettings.php:249
+msgid "Email saved."
+msgstr ""
+
+#: includes/Admin/EmailSettings.php:250
+msgid "The email was reset to its default text."
+msgstr ""
+
+#: includes/Admin/EmailSettings.php:251
+msgid "Sender saved."
+msgstr ""
+
+#. translators: %s: email address
+#: includes/Admin/EmailSettings.php:253
+msgid "A test email was sent to %s."
+msgstr ""
+
+#: includes/Admin/EmailSettings.php:254
+msgid "The test email could not be sent. Check that this site can send email, for example with an SMTP plugin."
+msgstr ""
+
+#: includes/Admin/EmailSettings.php:258
+msgid "The changes were not saved. Correct the highlighted fields and try again."
 msgstr ""
 
 #: includes/Admin/LoginSecurityPage.php:182
@@ -169,6 +198,10 @@ msgstr ""
 
 #: includes/Admin/Settings.php:274
 msgid "Trusted Devices"
+msgstr ""
+
+#: includes/Admin/Settings.php:275
+msgid "Emails"
 msgstr ""
 
 #: includes/Admin/UserListColumns.php:60
@@ -521,6 +554,7 @@ msgstr ""
 #: includes/Admin/views/login-security/password.php:22
 #: includes/Admin/views/settings-page.php:25
 #: includes/Admin/views/settings-page.php:45
+#: includes/Admin/views/settings/tab-emails.php:54
 msgid "Off"
 msgstr ""
 
@@ -531,6 +565,7 @@ msgstr ""
 #: includes/Admin/views/login-security/password.php:25
 #: includes/Admin/views/login-security/summary.php:141
 #: includes/Admin/views/settings-page.php:33
+#: includes/Admin/views/settings/tab-emails.php:52
 msgid "On"
 msgstr ""
 
@@ -783,21 +818,158 @@ msgstr ""
 msgid "Settings sections"
 msgstr ""
 
-#: includes/Admin/views/settings-page.php:101
+#: includes/Admin/views/settings-page.php:106
 msgid "Save Changes"
 msgstr ""
 
-#: includes/Admin/views/settings-page.php:105
+#: includes/Admin/views/settings-page.php:111
 msgid "Documentation"
 msgstr ""
 
-#: includes/Admin/views/settings-page.php:107
+#: includes/Admin/views/settings-page.php:113
 msgid "Support forum"
 msgstr ""
 
 #. translators: %s: plugin version number
-#: includes/Admin/views/settings-page.php:111
+#: includes/Admin/views/settings-page.php:117
 msgid "Version %s"
+msgstr ""
+
+#: includes/Admin/views/settings/email-edit.php:27
+msgid "All emails"
+msgstr ""
+
+#: includes/Admin/views/settings/email-edit.php:43
+msgid "Send this email"
+msgstr ""
+
+#: includes/Admin/views/settings/email-edit.php:46
+msgid "This is the only way users learn that a copy of their passkey may be in someone else's hands. Keep it on unless you alert users another way."
+msgstr ""
+
+#: includes/Admin/views/settings/email-edit.php:51
+#: includes/Admin/views/settings/tab-emails.php:50
+msgid "Always on"
+msgstr ""
+
+#: includes/Admin/views/settings/email-edit.php:52
+msgid "Users need this email to sign in, so it cannot be turned off."
+msgstr ""
+
+#: includes/Admin/views/settings/email-edit.php:57
+msgid "Subject"
+msgstr ""
+
+#: includes/Admin/views/settings/email-edit.php:63
+msgid "Email text"
+msgstr ""
+
+#: includes/Admin/views/settings/email-edit.php:66
+msgid "Plain text. HTML tags are removed. Line breaks are kept."
+msgstr ""
+
+#: includes/Admin/views/settings/email-edit.php:69
+msgid "Save Email"
+msgstr ""
+
+#: includes/Admin/views/settings/email-edit.php:74
+msgid "Test and reset"
+msgstr ""
+
+#. translators: %s: email address of the current administrator
+#: includes/Admin/views/settings/email-edit.php:82
+msgid "Send the saved version of this email to %s, with sample values."
+msgstr ""
+
+#: includes/Admin/views/settings/email-edit.php:88
+msgid "Send Test Email"
+msgstr ""
+
+#: includes/Admin/views/settings/email-edit.php:93
+msgid "Reset to default text"
+msgstr ""
+
+#: includes/Admin/views/settings/email-edit.php:95
+msgid "Your changes to the subject and text are deleted, and the email follows the plugin's default text and its translations again. Whether the email is sent stays as it is."
+msgstr ""
+
+#: includes/Admin/views/settings/email-edit.php:98
+msgid "Reset to Default"
+msgstr ""
+
+#: includes/Admin/views/settings/email-edit.php:108
+msgid "Placeholders"
+msgstr ""
+
+#: includes/Admin/views/settings/email-edit.php:109
+msgid "Replaced with real values when the email is sent. Select one to insert it at the cursor."
+msgstr ""
+
+#: includes/Admin/views/settings/email-edit.php:123
+msgid "Preview"
+msgstr ""
+
+#: includes/Admin/views/settings/email-edit.php:124
+msgid "With your account details and sample values."
+msgstr ""
+
+#: includes/Admin/views/settings/tab-emails.php:20
+msgid "Change the text of the emails Brain 2FA sends to users. Emails are sent as plain text. Use placeholders such as {user_first_name} to personalize them."
+msgstr ""
+
+#: includes/Admin/views/settings/tab-emails.php:29
+#: includes/Admin/views/settings/tab-emails.php:44
+msgid "Email"
+msgstr ""
+
+#: includes/Admin/views/settings/tab-emails.php:30
+#: includes/Admin/views/settings/tab-emails.php:48
+msgid "Status"
+msgstr ""
+
+#: includes/Admin/views/settings/tab-emails.php:31
+#: includes/Admin/views/settings/tab-emails.php:57
+msgid "Text"
+msgstr ""
+
+#: includes/Admin/views/settings/tab-emails.php:32
+msgid "Actions"
+msgstr ""
+
+#: includes/Admin/views/settings/tab-emails.php:58
+msgid "Customized"
+msgstr ""
+
+#: includes/Admin/views/settings/tab-emails.php:58
+msgid "Default"
+msgstr ""
+
+#: includes/Admin/views/settings/tab-emails.php:62
+msgid "Edit"
+msgstr ""
+
+#: includes/Admin/views/settings/tab-emails.php:73
+msgid "Sender"
+msgstr ""
+
+#: includes/Admin/views/settings/tab-emails.php:74
+msgid "Who Brain 2FA emails appear to come from. Leave a field empty to use the WordPress default. Other emails from your site are not affected."
+msgstr ""
+
+#: includes/Admin/views/settings/tab-emails.php:78
+msgid "From name"
+msgstr ""
+
+#: includes/Admin/views/settings/tab-emails.php:82
+msgid "From address"
+msgstr ""
+
+#: includes/Admin/views/settings/tab-emails.php:85
+msgid "Use an address on your own domain. Mail servers often reject or spam-filter mail from addresses your site is not allowed to send for (SPF and DMARC)."
+msgstr ""
+
+#: includes/Admin/views/settings/tab-emails.php:87
+msgid "Save Sender"
 msgstr ""
 
 #: includes/Admin/views/settings/tab-methods.php:22
@@ -963,11 +1135,11 @@ msgstr ""
 msgid "A code is needed again after this many days, after the user changes or resets their password, after they turn off their code method, and on any other browser."
 msgstr ""
 
-#: includes/App.php:219
+#: includes/App.php:221
 msgid "Cloning is forbidden."
 msgstr ""
 
-#: includes/App.php:228
+#: includes/App.php:230
 msgid "Unserializing instances of this class is forbidden."
 msgstr ""
 
@@ -1057,6 +1229,259 @@ msgstr ""
 msgid "Only needed if two-factor authentication is enabled for your account. Email users: sign in once without a code to receive one."
 msgstr ""
 
+#: includes/Emails/EmailRegistry.php:55
+msgid "[{site_name}] Your two-factor authentication settings changed"
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:60
+msgid "Sign-in code"
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:61
+msgid "Sent when a user signs in with email codes, and when they confirm email code setup."
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:65
+msgid "[{site_name}] Your two-factor authentication code"
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:66
+msgid ""
+"Hi {user_display_name},\n"
+"\n"
+"Your two-factor authentication code is:\n"
+"\n"
+"{code}\n"
+"\n"
+"This code expires in {expiry_minutes} minutes.\n"
+"\n"
+"If you did not request this code, please ignore this email.\n"
+"\n"
+"-- {site_name}"
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:72
+msgid "Two-factor turned on"
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:73
+msgid "Sent when a user turns on the authenticator app or email codes."
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:74
+msgid "Two-factor authentication was turned on for your account."
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:77
+msgid "Two-factor turned off"
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:78
+msgid "Sent when a user turns off their code method."
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:79
+msgid "Two-factor authentication was turned off for your account."
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:82
+msgid "Recovery codes regenerated"
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:83
+msgid "Sent when a user generates new recovery codes."
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:84
+msgid "New recovery codes were generated for your account. Your previous recovery codes no longer work."
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:87
+msgid "Passkey added"
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:88
+msgid "Sent when a user adds a passkey."
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:89
+msgid "A new passkey, \"{passkey_name}\", was added to your account. It can be used to sign in without a password."
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:93
+msgid "Passkey removed"
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:94
+msgid "Sent when a user removes one of their passkeys."
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:95
+msgid "The passkey \"{passkey_name}\" was removed from your account."
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:99
+msgid "Passkeys removed by an administrator"
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:100
+msgid "Sent when an administrator removes all of a user's passkeys from their profile."
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:101
+msgid "An administrator removed the passkeys from your account."
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:104
+msgid "Password sign-in turned off"
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:105
+msgid "Sent when a user switches their account to passkey-only sign-in."
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:106
+msgid "Password sign-in was turned off for your account. You can now only sign in with a passkey."
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:109
+msgid "Password sign-in turned back on"
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:110
+msgid "Sent when a user or an administrator turns password sign-in back on."
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:111
+msgid "Password sign-in was turned back on for your account."
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:114
+msgid "Passkey sign-in blocked"
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:115
+msgid "Sent when a sign-in is blocked because a passkey may have been copied."
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:116
+msgid "A sign-in with your passkey \"{passkey_name}\" was blocked because the passkey may have been copied. Remove it from your account and contact the site administrator."
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:129
+msgid "[{site_name}] A passkey sign-in was blocked"
+msgstr ""
+
+#. translators: %s: one-sentence description of the change. Keep the {placeholders} as they are.
+#: includes/Emails/EmailRegistry.php:132
+msgid ""
+"Hi {user_display_name},\n"
+"\n"
+"%s\n"
+"\n"
+"Time: {date_time}\n"
+"\n"
+"If you did not make this change, reset your password immediately and contact the site administrator.\n"
+"\n"
+"-- {site_name}\n"
+"{site_url}"
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:149
+msgid "Sign-in"
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:150
+msgid "Needed to sign in, so it is always sent."
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:153
+msgid "Security alerts"
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:154
+msgid "Tell users when the sign-in protection on their account changes, so they notice changes they did not make."
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:166
+msgid "The user's display name."
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:167
+msgid "The user's first name, or their display name if no first name is set."
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:168
+msgid "The user's username."
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:169
+msgid "The user's email address."
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:170
+msgid "The site title."
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:171
+msgid "The site address."
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:172
+msgid "The sign-in page address."
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:173
+msgid "The address of the user's Login Security page."
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:174
+msgid "The date and time the email was sent, in the site's format."
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:185
+msgid "The 6-digit sign-in code. Required in this email."
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:186
+msgid "How many minutes the code stays valid."
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:187
+msgid "The name of the passkey."
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:294
+msgid "That email does not exist."
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:302
+msgid "Enter a subject."
+msgstr ""
+
+#. translators: %d: maximum number of characters
+#: includes/Emails/EmailRegistry.php:305
+msgid "The subject can be at most %d characters long."
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:309
+msgid "Enter the email text."
+msgstr ""
+
+#. translators: %d: maximum number of characters
+#: includes/Emails/EmailRegistry.php:312
+msgid "The email text can be at most %d characters long."
+msgstr ""
+
+#. translators: %s: placeholder such as {code}
+#: includes/Emails/EmailRegistry.php:318
+msgid "The email text must contain %s. Without it, users cannot sign in."
+msgstr ""
+
+#: includes/Emails/EmailRegistry.php:383
+msgid "Enter a valid email address, or leave it empty."
+msgstr ""
+
 #: includes/Passkeys/PasskeyLogin.php:81
 #: includes/Passkeys/PasskeyLogin.php:101
 #: includes/Passkeys/PasskeyRegistration.php:103
@@ -1112,20 +1537,20 @@ msgstr ""
 msgid "This is your last passkey. Turn password sign-in back on before removing it."
 msgstr ""
 
-#: includes/Passkeys/PasskeyRegistration.php:194
-#: includes/Passkeys/PasskeyRegistration.php:289
+#: includes/Passkeys/PasskeyRegistration.php:202
+#: includes/Passkeys/PasskeyRegistration.php:297
 msgid "That passkey was not found."
 msgstr ""
 
-#: includes/Passkeys/PasskeyRegistration.php:215
+#: includes/Passkeys/PasskeyRegistration.php:223
 msgid "Passkey-only sign-in is not available on this site."
 msgstr ""
 
-#: includes/Passkeys/PasskeyRegistration.php:225
+#: includes/Passkeys/PasskeyRegistration.php:233
 msgid "Add a passkey before turning off password sign-in."
 msgstr ""
 
-#: includes/Passkeys/PasskeyRegistration.php:283
+#: includes/Passkeys/PasskeyRegistration.php:291
 msgid "Enter a name for the passkey."
 msgstr ""
 
@@ -1137,37 +1562,16 @@ msgstr ""
 msgid "This passkey request came from an unexpected website."
 msgstr ""
 
-#: includes/TwoFactor/Methods/EmailMethod.php:77
+#: includes/TwoFactor/Methods/EmailMethod.php:78
 msgid "A valid account email address is required for email authentication."
 msgstr ""
 
-#: includes/TwoFactor/Methods/EmailMethod.php:84
+#: includes/TwoFactor/Methods/EmailMethod.php:85
 msgid "The verification email could not be sent. Check the site's email settings or contact an administrator."
 msgstr ""
 
-#: includes/TwoFactor/Methods/EmailMethod.php:91
+#: includes/TwoFactor/Methods/EmailMethod.php:92
 msgid "Invalid or expired verification code."
-msgstr ""
-
-#. translators: %s: site name
-#: includes/TwoFactor/Methods/EmailMethod.php:179
-msgid "[%s] Your two-factor authentication code"
-msgstr ""
-
-#. translators: 1: user display name, 2: 6-digit code, 3: expiry in minutes, 4: site name
-#: includes/TwoFactor/Methods/EmailMethod.php:184
-msgid ""
-"Hi %1$s,\n"
-"\n"
-"Your two-factor authentication code is:\n"
-"\n"
-"%2$s\n"
-"\n"
-"This code expires in %3$d minute(s).\n"
-"\n"
-"If you did not request this code, please ignore this email.\n"
-"\n"
-"-- %4$s"
 msgstr ""
 
 #: includes/Utils.php:448
@@ -1181,94 +1585,38 @@ msgid_plural "Too many failed verification attempts. Please try again in %d minu
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/Utils.php:502
-msgid "Two-factor authentication was turned on for your account."
-msgstr ""
-
-#: includes/Utils.php:503
-msgid "Two-factor authentication was turned off for your account."
-msgstr ""
-
-#: includes/Utils.php:504
-msgid "New recovery codes were generated for your account. Your previous recovery codes no longer work."
-msgstr ""
-
-#: includes/Utils.php:505
-msgid "A new passkey was added to your account. It can be used to sign in without a password."
-msgstr ""
-
-#: includes/Utils.php:506
-msgid "A passkey was removed from your account."
-msgstr ""
-
-#: includes/Utils.php:507
-msgid "An administrator removed the passkeys from your account."
-msgstr ""
-
-#: includes/Utils.php:508
-msgid "Password sign-in was turned off for your account. You can now only sign in with a passkey."
-msgstr ""
-
-#: includes/Utils.php:509
-msgid "Password sign-in was turned back on for your account."
-msgstr ""
-
-#: includes/Utils.php:510
-msgid "A sign-in with one of your passkeys was blocked because the passkey may have been copied. Remove it from your account and contact the site administrator."
-msgstr ""
-
-#. translators: %s: site name
-#: includes/Utils.php:520
-msgid "[%s] Your two-factor authentication settings changed"
-msgstr ""
-
-#. translators: 1: user display name, 2: description of the change, 3: date and time of the change, 4: site name, 5: site URL
-#: includes/Utils.php:525
-msgid ""
-"Hi %1$s,\n"
-"\n"
-"%2$s\n"
-"\n"
-"Time: %3$s\n"
-"\n"
-"If you did not make this change, reset your password immediately and contact the site administrator.\n"
-"\n"
-"-- %4$s\n"
-"%5$s"
-msgstr ""
-
 #. translators: %d: number of users
-#: src/js/admin.js:56
+#: src/js/admin.js:77
 msgid "%d user will not be able to sign in with their password, because the code method they use is being turned off and they have no passkey. Continue?"
 msgid_plural "%d users will not be able to sign in with their password, because the code method they use is being turned off and they have no passkey. Continue?"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/js/admin.js:74
+#: src/js/admin.js:95
 msgid "Users in the newly selected roles must set up two-factor authentication. Make sure your own account has a method set up first. Continue?"
 msgstr ""
 
-#: src/js/admin.js:119
+#: src/js/admin.js:187
 msgid "Two-Factor Authentication Recovery Codes"
 msgstr ""
 
-#: src/js/admin.js:121
+#: src/js/admin.js:189
 msgid "Generated:"
 msgstr ""
 
-#: src/js/admin.js:123
+#: src/js/admin.js:191
 msgid "IMPORTANT: Store these codes in a safe place."
 msgstr ""
 
-#: src/js/admin.js:124
+#: src/js/admin.js:192
 msgid "Each code can only be used once."
 msgstr ""
 
-#: src/js/admin.js:128
+#: src/js/admin.js:196
 msgid "User:"
 msgstr ""
 
-#: src/js/admin.js:129
+#: src/js/admin.js:197
 msgid "Email:"
 msgstr ""
 

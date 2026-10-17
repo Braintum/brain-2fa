@@ -55,6 +55,12 @@ Brain 2FA runs inside the WordPress authentication path. This document lists wha
 | Signature counter regression blocks the sign-in and emails the owner | A counter going backwards suggests a copied authenticator. Synced passkeys report 0 and are not affected. |
 | No AAGUID metadata download | Looking up authenticator names would contact a third party. Only the AAGUID is stored. |
 | `vendor/lbuchs/webauthn/_test` is excluded from builds | It contains a web-reachable demo server. `deploy.sh` refuses a build that includes it. |
+| Emails are plain text, and the subject is made single-line at send time | No HTML means nothing in a template, placeholder value or display name can run as markup in a mail client. Forcing the subject onto one line after placeholders and the `brain2fa_email_content` filter stops header injection through a user-controlled value such as a display name. |
+| The sign-in code email cannot be turned off and must contain `{code}` | Turning it off or saving it without the code would silently stop email users from signing in. The editor rejects such a template. `EmailRegistry::get_template()` also reports the email as on whatever is stored, and falls back to the default body when a stored body lacks a required placeholder (for example after a direct database edit). |
+| Security alerts can be turned off, per email | Some sites need that (for example during a bulk migration), but the alerts are what tells a user that a stolen session changed their sign-in settings. They are on by default, the list shows which ones are off, and the passkey clone warning says why it should stay on. |
+| Placeholders expose only account and site details | No placeholder gives a secret, recovery code, token or password; `{code}` exists only in the sign-in code email, and a test email uses the sample code `123456`. Values are substituted with `strtr()`, so a display name containing `{code}` is not expanded. |
+| Email settings need `manage_options` and their own nonce | The same rule as every other site setting. The sender address is validated as entered (`is_email()` and unchanged by `sanitize_email()`), so a typo is reported instead of silently falling back to the default. The sender filters apply at priority 999 to the plugin's own email only and are removed right after `wp_mail()`. |
+| Only customized fields are stored | Untouched defaults keep following translations and future wording fixes. |
 | TOTP steps checked explicitly instead of otphp's `verify()` | otphp 11's `verify()` takes a leeway in seconds (not periods) and keeps no record of used codes. `TotpMethod::verify_totp_code()` checks the current step ±1 and stores the last accepted step in user meta (not a transient, which an object cache could evict). |
 
 ## Invariants
@@ -82,7 +88,7 @@ These were observed in the code on 2026-10-16. Re-check them before relying on t
 
 - **Restricted mode is enforced by redirects** on `admin_init` and `template_redirect`, plus REST and AJAX refusals. Code from other plugins that acts earlier (for example form handlers on `init`) still runs for restricted users.
 - **Application passwords bypass 2FA.** WordPress core validates application passwords for REST requests without the `authenticate` filter, so Brain 2FA does not see them. This is core's intended design for API access; sites that do not need application passwords can disable them with the `wp_is_application_passwords_available` filter.
-- **Passkey data stays after uninstall.** The plugin has no uninstall routine yet, so the `brain2fa_passkeys` table and passkey user meta remain if the plugin is deleted.
+- **Plugin data stays after uninstall.** The plugin has no uninstall routine yet, so the `brain2fa_passkeys` table, user meta and the `brain2fa_settings` and `brain2fa_emails` options remain if the plugin is deleted.
 - **Custom login forms** other than `wp-login.php`, the WooCommerce form and `wp_login_form()` get no code field, and users with 2FA cannot sign in through them (this fails closed).
 
 ## Reporting

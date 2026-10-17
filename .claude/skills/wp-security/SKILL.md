@@ -25,6 +25,13 @@ This plugin sits in the WordPress login path. A bug here either locks users out 
 14. **Expired users are restricted, not blocked.** `Utils::is_enrollment_required()` users may sign in interactively, but `Auth\EnrollmentGuard` must keep them on the setup page: any new entry point (admin page, front-end route, REST route, AJAX action) must stay covered by its redirects and refusals. Keep XML-RPC and REST logins blocked for them in `verify_2fa()`.
 15. **Passkeys (WebAuthn).** Always require user verification. Compare `clientDataJSON.origin` exactly in `WebAuthnServer::check_client_data()` before trusting the library (its own origin check is a loose suffix match). Challenges and login tokens stay single-use (`delete_transient()` must return true) and bound to the `brain2fa_passkey_{COOKIEHASH}` cookie. Adding or removing a passkey requires `Utils::confirm_password()` and sends a notification. Never ship `vendor/lbuchs/webauthn/_test`. Passkeys count as a factor only through `Utils::user_has_passkey_factor()` (false while passkeys are unusable); second-step challenges carry the expected user ID; `Utils::is_passkey_only()` is checked before the 2FA switch in both login paths, and a passkey-only account's last passkey cannot be removed.
 
+16. **Emails** go through `Emails\Mailer` only, as plain text, using the templates in `Emails\EmailRegistry`:
+    - **Sign-in code:** it cannot be turned off, and its body must contain `{code}`. `EmailRegistry::save_template()` enforces both, so never bypass it.
+    - **Subjects:** they are single-line after placeholder replacement (header-injection guard).
+    - **Content type and sender:** the `text/plain` and sender overrides are filters added just around `wp_mail()` and removed afterwards. Never set them site-wide.
+    - **What may be sent:** never put recovery codes, TOTP secrets, passwords or tokens into an email or a placeholder. The 6-digit sign-in code is the only secret an email may carry. IP addresses are not offered as placeholders, because the plugin stores only hashes.
+    - **Admin email actions:** they require `manage_options` and the `brain2fa_email_settings` nonce, and a test email goes only to the current user.
+
 ## General WordPress rules
 
 - **Authorization and intent on every state change.** Check capabilities with `current_user_can()` (`manage_options` for site settings and other users; `edit_user` for the target user) and verify a nonce with `check_admin_referer()`, `wp_verify_nonce()` or `check_ajax_referer()`. A nonce proves intent, not permission. You always need both.

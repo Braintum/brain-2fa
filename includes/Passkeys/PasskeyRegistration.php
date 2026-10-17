@@ -166,7 +166,7 @@ class PasskeyRegistration {
 		// A passkey is a second factor, so it completes enrollment for required roles.
 		Utils::clear_grace_period( $user->ID );
 
-		Utils::send_factor_change_notification( $user, 'passkey_added' );
+		Utils::send_factor_change_notification( $user, 'passkey_added', array( 'passkey_name' => $data['name'] ) );
 
 		return $id;
 	}
@@ -190,11 +190,19 @@ class PasskeyRegistration {
 			return new WP_Error( 'brain2fa_passkey_last', __( 'This is your last passkey. Turn password sign-in back on before removing it.', 'brain-2fa' ) );
 		}
 
+		$passkey_name = '';
+		foreach ( PasskeyRepository::get_for_user( $user->ID ) as $passkey ) {
+			if ( (int) $passkey->id === $id ) {
+				$passkey_name = (string) $passkey->name;
+				break;
+			}
+		}
+
 		if ( ! PasskeyRepository::delete( $id, $user->ID ) ) {
 			return new WP_Error( 'brain2fa_passkey_not_found', __( 'That passkey was not found.', 'brain-2fa' ) );
 		}
 
-		Utils::send_factor_change_notification( $user, 'passkey_removed' );
+		Utils::send_factor_change_notification( $user, 'passkey_removed', array( 'passkey_name' => $passkey_name ) );
 		self::restrict_if_unenrolled( $user );
 
 		return true;

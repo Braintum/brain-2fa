@@ -14,9 +14,10 @@ Keep production changes inside this plugin. Do not modify WordPress core or `ven
 - `includes/Auth/EnrollmentGuard.php` restricts users who must enroll to the setup page, and opens that page to WooCommerce customers.
 - `includes/Auth/LoginAssets.php` loads the browser login script on `wp-login.php`.
 - `includes/TwoFactor/Methods/TotpMethod.php` owns TOTP setup, verification, and recovery codes.
-- `includes/Admin/Settings.php` owns site-wide settings (three tabbed forms in `views/settings/`). `includes/Admin/LoginSecurityPage.php` owns the per-user Login Security page (views in `views/login-security/`).
+- `includes/Admin/Settings.php` owns site-wide settings (three tabbed forms in `views/settings/`, plus the Emails tab owned by `includes/Admin/EmailSettings.php`). `includes/Admin/LoginSecurityPage.php` owns the per-user Login Security page (views in `views/login-security/`).
 - `includes/Admin/UserProfile.php` owns profile status, grace extensions, and Dashboard notices.
 - `includes/Admin/UserListColumns.php` shows 2FA, setup-deadline, and grace-expiry status in Users.
+- `includes/Emails/` holds every outgoing email: `EmailRegistry` (definitions, placeholders, default text, stored customizations in the `brain2fa_emails` option) and `Mailer` (renders and sends). Send plugin emails only through `Mailer::send( $id, $user, $context )` or, for alerts, `Utils::send_factor_change_notification()`; never call `wp_mail()` directly. A new email needs a definition in `EmailRegistry::get_definitions()` so admins can edit it.
 - `includes/Utils.php` is the shared policy layer for enablement, role enforcement, and grace deadlines.
 
 The AJAX request validates credentials before showing the 2FA field; it does not sign the user in. The browser then submits the normal WordPress login form with `brain2fa_code`. Both paths must apply the same policy because a user can bypass the AJAX preflight by submitting `wp-login.php` directly.
@@ -50,16 +51,20 @@ All user-visible strings use the `brain-2fa` text domain (PHP and `@wordpress/i1
 Use the narrowest applicable checks:
 
 ```sh
-composer phpcs        # WordPress-Extra + WordPress-Docs, must stay clean
-npm run lint          # eslint-config-wordpress, must stay clean
+composer phpcs                  # WordPress-Extra + WordPress-Docs, must stay clean
+npm run lint                    # eslint-config-wordpress, must stay clean
 npm run build
+npm run make-pot                # after any string change; CI fails on a stale POT
+bash scripts/check-versions.sh  # version, requirements and changelog agree
 php wp-cli.phar plugin status brain-2fa
 php wp-cli.phar eval 'echo Brain_2FA\Utils::get_grace_period_days();'
 ```
 
 `wp-cli.phar` lives in the WordPress root (`../../..` from this plugin); a global `wp` also works.
 
-There is no PHPUnit configuration in this plugin. For login changes, test a required user with no 2FA during the grace window and after expiry (restricted mode, including a 0-day grace period), a user with active TOTP through both the JavaScript-assisted path and a no-JavaScript submission (the server-rendered `brain2fa_code_fallback` field), and a WooCommerce customer on the My Account login form.
+CI (`.github/workflows/ci.yml`) runs these checks plus PHP syntax on 8.1–8.4 and WordPress.org Plugin Check on every push to `master` and every pull request. The plugin is live on WordPress.org, so keep it green.
+
+There is no PHPUnit configuration in this plugin. For login changes, test a required user with no 2FA during the grace window and after expiry (restricted mode, including a 0-day grace period), a user with active TOTP through both the JavaScript-assisted path and a no-JavaScript submission (the server-rendered `brain2fa_code_fallback` field), and a WooCommerce customer on the My Account login form. For email changes, capture mail with the `pre_wp_mail` filter and check the rendered subject, body, recipient and sender.
 
 ## Coding Standards
 

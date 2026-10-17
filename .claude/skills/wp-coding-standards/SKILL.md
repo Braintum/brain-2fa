@@ -5,7 +5,7 @@ description: WordPress Coding Standards for Brain 2FA PHP and JavaScript. Use wh
 
 # WordPress Coding Standards (Brain 2FA)
 
-The PHP baseline is clean against `phpcs.xml.dist` (WordPress-Extra + WordPress-Docs, PHP 8.1+, WordPress 6.4+). The JavaScript baseline is clean against `eslint-config-wordpress`. Keep both clean: the PostToolUse hook runs `phpcbf`/`phpcs` and `eslint --fix`/`eslint` on every edited file and returns violations to you.
+The PHP baseline is clean against `phpcs.xml.dist` (WordPress-Extra + WordPress-Docs, PHP 8.1+, WordPress 6.4+). The JavaScript baseline is clean against `eslint-config-wordpress`. Keep both clean: the PostToolUse hook runs `phpcbf`/`phpcs` and `eslint --fix`/`eslint` on every edited file and returns violations to you. **The hook only runs when the session was opened in the plugin directory** (see CLAUDE.md). If you got no hook feedback after an edit, assume it did not run: run `composer phpcs` and `npm run lint` yourself before reporting the work as done. CI runs the same checks on every push to `master`.
 
 ## Commands
 
@@ -29,6 +29,14 @@ npm run lint:fix
 - **Docblocks** on every file, class, method and property, with `@param`, `@return` and a `@package` tag. `@since` matches the version that introduced the code.
 - **Type declarations** are welcome (the code base targets PHP 8.1), but keep public method signatures compatible with `TwoFactorMethodInterface`.
 - **Every PHP file** starts with the `ABSPATH` guard used in the existing files.
+- **Class files use PSR-4 names** (`includes/Emails/Mailer.php` holds `Brain_2FA\Emails\Mailer`), not WordPress `class-*.php` names. Start each class file with `<?php // phpcs:ignore WordPress.Files.FileName.InvalidClassFileName`, as the existing ones do. This is the only accepted file-level exception.
+- **View templates** (`includes/Admin/views/`) run in the global scope. Prefix every variable a template creates with `brain2fa_` (PrefixAllGlobals sniff), list the variables it receives in a `@var` docblock, and never build an `include` path from request data. Use a fixed `if`/`elseif` map instead.
+- **SQL:** write each query as one complete string literal with placeholders, using `%i` for table names, and pass it straight to `$wpdb->prepare()`. If the query has variants, write each variant out in full rather than building the string conditionally: the PreparedSQL sniff cannot verify built strings, and suppressing it is not allowed.
+- **Settings and admin forms:**
+  - Check the capability and nonce first.
+  - Handle the POST on the page's `load-{hook}` action, before any output.
+  - After a success, call `wp_safe_redirect()` then `exit`.
+  - After a failure, render the form again with the submitted values and the error next to the field, rather than redirecting and losing the input.
 
 ## phpcs:ignore etiquette
 
@@ -49,4 +57,8 @@ Never add a bare `// phpcs:ignore` or a file-wide `phpcs:disable` to silence the
 
 ## SCSS
 
-Edit `src/scss/` partials and run `npm run build`. Never edit `assets/css/admin.css` by hand.
+Edit `src/scss/` partials and run `npm run build`. Never edit `assets/css/admin.css` by hand. The lint hook compiles `src/scss/admin.scss` after each SCSS edit to catch errors. `admin.css` also loads on the Users screens, so scope every rule under a plugin class (`.brain2fa-…`), never a bare element or attribute selector. Keep `_responsive.scss` last in `admin.scss`.
+
+## Release metadata
+
+The version lives in the `brain-2fa.php` header, `BRAIN_2FA_VERSION`, `readme.txt` `Stable tag`, and `package.json`. Run `bash scripts/check-versions.sh`; it also checks "Requires at least", "Requires PHP" and the changelog entry. CI fails when they disagree.

@@ -12,6 +12,7 @@ use Brain_2FA\Admin\UserListColumns;
 use Brain_2FA\Admin\Settings;
 use Brain_2FA\Admin\UserProfile;
 use Brain_2FA\Admin\Assets;
+use Brain_2FA\Admin\EmailSettings;
 use Brain_2FA\Auth\AccountEvents;
 use Brain_2FA\Auth\EnrollmentGuard;
 use Brain_2FA\Auth\LoginController;
@@ -194,6 +195,7 @@ final class App {
 			$this->admin_user_profile = UserProfile::instance();
 			$this->admin_assets       = Assets::instance();
 			$this->admin_user_columns = UserListColumns::instance();
+			EmailSettings::init();
 		}
 
 		do_action( 'brain_2fa_loaded' );
