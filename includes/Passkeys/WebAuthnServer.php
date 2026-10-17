@@ -165,20 +165,35 @@ class WebAuthnServer {
 	}
 
 	/**
-	 * Build PublicKeyCredentialRequestOptions for a passwordless sign-in.
+	 * Build PublicKeyCredentialRequestOptions for a passkey sign-in.
 	 *
-	 * The allowCredentials list is empty, so the browser offers any passkey the
-	 * user has for this site (discoverable credentials).
+	 * Without credentials, allowCredentials is empty and the browser offers any
+	 * passkey the user has for this site (passwordless sign-in). With credentials,
+	 * only those passkeys are offered (the second step after a password).
 	 *
-	 * @param string $challenge Binary challenge.
+	 * @param string   $challenge   Binary challenge.
+	 * @param object[] $credentials Passkey rows to allow, or none for any passkey.
 	 * @return array Options in WebAuthn JSON form.
 	 */
-	public static function get_request_options( string $challenge ): array {
+	public static function get_request_options( string $challenge, array $credentials = array() ): array {
+		$allow = array();
+		foreach ( $credentials as $credential ) {
+			$entry      = array(
+				'type' => 'public-key',
+				'id'   => (string) $credential->credential_id,
+			);
+			$transports = array_values( array_filter( explode( ',', (string) $credential->transports ) ) );
+			if ( $transports ) {
+				$entry['transports'] = $transports;
+			}
+			$allow[] = $entry;
+		}
+
 		return array(
 			'challenge'        => self::base64url_encode( $challenge ),
 			'timeout'          => self::TIMEOUT * 1000,
 			'rpId'             => self::get_rp_id(),
-			'allowCredentials' => array(),
+			'allowCredentials' => $allow,
 			'userVerification' => 'required',
 		);
 	}

@@ -17,8 +17,9 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Passkey Registration
  *
- * Lets signed-in users add, rename and remove their own passkeys, and lets
- * administrators revoke another user's passkeys.
+ * Lets signed-in users add, rename and remove their own passkeys and turn
+ * password sign-in off (passkey-only), and lets administrators revoke another
+ * user's passkeys or restore their password sign-in.
  *
  * Adding or removing a passkey requires the account password: a passkey is a
  * permanent passwordless sign-in, so a hijacked session must not be able to
@@ -162,6 +163,9 @@ class PasskeyRegistration {
 			return new WP_Error( 'brain2fa_passkey_save_failed', __( 'The passkey could not be saved. Please try again.', 'brain-2fa' ) );
 		}
 
+		// A passkey is a second factor, so it completes enrollment for required roles.
+		Utils::clear_grace_period( $user->ID );
+
 		Utils::send_factor_change_notification( $user, 'passkey_added' );
 
 		return $id;
@@ -181,13 +185,87 @@ class PasskeyRegistration {
 			return $confirmation;
 		}
 
+		// Removing the last passkey of a passkey-only account would lock the user out.
+		if ( Utils::is_passkey_only( $user ) && 1 === PasskeyRepository::count_for_user( $user->ID ) ) {
+			return new WP_Error( 'brain2fa_passkey_last', __( 'This is your last passkey. Turn password sign-in back on before removing it.', 'brain-2fa' ) );
+		}
+
 		if ( ! PasskeyRepository::delete( $id, $user->ID ) ) {
 			return new WP_Error( 'brain2fa_passkey_not_found', __( 'That passkey was not found.', 'brain-2fa' ) );
 		}
 
 		Utils::send_factor_change_notification( $user, 'passkey_removed' );
+		self::restrict_if_unenrolled( $user );
 
 		return true;
+	}
+
+	/**
+	 * Turn password sign-in off (passkey-only) or back on for the user.
+	 *
+	 * Turning it off needs at least one passkey. Both directions need the account password.
+	 *
+	 * @param WP_User $user     User changing the setting.
+	 * @param bool    $enable   True to turn password sign-in off, false to turn it back on.
+	 * @param string  $password Account password, unslashed and unsanitized.
+	 * @return true|WP_Error True when changed.
+	 */
+	public static function set_passkey_only( WP_User $user, bool $enable, string $password ) {
+		if ( ! Utils::is_passkey_only_allowed() || ! PasskeyLogin::is_enabled() ) {
+			return new WP_Error( 'brain2fa_passkeys_unavailable', __( 'Passkey-only sign-in is not available on this site.', 'brain-2fa' ) );
+		}
+
+		$confirmation = Utils::confirm_password( $user, $password );
+		if ( is_wp_error( $confirmation ) ) {
+			return $confirmation;
+		}
+
+		if ( $enable ) {
+			if ( PasskeyRepository::count_for_user( $user->ID ) < 1 ) {
+				return new WP_Error( 'brain2fa_passkey_required', __( 'Add a passkey before turning off password sign-in.', 'brain-2fa' ) );
+			}
+
+			update_user_meta( $user->ID, Utils::PASSKEY_ONLY_META_KEY, 1 );
+			Utils::send_factor_change_notification( $user, 'passkey_only_enabled' );
+
+			return true;
+		}
+
+		delete_user_meta( $user->ID, Utils::PASSKEY_ONLY_META_KEY );
+		Utils::send_factor_change_notification( $user, 'passkey_only_disabled' );
+
+		return true;
+	}
+
+	/**
+	 * Turn password sign-in back on for a user, on an administrator's behalf.
+	 *
+	 * The caller must check capabilities and the nonce.
+	 *
+	 * @param WP_User $user User whose passkey-only setting is cleared.
+	 * @return bool True when the setting was on and has been cleared.
+	 */
+	public static function restore_password_sign_in( WP_User $user ): bool {
+		if ( empty( get_user_meta( $user->ID, Utils::PASSKEY_ONLY_META_KEY, true ) ) ) {
+			return false;
+		}
+
+		delete_user_meta( $user->ID, Utils::PASSKEY_ONLY_META_KEY );
+		Utils::send_factor_change_notification( $user, 'passkey_only_disabled' );
+
+		return true;
+	}
+
+	/**
+	 * Restrict a required-role user to setup when they no longer have any second factor.
+	 *
+	 * @param WP_User $user User who just lost a passkey.
+	 * @return void
+	 */
+	private static function restrict_if_unenrolled( WP_User $user ): void {
+		if ( Utils::is_2fa_required_for_user( $user ) && ! Utils::is_2fa_enabled_for_user( $user->ID ) ) {
+			Utils::require_enrollment_now( $user );
+		}
 	}
 
 	/**
@@ -227,8 +305,12 @@ class PasskeyRegistration {
 	public static function revoke_all( WP_User $user ): int {
 		$removed = PasskeyRepository::delete_all_for_user( $user->ID );
 
+		// Without passkeys, a passkey-only account must be able to use its password again.
+		delete_user_meta( $user->ID, Utils::PASSKEY_ONLY_META_KEY );
+
 		if ( $removed > 0 ) {
 			Utils::send_factor_change_notification( $user, 'passkeys_revoked' );
+			self::restrict_if_unenrolled( $user );
 		}
 
 		return $removed;

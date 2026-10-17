@@ -114,6 +114,50 @@ export function show2FAField( form, method = 'email', showRememberDevice = false
 }
 
 /**
+ * Show the passkey option for the second step after a password.
+ *
+ * @param {HTMLFormElement} form          - The login form
+ * @param {boolean}         hasCodeField  - Whether a code field is also shown
+ * @param {Function}        onUsePasskey  - Starts the passkey ceremony
+ */
+export function showPasskeyStep( form, hasCodeField, onUsePasskey ) {
+	if ( form.querySelector( '.brain2fa-passkey-step' ) ) {
+		return;
+	}
+
+	const submitButton = form.querySelector( 'p.submit, button[type="submit"]' );
+	const submitRow = submitButton?.closest( 'p' ) || submitButton;
+	if ( ! submitRow?.parentNode ) {
+		return;
+	}
+
+	const wrapper = document.createElement( 'p' );
+	wrapper.className = 'brain2fa-passkey-step';
+
+	if ( ! hasCodeField ) {
+		const description = document.createElement( 'span' );
+		description.className = 'description';
+		description.style.display = 'block';
+		description.style.marginBottom = '8px';
+		description.textContent = __( 'Confirm it\'s you with your passkey.', 'brain-2fa' );
+		wrapper.appendChild( description );
+
+		// Without a code field there is nothing to submit; the passkey completes sign-in.
+		submitRow.style.display = 'none';
+	}
+
+	const button = document.createElement( 'button' );
+	button.type = 'button';
+	button.className = hasCodeField ? 'button button-secondary' : 'button button-primary button-large';
+	button.style.width = '100%';
+	button.textContent = hasCodeField ? __( 'Use a passkey instead', 'brain-2fa' ) : __( 'Use your passkey', 'brain-2fa' );
+	button.addEventListener( 'click', onUsePasskey );
+	wrapper.appendChild( button );
+
+	submitRow.parentNode.insertBefore( wrapper, hasCodeField ? submitRow.nextSibling : submitRow );
+}
+
+/**
  * Get element safely
  *
  * @param {string} selector - CSS selector

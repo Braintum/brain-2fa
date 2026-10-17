@@ -34,6 +34,15 @@ class PasskeyRepository {
 	private const USER_HANDLE_META_KEY = 'brain2fa_webauthn_user_handle';
 
 	/**
+	 * Per-request passkey counts, keyed by user ID.
+	 *
+	 * Enrollment checks run on every page load for signed-in users, so counts are cached.
+	 *
+	 * @var array<int,int>
+	 */
+	private static $count_cache = array();
+
+	/**
 	 * Register cleanup hooks.
 	 *
 	 * @return void
@@ -119,9 +128,13 @@ class PasskeyRepository {
 	public static function count_for_user( int $user_id ): int {
 		global $wpdb;
 
-		return (int) $wpdb->get_var(
-			$wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE user_id = %d', self::table_name(), $user_id )
-		);
+		if ( ! isset( self::$count_cache[ $user_id ] ) ) {
+			self::$count_cache[ $user_id ] = (int) $wpdb->get_var(
+				$wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE user_id = %d', self::table_name(), $user_id )
+			);
+		}
+
+		return self::$count_cache[ $user_id ];
 	}
 
 	/**
@@ -133,6 +146,8 @@ class PasskeyRepository {
 	 */
 	public static function add( int $user_id, array $data ): int {
 		global $wpdb;
+
+		unset( self::$count_cache[ $user_id ] );
 
 		$inserted = $wpdb->insert(
 			self::table_name(),
@@ -212,6 +227,8 @@ class PasskeyRepository {
 	public static function delete( int $id, int $user_id ): bool {
 		global $wpdb;
 
+		unset( self::$count_cache[ $user_id ] );
+
 		return (bool) $wpdb->delete(
 			self::table_name(),
 			array(
@@ -230,6 +247,8 @@ class PasskeyRepository {
 	 */
 	public static function delete_all_for_user( $user_id ): int {
 		global $wpdb;
+
+		unset( self::$count_cache[ (int) $user_id ] );
 
 		return (int) $wpdb->delete( self::table_name(), array( 'user_id' => (int) $user_id ), array( '%d' ) );
 	}

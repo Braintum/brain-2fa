@@ -18,7 +18,7 @@ Codes are generated and passkeys are verified on your own server. Brain 2FA does
 
 = Features =
 
-* **Passkeys:** Sign in without a password using Face ID, Touch ID, Windows Hello, a phone or a security key. Passkeys are offered right in the username field, and a passkey sign-in counts as two-factor authentication. Requires HTTPS; turn it on under **Brain 2FA > Settings**.
+* **Passkeys:** Sign in without a password using Face ID, Touch ID, Windows Hello, a phone or a security key. Passkeys are offered right in the username field, and a passkey sign-in counts as two-factor authentication. A passkey can also be the second step after a password, counts toward required two-factor setup, and users can optionally turn off password sign-in entirely. Requires HTTPS; turn it on under **Brain 2FA > Settings**.
 * **Authenticator apps (TOTP):** Works with Google Authenticator, Microsoft Authenticator, Authy, 1Password, Bitwarden and any other TOTP-compatible app. Users set it up by scanning a QR code or entering the secret key manually.
 * **Email verification codes:** Sends a one-time code to the account email address, with a configurable expiry time.
 * **Recovery codes:** TOTP users receive one-time recovery codes they can download and regenerate in case they lose their phone.
@@ -71,9 +71,17 @@ Yes, with passkeys. Enable **Passkeys** under **Brain 2FA > Settings**, then eac
 
 Yes. Browsers only allow passkeys on secure (HTTPS) sites. On a site without HTTPS, the passkey options stay hidden.
 
+= Can a passkey be used as the second factor after a password? =
+
+Yes. After entering their password, users with a passkey can confirm with it instead of typing a code. A passkey also counts as two-factor authentication for roles that require it, so users can set up 2FA with a passkey alone.
+
+= Can users turn off password sign-in? =
+
+Yes, if you allow it under **Brain 2FA > Settings**. Users with a passkey can then turn off password sign-in on their Login Security page, so their account can only be accessed with a passkey. If they lose all their passkeys, an administrator can turn password sign-in back on from the user's profile.
+
 = What if a user loses the device with their passkey? =
 
-They can still sign in with their password (and their two-factor code, if enabled) and remove the lost passkey on their Login Security page. Administrators can remove all of a user's passkeys from the user's profile.
+Unless they turned off password sign-in, they can still sign in with their password (and a two-factor code, if they have one) and remove the lost passkey on their Login Security page. Administrators can remove all of a user's passkeys from the user's profile, which also turns password sign-in back on.
 
 = Does Brain 2FA connect to external services? =
 
@@ -106,6 +114,9 @@ The JavaScript files in `assets/js/` are generated from the source files in `src
 * New: Passkeys for passwordless sign-in (Face ID, Touch ID, Windows Hello, phones and security keys). Passkeys are offered in the username field's autofill and through a "Sign in with a passkey" button on the WordPress and WooCommerce login forms. Off by default; requires HTTPS.
 * New: Users add, rename and remove passkeys on their Login Security page. Adding or removing a passkey requires the account password, and users are emailed about each change.
 * New: Administrators can remove all of a user's passkeys from the user's profile.
+* New: A passkey can be the second step after a password, as an alternative to a code or as the only second factor.
+* New: Passkeys count toward required two-factor setup: users in required roles can enroll with a passkey alone.
+* New: Optional passkey-only accounts. When allowed under Brain 2FA > Settings, users can turn off password sign-in; administrators can turn it back on from the user's profile.
 * Security: A passkey sign-in requires the device's biometric or PIN check and counts as two-factor authentication. A passkey that appears to have been copied is blocked, and the owner is notified.
 
 = 1.0.4 =
@@ -145,7 +156,7 @@ The JavaScript files in `assets/js/` are generated from the source files in `src
 
 = 1.1.0 =
 
-Adds passkeys for passwordless sign-in. Off by default: enable it under Brain 2FA > Settings (requires HTTPS).
+Adds passkeys: passwordless sign-in, passkeys as a second factor, and optional passkey-only accounts. Off by default: enable it under Brain 2FA > Settings (requires HTTPS).
 
 = 1.0.4 =
 

@@ -107,7 +107,7 @@ defined( 'ABSPATH' ) || exit;
 							</p>
 						</div>
 						
-						<?php if ( $role_requires_2fa ) : ?>
+						<?php if ( $role_requires_2fa && empty( $passkeys ) ) : ?>
 							<p class="description"><?php esc_html_e( 'Your role requires two-factor authentication. After deactivating, you must set up a new method before you can continue using the site.', 'brain-2fa' ); ?></p>
 						<?php endif; ?>
 						<p>
@@ -137,7 +137,7 @@ defined( 'ABSPATH' ) || exit;
 					<form method="post" action="">
 						<?php wp_nonce_field( 'brain2fa_setup_action', 'brain2fa_setup_nonce' ); ?>
 						<input type="hidden" name="brain2fa_action" value="deactivate">
-						<?php if ( $role_requires_2fa ) : ?>
+						<?php if ( $role_requires_2fa && empty( $passkeys ) ) : ?>
 							<p class="description"><?php esc_html_e( 'Your role requires two-factor authentication. After deactivating, you must set up a new method before you can continue using the site.', 'brain-2fa' ); ?></p>
 						<?php endif; ?>
 						<p>
@@ -353,6 +353,39 @@ defined( 'ABSPATH' ) || exit;
 								<?php endforeach; ?>
 							</tbody>
 						</table>
+					<?php endif; ?>
+
+					<?php if ( $passkey_only_allowed && ! empty( $passkeys ) ) : ?>
+						<h3><?php esc_html_e( 'Password sign-in', 'brain-2fa' ); ?></h3>
+						<?php if ( $passkey_only ) : ?>
+							<p>
+								<span class="brain2fa-status brain2fa-status-enabled">
+									<span class="dashicons dashicons-lock"></span>
+									<?php esc_html_e( 'Password sign-in is off. You sign in with a passkey only.', 'brain-2fa' ); ?>
+								</span>
+							</p>
+						<?php else : ?>
+							<p><?php esc_html_e( 'Turn off password sign-in so your account can only be accessed with a passkey. This protects you from password phishing and leaked passwords.', 'brain-2fa' ); ?></p>
+							<?php if ( count( $passkeys ) < 2 ) : ?>
+								<p class="description"><?php esc_html_e( 'Tip: add a second passkey on another device first. If you lose all your passkeys, only an administrator can restore password sign-in.', 'brain-2fa' ); ?></p>
+							<?php endif; ?>
+						<?php endif; ?>
+						<form method="post" action="">
+							<?php wp_nonce_field( 'brain2fa_setup_action', 'brain2fa_setup_nonce' ); ?>
+							<input type="hidden" name="brain2fa_action" value="passkey_only">
+							<input type="hidden" name="brain2fa_passkey_only" value="<?php echo $passkey_only ? '0' : '1'; ?>">
+							<p>
+								<label for="brain2fa_passkey_only_password"><?php esc_html_e( 'Confirm your password', 'brain-2fa' ); ?></label><br>
+								<input type="password" id="brain2fa_passkey_only_password" name="brain2fa_confirm_password" class="regular-text" autocomplete="current-password" required>
+							</p>
+							<p>
+								<?php if ( $passkey_only ) : ?>
+									<button type="submit" class="button button-secondary"><?php esc_html_e( 'Turn password sign-in back on', 'brain-2fa' ); ?></button>
+								<?php else : ?>
+									<button type="submit" class="button button-secondary" onclick="return confirm('<?php esc_attr_e( 'Turn off password sign-in? You will only be able to sign in with a passkey.', 'brain-2fa' ); ?>');"><?php esc_html_e( 'Turn off password sign-in', 'brain-2fa' ); ?></button>
+								<?php endif; ?>
+							</p>
+						</form>
 					<?php endif; ?>
 
 					<h3><?php esc_html_e( 'Add a passkey', 'brain-2fa' ); ?></h3>

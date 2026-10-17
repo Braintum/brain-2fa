@@ -8,7 +8,7 @@
 
 import { __ } from '@wordpress/i18n';
 import { sendAjaxRequest } from '../utils/ajax';
-import { hideFormFields, show2FAField } from '../utils/dom';
+import { hideFormFields, show2FAField, showPasskeyStep } from '../utils/dom';
 import { showError, removeError } from '../utils/notification';
 
 let isSubmitting = false;
@@ -90,7 +90,7 @@ async function validateCredentials() {
 
 		if ( 1 === response.data.login ) {
 			if ( response.data.requires_2fa ) {
-				handle2FA( response.data.method );
+				handle2FA( response.data.method, response.data.passkey );
 			} else {
 				submitForm();
 			}
@@ -123,11 +123,35 @@ function handleError( data ) {
 /**
  * Handle 2FA requirement
  *
- * @param {string} method - 2FA method (e.g., 'email', 'app')
+ * The second step can be a code (method), a passkey (passkeyOptions), or a
+ * choice of both. Passkeys are handled by passkey-login.js when it is loaded.
+ *
+ * @param {string}      method         - Code method ('totp' or 'email'), or empty when the user only has passkeys.
+ * @param {Object|null} passkeyOptions - WebAuthn request options for the user's passkeys, if any.
  */
-function handle2FA( method ) {
+function handle2FA( method, passkeyOptions ) {
+	const passkeyLogin = passkeyOptions ? window.Brain2FAPasskeyLogin : null;
+
+	if ( ! method && ! passkeyLogin ) {
+		showError( __( 'Use your passkey to finish signing in. Passkeys are not available in this browser.', 'brain-2fa' ) );
+		return;
+	}
+
 	hideFormFields( loginForm );
-	show2FAField( loginForm, method, window.Brain2FA?.rememberDevice );
+
+	if ( method ) {
+		show2FAField( loginForm, method, window.Brain2FA?.rememberDevice );
+	}
+
+	if ( passkeyLogin ) {
+		const start = () => passkeyLogin.runSecondStep( loginForm, passkeyOptions );
+		showPasskeyStep( loginForm, Boolean( method ), start );
+
+		// With no code method, the passkey is the only option, so ask for it right away.
+		if ( ! method ) {
+			start();
+		}
+	}
 }
 
 /**

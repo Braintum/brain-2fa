@@ -74,13 +74,14 @@ class UserListColumns {
 			return $output;
 		}
 
-		$is_enabled = get_user_meta( $user_id, 'brain2fa_enabled', true );
-
-		if ( $is_enabled ) {
-
+		if ( Utils::is_2fa_enabled_for_user( $user_id ) ) {
 			return sprintf(
 				'<span class="brain2fa-status brain2fa-status-enabled"><span class="dashicons dashicons-shield-alt"></span> %s</span>',
-				esc_html__( 'Enabled', 'brain-2fa' ),
+				esc_html(
+					Utils::is_code_method_enabled_for_user( $user_id )
+						? __( 'Enabled', 'brain-2fa' )
+						: __( 'Enabled (passkeys)', 'brain-2fa' )
+				)
 			);
 		}
 

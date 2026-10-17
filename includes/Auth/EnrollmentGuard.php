@@ -120,7 +120,7 @@ class EnrollmentGuard {
 	/**
 	 * Keep users who must enroll on the setup page inside wp-admin.
 	 *
-	 * AJAX requests are refused, except the Heartbeat API that keeps the session alive.
+	 * AJAX requests are refused, except those in is_allowed_ajax_action().
 	 *
 	 * @return void
 	 */
@@ -132,7 +132,7 @@ class EnrollmentGuard {
 		if ( wp_doing_ajax() ) {
 			// phpcs:ignore WordPress.Security.NonceVerification -- Read-only routing check; the request is refused either way.
 			$action = isset( $_REQUEST['action'] ) && is_string( $_REQUEST['action'] ) ? sanitize_key( wp_unslash( $_REQUEST['action'] ) ) : '';
-			if ( 'heartbeat' !== $action ) {
+			if ( ! self::is_allowed_ajax_action( $action ) ) {
 				wp_send_json_error( array( 'message' => self::get_restriction_message() ), 403 );
 			}
 			return;
@@ -144,6 +144,19 @@ class EnrollmentGuard {
 
 		wp_safe_redirect( self::get_setup_url() );
 		exit;
+	}
+
+	/**
+	 * Check whether a restricted user may run an AJAX action.
+	 *
+	 * Allows the Heartbeat API (keeps the session alive) and passkey registration,
+	 * which is a way to enroll.
+	 *
+	 * @param string $action AJAX action name.
+	 * @return bool True when allowed.
+	 */
+	public static function is_allowed_ajax_action( string $action ): bool {
+		return in_array( $action, array( 'heartbeat', 'brain2fa_passkey_register_options', 'brain2fa_passkey_register_verify' ), true );
 	}
 
 	/**

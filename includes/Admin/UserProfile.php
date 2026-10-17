@@ -67,7 +67,8 @@ class UserProfile {
 			return;
 		}
 
-		$is_enabled              = get_user_meta( $user->ID, 'brain2fa_enabled', true );
+		$is_enabled              = Utils::is_2fa_enabled_for_user( $user->ID );
+		$passkeys_only_factor    = $is_enabled && ! Utils::is_code_method_enabled_for_user( $user->ID );
 		$grace_period_expires_at = ! $is_enabled && Utils::is_2fa_required_for_user( $user ) ? Utils::get_grace_period_expiry( $user ) : 0;
 
 		if ( $grace_period_expires_at > 0 && current_user_can( 'manage_options' ) ) {
@@ -85,7 +86,13 @@ class UserProfile {
 					<?php if ( $is_enabled ) : ?>
 						<span class="brain2fa-status brain2fa-status-enabled">
 							<span class="dashicons dashicons-shield-alt"></span>
-							<?php esc_html_e( 'Two-Factor Authentication is Active', 'brain-2fa' ); ?>
+							<?php
+							echo esc_html(
+								$passkeys_only_factor
+									? __( 'Two-Factor Authentication is Active (passkeys)', 'brain-2fa' )
+									: __( 'Two-Factor Authentication is Active', 'brain-2fa' )
+							);
+							?>
 						</span>
 					<?php else : ?>
 						<span class="brain2fa-status brain2fa-status-disabled">
@@ -281,11 +288,22 @@ class UserProfile {
 						<?php endforeach; ?>
 					</ul>
 					<?php wp_nonce_field( 'brain2fa_revoke_passkeys_' . $user->ID, 'brain2fa_passkeys_nonce' ); ?>
+					<?php if ( ! empty( get_user_meta( $user->ID, \Brain_2FA\Utils::PASSKEY_ONLY_META_KEY, true ) ) ) : ?>
+						<p>
+							<strong><?php esc_html_e( 'Password sign-in is turned off for this account (passkey-only).', 'brain-2fa' ); ?></strong>
+						</p>
+						<p>
+							<label>
+								<input type="checkbox" name="brain2fa_restore_password_sign_in" value="1">
+								<?php esc_html_e( 'Turn password sign-in back on', 'brain-2fa' ); ?>
+							</label>
+						</p>
+					<?php endif; ?>
 					<label>
 						<input type="checkbox" name="brain2fa_revoke_passkeys" value="1">
 						<?php esc_html_e( 'Remove all passkeys from this account', 'brain-2fa' ); ?>
 					</label>
-					<p class="description"><?php esc_html_e( 'Use this if a device was lost or the account may be compromised. The user is notified by email.', 'brain-2fa' ); ?></p>
+					<p class="description"><?php esc_html_e( 'Use these if a device was lost or the account may be compromised. Removing all passkeys also turns password sign-in back on. The user is notified by email.', 'brain-2fa' ); ?></p>
 				</td>
 			</tr>
 		</table>
@@ -293,13 +311,13 @@ class UserProfile {
 	}
 
 	/**
-	 * Revoke a user's passkeys when an administrator ticks the option.
+	 * Revoke a user's passkeys, or restore their password sign-in, when an administrator ticks the option.
 	 *
 	 * @param int $user_id User being saved.
 	 * @return void
 	 */
 	public function save_passkeys_section( int $user_id ): void {
-		if ( ! current_user_can( 'manage_options' ) || ! current_user_can( 'edit_user', $user_id ) || empty( $_POST['brain2fa_revoke_passkeys'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Verified below before any change.
+		if ( ! current_user_can( 'manage_options' ) || ! current_user_can( 'edit_user', $user_id ) || ( empty( $_POST['brain2fa_revoke_passkeys'] ) && empty( $_POST['brain2fa_restore_password_sign_in'] ) ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Verified below before any change.
 			return;
 		}
 
@@ -309,8 +327,14 @@ class UserProfile {
 		}
 
 		$user = get_userdata( $user_id );
-		if ( $user instanceof \WP_User ) {
+		if ( ! $user instanceof \WP_User ) {
+			return;
+		}
+
+		if ( ! empty( $_POST['brain2fa_revoke_passkeys'] ) ) {
 			\Brain_2FA\Passkeys\PasskeyRegistration::revoke_all( $user );
+		} elseif ( ! empty( $_POST['brain2fa_restore_password_sign_in'] ) ) {
+			\Brain_2FA\Passkeys\PasskeyRegistration::restore_password_sign_in( $user );
 		}
 	}
 }

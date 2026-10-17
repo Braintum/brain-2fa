@@ -205,16 +205,17 @@ class Settings {
 	public function sanitize_settings( $input ): array {
 		$sanitized = array();
 
-		$sanitized['enable_2fa']        = ! empty( $input['enable_2fa'] );
-		$valid_roles                    = array_keys( wp_roles()->roles );
-		$raw_roles                      = isset( $input['force_2fa_roles'] ) && is_array( $input['force_2fa_roles'] ) ? $input['force_2fa_roles'] : array();
-		$sanitized['force_2fa_roles']   = array_values( array_filter( $raw_roles, fn( $r ) => in_array( $r, $valid_roles, true ) ) );
-		$sanitized['grace_period_days'] = min( 365, absint( $input['grace_period_days'] ?? 14 ) );
-		$sanitized['enable_totp']       = ! empty( $input['enable_totp'] );
-		$sanitized['enable_email']      = ! empty( $input['enable_email'] );
-		$sanitized['enable_passkeys']   = ! empty( $input['enable_passkeys'] );
-		$default_method                 = $input['default_method'] ?? 'totp';
-		$default_method                 = 'email_backup' === $default_method ? 'email' : $default_method;
+		$sanitized['enable_2fa']         = ! empty( $input['enable_2fa'] );
+		$valid_roles                     = array_keys( wp_roles()->roles );
+		$raw_roles                       = isset( $input['force_2fa_roles'] ) && is_array( $input['force_2fa_roles'] ) ? $input['force_2fa_roles'] : array();
+		$sanitized['force_2fa_roles']    = array_values( array_filter( $raw_roles, fn( $r ) => in_array( $r, $valid_roles, true ) ) );
+		$sanitized['grace_period_days']  = min( 365, absint( $input['grace_period_days'] ?? 14 ) );
+		$sanitized['enable_totp']        = ! empty( $input['enable_totp'] );
+		$sanitized['enable_email']       = ! empty( $input['enable_email'] );
+		$sanitized['enable_passkeys']    = ! empty( $input['enable_passkeys'] );
+		$sanitized['allow_passkey_only'] = ! empty( $input['allow_passkey_only'] );
+		$default_method                  = $input['default_method'] ?? 'totp';
+		$default_method                  = 'email_backup' === $default_method ? 'email' : $default_method;
 		if ( ! in_array( $default_method, array( 'totp', 'email' ), true ) || ( 'totp' === $default_method && ! $sanitized['enable_totp'] ) || ( 'email' === $default_method && ! $sanitized['enable_email'] ) ) {
 			$default_method = $sanitized['enable_totp'] ? 'totp' : 'email';
 		}
@@ -379,6 +380,15 @@ class Settings {
 				<?php esc_html_e( 'Passkeys need HTTPS. Your site address does not use HTTPS, so passkeys stay hidden until it does.', 'brain-2fa' ); ?>
 			</p>
 		<?php endif; ?>
+		<p style="margin-top: 10px;">
+			<label>
+				<input type="checkbox" name="brain2fa_settings[allow_passkey_only]" value="1" <?php checked( ! empty( $options['allow_passkey_only'] ) ); ?>>
+				<?php esc_html_e( 'Let users turn off password sign-in for their account (passkey-only)', 'brain-2fa' ); ?>
+			</label>
+		</p>
+		<p class="description">
+			<?php esc_html_e( 'Passkey-only accounts cannot be phished with a password. If such a user loses all their passkeys, an administrator restores password sign-in from their profile.', 'brain-2fa' ); ?>
+		</p>
 		<?php
 	}
 
@@ -493,6 +503,21 @@ class Settings {
 				}
 			}
 
+			if ( 'passkey_only' === $action && PasskeyLogin::is_enabled() ) {
+				$enable   = isset( $_POST['brain2fa_passkey_only'] ) && '1' === sanitize_key( wp_unslash( $_POST['brain2fa_passkey_only'] ) );
+				$password = isset( $_POST['brain2fa_confirm_password'] ) && is_string( $_POST['brain2fa_confirm_password'] ) ? wp_unslash( $_POST['brain2fa_confirm_password'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Passwords must not be altered before checking.
+				$result   = PasskeyRegistration::set_passkey_only( $current_user, $enable, $password );
+
+				if ( is_wp_error( $result ) ) {
+					echo '<div class="notice notice-error"><p>' . esc_html( $result->get_error_message() ) . '</p></div>';
+				} elseif ( $enable ) {
+					echo '<div class="notice notice-success"><p>' . esc_html__( 'Password sign-in is now off. Sign in with your passkey from now on.', 'brain-2fa' ) . '</p></div>';
+				} else {
+					echo '<div class="notice notice-success"><p>' . esc_html__( 'Password sign-in is turned back on.', 'brain-2fa' ) . '</p></div>';
+				}
+				$action = '';
+			}
+
 			if ( in_array( $action, array( 'passkey_remove', 'passkey_rename' ), true ) && PasskeyLogin::is_enabled() ) {
 				$passkey_id = isset( $_POST['brain2fa_passkey_id'] ) ? absint( wp_unslash( $_POST['brain2fa_passkey_id'] ) ) : 0;
 
@@ -570,8 +595,9 @@ class Settings {
 				$current_method = '';
 				Utils::send_factor_change_notification( $current_user, 'deactivated' );
 
-				// Users whose role requires 2FA go straight back to setup instead of getting a new grace period.
-				if ( Utils::is_2fa_required_for_user( $current_user ) ) {
+				// Users whose role requires 2FA go straight back to setup instead of getting a new grace period,
+				// unless their passkeys still count as a second factor.
+				if ( Utils::is_2fa_required_for_user( $current_user ) && ! Utils::is_2fa_enabled_for_user( $current_user->ID ) ) {
 					Utils::require_enrollment_now( $current_user );
 					echo '<div class="notice notice-warning"><p>' . esc_html__( 'Two-Factor Authentication has been deactivated. Your role requires it, so set up a new method below to continue using the site.', 'brain-2fa' ) . '</p></div>';
 				} else {
@@ -598,9 +624,11 @@ class Settings {
 		$role_requires_2fa  = Utils::is_2fa_required_for_user( $current_user );
 		$must_enroll        = Utils::is_enrollment_required( $current_user );
 
-		// Passkeys: only shown when enabled and served over HTTPS; restricted users enroll in a code method first.
-		$passkeys_enabled = PasskeyLogin::is_enabled() && ! $must_enroll;
-		$passkeys         = $passkeys_enabled ? PasskeyRepository::get_for_user( $current_user->ID ) : array();
+		// Passkeys: only shown when enabled and served over HTTPS. Restricted users may enroll with a passkey.
+		$passkeys_enabled     = PasskeyLogin::is_enabled();
+		$passkeys             = $passkeys_enabled ? PasskeyRepository::get_for_user( $current_user->ID ) : array();
+		$passkey_only_allowed = $passkeys_enabled && Utils::is_passkey_only_allowed();
+		$passkey_only         = Utils::is_passkey_only( $current_user );
 
 		include BRAIN_2FA_PLUGIN_DIR . 'includes/Admin/views/login-security-page.php';
 	}

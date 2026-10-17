@@ -46,6 +46,9 @@ Brain 2FA runs inside the WordPress authentication path. This document lists wha
 | Passkey sign-in ends with a normal form submission (token + `authenticate` filter at priority 15) | Core sign-in, redirects, remember-me, other security plugins and restricted mode behave exactly as for password sign-ins, with no separate session-creation code. |
 | Adding or removing a passkey needs the password; admins can revoke; owners are emailed | A passkey is a permanent passwordless sign-in, so planting one is the most valuable thing a hijacked session could do. |
 | A password reset does not delete passkeys | They are independent credentials. An administrator can revoke them after a compromise. |
+| Passkeys count as a second factor only while usable | If passkeys are turned off or the site loses HTTPS, they stop counting: required users fall back to restricted mode, and passkey-only accounts can use their password again, so nobody is locked out by a setting change. |
+| Second-step challenges are bound to the user who entered the password | The options list only that user's passkeys, and an assertion from another account's passkey is rejected. |
+| Passkey-only accounts: opt-in twice, password-confirmed, admin recovery only | The site must allow it and the user must turn it on. A password reset does **not** turn it off (that would let email access bypass it); an administrator restores password sign-in, and revoking all passkeys restores it too. The last passkey of such an account cannot be removed by the user. It is enforced before the 2FA switch, because it is about passwords, not second factors. |
 | The per-user code lockout does not block passkey sign-in | A passkey cannot be guessed, and an attacker who knows the password should not be able to lock the owner out of their passkey. Failed assertions count toward the IP limit. |
 | Signature counter regression blocks the sign-in and emails the owner | A counter going backwards suggests a copied authenticator. Synced passkeys report 0 and are not affected. |
 | No AAGUID metadata download | Looking up authenticator names would contact a third party. Only the AAGUID is stored. |
@@ -78,7 +81,6 @@ These were observed in the code on 2026-10-16. Re-check them before relying on t
 - **Restricted mode is enforced by redirects** on `admin_init` and `template_redirect`, plus REST and AJAX refusals. Code from other plugins that acts earlier (for example form handlers on `init`) still runs for restricted users.
 - **Application passwords bypass 2FA.** WordPress core validates application passwords for REST requests without the `authenticate` filter, so Brain 2FA does not see them. This is core's intended design for API access; sites that do not need application passwords can disable them with the `wp_is_application_passwords_available` filter.
 - **Passkey data stays after uninstall.** The plugin has no uninstall routine yet, so the `brain2fa_passkeys` table and passkey user meta remain if the plugin is deleted.
-- **Passkeys do not count toward required-role enrollment yet** (phase 2), and there is no passkey second step after a password.
 - **Custom login forms** other than `wp-login.php`, the WooCommerce form and `wp_login_form()` get no code field, and users with 2FA cannot sign in through them (this fails closed).
 
 ## Reporting

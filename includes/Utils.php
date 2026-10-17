@@ -48,14 +48,67 @@ class Utils {
 	private const IP_FAILURES_TRANSIENT_PREFIX = 'brain2fa_ip_failures_';
 
 	/**
+	 * User meta key set when the user turned off password sign-in.
+	 *
+	 * @var string
+	 */
+	public const PASSKEY_ONLY_META_KEY = 'brain2fa_passkey_only';
+
+	/**
 	 * Check whether 2FA is enabled for a specific user.
 	 *
 	 * @param int|string $user_id User ID.
 	 * @return bool True when user 2FA is enabled, false otherwise.
 	 */
 	public static function is_2fa_enabled_for_user( $user_id ): bool {
-		$user_2fa_enabled = get_user_meta( $user_id, 'brain2fa_enabled', true );
-		return ! empty( $user_2fa_enabled );
+		return self::is_code_method_enabled_for_user( (int) $user_id ) || self::user_has_passkey_factor( (int) $user_id );
+	}
+
+	/**
+	 * Check whether a user has a code method (TOTP or email) enabled.
+	 *
+	 * @param int $user_id User ID.
+	 * @return bool True when a code method is enabled.
+	 */
+	public static function is_code_method_enabled_for_user( int $user_id ): bool {
+		return ! empty( get_user_meta( $user_id, 'brain2fa_enabled', true ) );
+	}
+
+	/**
+	 * Check whether a user's passkeys currently count as a second factor.
+	 *
+	 * Only while passkeys are enabled and usable (HTTPS); otherwise they cannot be used.
+	 *
+	 * @param int $user_id User ID.
+	 * @return bool True when the user has at least one usable passkey.
+	 */
+	public static function user_has_passkey_factor( int $user_id ): bool {
+		return \Brain_2FA\Passkeys\PasskeyLogin::is_enabled() && \Brain_2FA\Passkeys\PasskeyRepository::count_for_user( $user_id ) > 0;
+	}
+
+	/**
+	 * Check whether the site lets users turn off password sign-in for their account.
+	 *
+	 * @return bool True when passkey-only accounts are allowed.
+	 */
+	public static function is_passkey_only_allowed(): bool {
+		$plugin_settings = get_option( 'brain2fa_settings', array() );
+		return self::is_passkeys_enabled() && ! empty( $plugin_settings['allow_passkey_only'] );
+	}
+
+	/**
+	 * Check whether password sign-in is turned off for a user (passkey-only account).
+	 *
+	 * Never true unless the site allows it, passkeys are usable and the user has a
+	 * passkey, so turning passkeys off for the site restores password sign-in.
+	 *
+	 * @param \WP_User $user User to evaluate.
+	 * @return bool True when the user may only sign in with a passkey.
+	 */
+	public static function is_passkey_only( \WP_User $user ): bool {
+		return self::is_passkey_only_allowed()
+			&& ! empty( get_user_meta( $user->ID, self::PASSKEY_ONLY_META_KEY, true ) )
+			&& self::user_has_passkey_factor( $user->ID );
 	}
 
 	/**
@@ -403,7 +456,8 @@ class Utils {
 	 *
 	 * @param \WP_User $user  User whose settings changed.
 	 * @param string   $event One of 'activated', 'deactivated', 'recovery_codes_regenerated', 'passkey_added',
-	 *                        'passkey_removed', 'passkeys_revoked' or 'passkey_clone_warning'.
+	 *                        'passkey_removed', 'passkeys_revoked', 'passkey_only_enabled',
+	 *                        'passkey_only_disabled' or 'passkey_clone_warning'.
 	 * @return void
 	 */
 	public static function send_factor_change_notification( \WP_User $user, string $event ): void {
@@ -418,6 +472,8 @@ class Utils {
 			'passkey_added'              => __( 'A new passkey was added to your account. It can be used to sign in without a password.', 'brain-2fa' ),
 			'passkey_removed'            => __( 'A passkey was removed from your account.', 'brain-2fa' ),
 			'passkeys_revoked'           => __( 'An administrator removed the passkeys from your account.', 'brain-2fa' ),
+			'passkey_only_enabled'       => __( 'Password sign-in was turned off for your account. You can now only sign in with a passkey.', 'brain-2fa' ),
+			'passkey_only_disabled'      => __( 'Password sign-in was turned back on for your account.', 'brain-2fa' ),
 			'passkey_clone_warning'      => __( 'A sign-in with one of your passkeys was blocked because the passkey may have been copied. Remove it from your account and contact the site administrator.', 'brain-2fa' ),
 		);
 

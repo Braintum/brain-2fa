@@ -116,13 +116,42 @@ class PasskeyLogin {
 	 * Create sign-in options and store the challenge for a browser session.
 	 *
 	 * @param string $session Random session value from the browser's cookie.
+	 * @param int    $user_id Restrict the ceremony to this user's passkeys (second step
+	 *                        after a password), or 0 for any passkey (passwordless).
 	 * @return array WebAuthn request options.
 	 */
-	public static function create_authentication_options( string $session ): array {
+	public static function create_authentication_options( string $session, int $user_id = 0 ): array {
 		$challenge = WebAuthnServer::generate_challenge();
-		set_transient( self::challenge_key( $session ), WebAuthnServer::base64url_encode( $challenge ), WebAuthnServer::TIMEOUT );
+		set_transient(
+			self::challenge_key( $session ),
+			array(
+				'challenge' => WebAuthnServer::base64url_encode( $challenge ),
+				'user_id'   => $user_id,
+			),
+			WebAuthnServer::TIMEOUT
+		);
 
-		return WebAuthnServer::get_request_options( $challenge );
+		return WebAuthnServer::get_request_options( $challenge, $user_id > 0 ? PasskeyRepository::get_for_user( $user_id ) : array() );
+	}
+
+	/**
+	 * Start a passkey ceremony as the second step after a correct password.
+	 *
+	 * Called from the login preflight, which has already verified the password.
+	 * The options only offer this user's passkeys, and the resulting assertion is
+	 * rejected if it comes from anyone else's passkey.
+	 *
+	 * @param WP_User $user    User who entered a correct password.
+	 * @param string  $session Session value to use; a new one is created and set as a cookie when empty.
+	 * @return array WebAuthn request options.
+	 */
+	public static function start_second_step( WP_User $user, string $session = '' ): array {
+		if ( '' === $session ) {
+			$session = wp_generate_password( 43, false, false );
+			self::set_session_cookie( $session, time() + WebAuthnServer::TIMEOUT );
+		}
+
+		return self::create_authentication_options( $session, $user->ID );
 	}
 
 	/**
@@ -138,13 +167,16 @@ class PasskeyLogin {
 			return new WP_Error( 'brain2fa_too_many_attempts', Utils::get_lockout_message( $locked_for ) );
 		}
 
-		$key       = self::challenge_key( $session );
-		$challenge = '' !== $session ? get_transient( $key ) : false;
+		$key     = self::challenge_key( $session );
+		$pending = '' !== $session ? get_transient( $key ) : false;
 
 		// Only the request that deletes the challenge may use it.
-		if ( ! is_string( $challenge ) || ! delete_transient( $key ) ) {
+		if ( ! is_array( $pending ) || empty( $pending['challenge'] ) || ! delete_transient( $key ) ) {
 			return new WP_Error( 'brain2fa_passkey_expired', __( 'The passkey request expired. Please try again.', 'brain-2fa' ) );
 		}
+
+		$challenge     = (string) $pending['challenge'];
+		$expected_user = absint( $pending['user_id'] ?? 0 );
 
 		$credential_id = isset( $credential['id'] ) && is_string( $credential['id'] ) ? $credential['id'] : '';
 		$passkey       = '' !== $credential_id ? PasskeyRepository::find_by_credential_id( $credential_id ) : null;
@@ -153,6 +185,12 @@ class PasskeyLogin {
 		if ( ! $passkey || ! $user instanceof WP_User ) {
 			Utils::record_failed_ip_attempt();
 			return new WP_Error( 'brain2fa_passkey_unknown', __( 'This passkey is not registered on this site. It may have been removed.', 'brain-2fa' ) );
+		}
+
+		// A second-step ceremony must be completed with the passkey of the user who entered the password.
+		if ( $expected_user > 0 && $expected_user !== $user->ID ) {
+			Utils::record_failed_ip_attempt();
+			return new WP_Error( 'brain2fa_passkey_wrong_user', __( 'This passkey belongs to a different account.', 'brain-2fa' ) );
 		}
 
 		// The user handle returned by the authenticator must belong to the passkey's owner.

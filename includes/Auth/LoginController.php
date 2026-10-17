@@ -110,62 +110,12 @@ class LoginController {
 
 		$user = wp_authenticate( $username, $password );
 		if ( is_object( $user ) && ( $user instanceof WP_User ) ) {
+			$response = self::get_preflight_response( $user );
 
-			if ( ! Utils::is_2fa_enabled_sitewide() ) {
-				// 2FA is not enabled site-wide, pass the credentials on to the normal login flow.
-				wp_send_json_success( array( 'login' => 1 ) );
+			if ( $response['success'] ) {
+				wp_send_json_success( $response['data'] );
 			}
-
-			// Check if user has 2FA enabled.
-			$is_2fa_enabled = get_user_meta( $user->ID, 'brain2fa_enabled', true );
-
-			if ( ! $is_2fa_enabled ) {
-				// Not enrolled: sign in normally. If the grace period has expired, EnrollmentGuard
-				// redirects the user to the setup page and restricts them there until they enroll.
-				wp_send_json_success( array( 'login' => 1 ) );
-			}
-
-			if ( Utils::is_remembered_device( $user ) ) {
-				wp_send_json_success( array( 'login' => 1 ) );
-			}
-
-			$locked_for = Utils::get_verification_lockout( $user );
-			if ( $locked_for > 0 ) {
-				wp_send_json_error(
-					array(
-						'error' => Utils::get_lockout_message( $locked_for ),
-						'reset' => true,
-					)
-				);
-			}
-
-			$method_id = get_user_meta( $user->ID, 'brain2fa_method', true );
-			$method    = brain_2fa()->manager->get_method( $method_id );
-			if ( ! Utils::is_method_enabled( $method_id ) || ! $method ) {
-				wp_send_json_error(
-					array(
-						'error' => __( 'Your configured two-factor authentication method is unavailable. Please contact an administrator.', 'brain-2fa' ),
-						'reset' => true,
-					)
-				);
-			}
-
-			if ( 'email' === $method_id && ! $method->send_challenge( $user ) ) {
-				wp_send_json_error(
-					array(
-						'error' => __( 'Unable to send your email authentication code. Please try again or contact an administrator.', 'brain-2fa' ),
-						'reset' => true,
-					)
-				);
-			}
-
-			wp_send_json_success(
-				array(
-					'login'        => 1,
-					'requires_2fa' => true,
-					'method'       => $method_id,
-				)
-			);
+			wp_send_json_error( $response['data'] );
 		}
 
 		if ( is_wp_error( $user ) ) {
@@ -261,75 +211,174 @@ class LoginController {
 			return $user;
 		}
 
+		if ( ! $user instanceof WP_User ) {
+			return $user;
+		}
+
+		// A passkey with user verification is multi-factor on its own.
+		if ( PasskeyLogin::is_passkey_authentication( $user ) ) {
+			return $user;
+		}
+
+		// Passkey-only accounts have password sign-in turned off (independent of the 2FA switch).
+		if ( Utils::is_passkey_only( $user ) ) {
+			return new WP_Error( 'brain2fa_passkey_only', self::get_passkey_only_message() );
+		}
+
 		if ( ! Utils::is_2fa_enabled_sitewide() ) {
 			return $user;
 		}
 
-		if ( $user instanceof WP_User ) {
+		$has_code_method = Utils::is_code_method_enabled_for_user( $user->ID );
+		$has_passkey     = Utils::user_has_passkey_factor( $user->ID );
 
-			// A passkey with user verification is multi-factor on its own.
-			if ( PasskeyLogin::is_passkey_authentication( $user ) ) {
-				return $user;
-			}
-
-			// Check if user has 2FA enabled.
-			$is_2fa_enabled = get_user_meta( $user->ID, 'brain2fa_enabled', true );
-			if ( ! $is_2fa_enabled ) {
-				// Interactive sign-ins continue into restricted setup mode (see EnrollmentGuard).
-				// XML-RPC and REST have no setup page, so they stay blocked until the user enrolls.
-				if ( Utils::is_enrollment_required( $user ) && self::is_non_interactive_request() ) {
-					return new WP_Error(
-						'brain2fa_setup_required',
-						__( 'Two-factor authentication must be set up for this account. Sign in through the website to set it up.', 'brain-2fa' )
-					);
-				}
-
-				return $user;
-			}
-
-			if ( Utils::is_remembered_device( $user ) ) {
-				return $user;
-			}
-
-			// Checked before any code is evaluated, so locked-out attempts cost nothing and send no email.
-			$locked_for = Utils::get_verification_lockout( $user );
-			if ( $locked_for > 0 ) {
-				return new WP_Error( 'brain2fa_too_many_attempts', Utils::get_lockout_message( $locked_for ) );
-			}
-
-			$method_id = get_user_meta( $user->ID, 'brain2fa_method', true );
-			$method    = brain_2fa()->manager->get_method( $method_id );
-
-			// Ensure 2FA code is provided.
-			if ( ! isset( $_POST['brain2fa_code'] ) || empty( $_POST['brain2fa_code'] ) ) { //phpcs:ignore
-				if ( 'email' === $method_id && Utils::is_method_enabled( $method_id ) && $method && $method->send_challenge( $user ) ) {
-					return new WP_Error(
-						'brain2fa_required',
-						__( 'An email authentication code has been sent. Enter it to continue.', 'brain-2fa' )
-					);
-				}
-
+		if ( ! $has_code_method && ! $has_passkey ) {
+			// Interactive sign-ins continue into restricted setup mode (see EnrollmentGuard).
+			// XML-RPC and REST have no setup page, so they stay blocked until the user enrolls.
+			if ( Utils::is_enrollment_required( $user ) && self::is_non_interactive_request() ) {
 				return new WP_Error(
-					'brain2fa_required',
-					__( 'Two-factor authentication required.', 'brain-2fa' )
+					'brain2fa_setup_required',
+					__( 'Two-factor authentication must be set up for this account. Sign in through the website to set it up.', 'brain-2fa' )
 				);
 			}
 
-			$code      = sanitize_text_field( wp_unslash( $_POST['brain2fa_code'] ) ); //phpcs:ignore
+			return $user;
+		}
 
-			if ( ! Utils::is_method_enabled( $method_id ) || ! $method || ! $method->verify( $user, $code ) ) {
-				Utils::record_failed_verification( $user );
-				return new WP_Error( 'invalid_code', __( 'Invalid verification code.', 'brain-2fa' ) );
+		if ( Utils::is_remembered_device( $user ) ) {
+			return $user;
+		}
+
+		// Checked before any code is evaluated, so locked-out attempts cost nothing and send no email.
+		$locked_for = Utils::get_verification_lockout( $user );
+		if ( $locked_for > 0 ) {
+			return new WP_Error( 'brain2fa_too_many_attempts', Utils::get_lockout_message( $locked_for ) );
+		}
+
+		// Passkeys are this user's only second factor: the passkey sign-in (which needs JavaScript) completes it.
+		if ( ! $has_code_method ) {
+			return new WP_Error( 'brain2fa_passkey_required', __( 'Use your passkey to finish signing in.', 'brain-2fa' ) );
+		}
+
+		$method_id = get_user_meta( $user->ID, 'brain2fa_method', true );
+		$method    = brain_2fa()->manager->get_method( $method_id );
+
+		// Ensure 2FA code is provided.
+		if ( ! isset( $_POST['brain2fa_code'] ) || empty( $_POST['brain2fa_code'] ) ) { //phpcs:ignore
+			if ( 'email' === $method_id && Utils::is_method_enabled( $method_id ) && $method && $method->send_challenge( $user ) ) {
+				return new WP_Error(
+					'brain2fa_required',
+					__( 'An email authentication code has been sent. Enter it to continue.', 'brain-2fa' )
+				);
 			}
 
-			Utils::clear_failed_verifications( $user );
+			return new WP_Error(
+				'brain2fa_required',
+				__( 'Two-factor authentication required.', 'brain-2fa' )
+			);
+		}
 
-			if ( isset( $_POST['brain2fa_remember_device'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
-				Utils::remember_device( $user );
-			}
+		$code      = sanitize_text_field( wp_unslash( $_POST['brain2fa_code'] ) ); //phpcs:ignore
+
+		if ( ! Utils::is_method_enabled( $method_id ) || ! $method || ! $method->verify( $user, $code ) ) {
+			Utils::record_failed_verification( $user );
+			return new WP_Error( 'invalid_code', __( 'Invalid verification code.', 'brain-2fa' ) );
+		}
+
+		Utils::clear_failed_verifications( $user );
+
+		if ( isset( $_POST['brain2fa_remember_device'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			Utils::remember_device( $user );
 		}
 
 		return $user;
+	}
+
+	/**
+	 * Decide the login preflight response for a user whose password was correct.
+	 *
+	 * Mirrors the policy in verify_2fa(), which remains the real enforcement point.
+	 * The response tells login.js whether to submit the form directly or to ask
+	 * for a second factor: a code ('method'), a passkey ('passkey' options), or both.
+	 *
+	 * @param WP_User $user User who entered a correct password.
+	 * @return array{success:bool,data:array} Response for wp_send_json_success() or wp_send_json_error().
+	 */
+	public static function get_preflight_response( WP_User $user ): array {
+		$error = static fn( string $message ) => array(
+			'success' => false,
+			'data'    => array(
+				'error' => $message,
+				'reset' => true,
+			),
+		);
+		$login = array(
+			'success' => true,
+			'data'    => array( 'login' => 1 ),
+		);
+
+		if ( Utils::is_passkey_only( $user ) ) {
+			return $error( self::get_passkey_only_message() );
+		}
+
+		if ( ! Utils::is_2fa_enabled_sitewide() ) {
+			return $login;
+		}
+
+		$has_code_method = Utils::is_code_method_enabled_for_user( $user->ID );
+		$has_passkey     = Utils::user_has_passkey_factor( $user->ID );
+
+		// Not enrolled: sign in normally. If the grace period has expired, EnrollmentGuard
+		// redirects the user to the setup page and restricts them there until they enroll.
+		if ( ( ! $has_code_method && ! $has_passkey ) || Utils::is_remembered_device( $user ) ) {
+			return $login;
+		}
+
+		$locked_for = Utils::get_verification_lockout( $user );
+		if ( $locked_for > 0 ) {
+			return $error( Utils::get_lockout_message( $locked_for ) );
+		}
+
+		$data = array(
+			'login'        => 1,
+			'requires_2fa' => true,
+			'method'       => '',
+		);
+
+		if ( $has_code_method ) {
+			$method_id = (string) get_user_meta( $user->ID, 'brain2fa_method', true );
+			$method    = brain_2fa()->manager->get_method( $method_id );
+
+			if ( ! Utils::is_method_enabled( $method_id ) || ! $method ) {
+				if ( ! $has_passkey ) {
+					return $error( __( 'Your configured two-factor authentication method is unavailable. Please contact an administrator.', 'brain-2fa' ) );
+				}
+			} elseif ( 'email' === $method_id && ! $method->send_challenge( $user ) ) {
+				if ( ! $has_passkey ) {
+					return $error( __( 'Unable to send your email authentication code. Please try again or contact an administrator.', 'brain-2fa' ) );
+				}
+			} else {
+				$data['method'] = $method_id;
+			}
+		}
+
+		if ( $has_passkey ) {
+			$data['passkey'] = PasskeyLogin::start_second_step( $user );
+		}
+
+		return array(
+			'success' => true,
+			'data'    => $data,
+		);
+	}
+
+	/**
+	 * Get the message shown when a passkey-only account tries to use its password.
+	 *
+	 * @return string Translated message.
+	 */
+	public static function get_passkey_only_message(): string {
+		return __( 'This account signs in with a passkey only. Use "Sign in with a passkey" instead of your password.', 'brain-2fa' );
 	}
 
 	/**

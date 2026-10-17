@@ -120,6 +120,45 @@ async function signIn( form, autofill ) {
 }
 
 /**
+ * Complete the second step after a password with one of the user's passkeys.
+ *
+ * Called by login.js. The options come from the login preflight and only allow
+ * the passkeys of the user who entered the password.
+ *
+ * @param {HTMLFormElement} form        - Login form.
+ * @param {Object}          optionsJSON - WebAuthn request options from the preflight.
+ * @return {Promise<boolean>} True when the form is being submitted.
+ */
+async function runSecondStep( form, optionsJSON ) {
+	try {
+		const credential = await startAuthentication({ optionsJSON });
+
+		removeError();
+		const result = await post({
+			action: 'brain2fa_passkey_auth_verify',
+			credential: JSON.stringify( credential )
+		});
+
+		if ( ! result.success ) {
+			showError( result.data?.message || __( 'Passkey sign-in failed. Please try again.', 'brain-2fa' ) );
+			return false;
+		}
+
+		submitWithToken( form, result.data );
+		return true;
+	} catch ( error ) {
+		if ( 'NotAllowedError' !== error?.name && 'AbortError' !== error?.name ) {
+			showError( __( 'Passkey sign-in failed. Please try again.', 'brain-2fa' ) );
+		}
+		return false;
+	}
+}
+
+if ( config.ajax && window.isSecureContext && browserSupportsWebAuthn() ) {
+	window.Brain2FAPasskeyLogin = { runSecondStep };
+}
+
+/**
  * Offer passkeys in the username field's autofill, when the browser supports it.
  *
  * @param {HTMLFormElement} form - Login form.

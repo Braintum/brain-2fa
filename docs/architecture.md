@@ -44,10 +44,10 @@ submit username + password  ──AJAX──▶ LoginController::handle_login()
                                         - wp_authenticate() with BRAIN_2FA_AUTHENTICATION_CHECK defined
                                         - site 2FA off, user not enrolled, or trusted device
                                             → {login: 1}  (expired grace → restricted mode after login)
+                                        - passkey-only account → error + reset
                                         - verification locked out → error + reset
-                                        - method unavailable → error + reset
-                                        - email method → send_challenge()
-                                        - otherwise → {login: 1, requires_2fa: true, method}
+                                        - {requires_2fa, method (code, may be empty), passkey (options, if any)}
+                                        - method unavailable / email failed → error, unless a passkey is offered
 show "Verification Code" field
 submit the native login form  ──POST─▶ wp-login.php → authenticate filter
   with brain2fa_code                    LoginController::verify_2fa()  (the real gate)
@@ -79,7 +79,13 @@ Email authentication is enabled only after the user enters a code sent to their 
 
 ## Passkeys (passwordless sign-in)
 
-Off by default (`enable_passkeys`), and only active over HTTPS or on localhost (`WebAuthnServer::is_available()`), because browsers only allow WebAuthn in a secure context. A passkey sign-in requires user verification (biometric or PIN), so it satisfies 2FA without a code. In this phase, passkeys do not count toward required-role enrollment, and password sign-ins are unchanged.
+Off by default (`enable_passkeys`), and only active over HTTPS or on localhost (`WebAuthnServer::is_available()`), because browsers only allow WebAuthn in a secure context. A passkey sign-in requires user verification (biometric or PIN), so it satisfies 2FA without a code.
+
+Passkeys are a second factor alongside the code methods, not a `TwoFactorMethodInterface` method: `Utils::is_2fa_enabled_for_user()` is true for a code method (`brain2fa_enabled`) **or** a usable passkey (`Utils::user_has_passkey_factor()`, which is false while passkeys are off or the site is not on HTTPS). So:
+
+- **Enrollment:** adding a passkey enrolls a required-role user and clears their grace deadline; restricted users may call the passkey registration AJAX actions (`EnrollmentGuard::is_allowed_ajax_action()`); removing the last factor restricts them again.
+- **Second step after a password:** `LoginController::get_preflight_response()` returns `passkey` options limited to the user's own passkeys (`PasskeyLogin::start_second_step()`), alongside `method` when the user also has a code method. The challenge records the user ID, and `verify_authentication()` rejects another account's passkey. A user whose only factor is passkeys gets `brain2fa_passkey_required` from `verify_2fa()` on a password-only submission.
+- **Passkey-only accounts:** when the site allows it (`allow_passkey_only`), a user with a passkey can turn off password sign-in (`brain2fa_passkey_only` user meta, password-confirmed). `Utils::is_passkey_only()` is checked before the 2FA switch in both the preflight and `verify_2fa()`. It never applies while passkeys are unusable. The last passkey of a passkey-only account cannot be removed; an administrator can restore password sign-in from the profile, and revoking all passkeys restores it too.
 
 **Registering** (Login Security page, `passkey-manage.js`): the user enters a name and their password, and `brain2fa_passkey_register_options` confirms the password (`Utils::confirm_password()`) and returns creation options (`residentKey` and `userVerification` required, `attestation: none`, existing passkeys excluded). The challenge is stored in `brain2fa_webauthn_reg_{user_id}`. `brain2fa_passkey_register_verify` consumes the challenge, verifies the response and stores the passkey.
 
@@ -116,7 +122,8 @@ Because the final step is a normal form submission, `wp_signon()`, remember-me, 
 | `grace_period_days` | int 0–365 | 14 | `0` puts unenrolled required users in restricted setup mode at their first sign-in. |
 | `default_method` | `totp` \| `email` | `totp` | Falls back to an enabled method. The legacy value `email_backup` maps to `email`. |
 | `enable_totp`, `enable_email` | bool | true when unset | Method availability. |
-| `enable_passkeys` | bool | false | Passkey registration and passwordless sign-in (needs HTTPS). |
+| `enable_passkeys` | bool | false | Passkey registration, passwordless sign-in and passkeys as a second factor (needs HTTPS). |
+| `allow_passkey_only` | bool | false | Users may turn off password sign-in for their account. |
 | `code_expiry` | int 1–60 minutes | 10 | Email code lifetime. |
 | `remember_device` | bool | false | Trusted devices on or off. |
 | `remember_duration` | int 1–365 days | 30 | Trusted device lifetime. |
@@ -127,7 +134,7 @@ Because the final step is a normal form submission, `wp_signon()`, remember-me, 
 
 **Table** `{prefix}brain2fa_passkeys`: `user_id`, `credential_hash` (SHA-256 of the credential ID, unique), `credential_id` (base64url), `public_key` (PEM), `sign_count`, `transports`, `aaguid`, `backup_eligible`, `backed_up`, `name`, `created_at`, `last_used_at` (GMT). Rows are deleted with the user (`deleted_user`). Option `brain2fa_db_version` tracks the schema.
 
-**Passkey user meta and transients:** `brain2fa_webauthn_user_handle` (base64url of 32 random bytes), `brain2fa_webauthn_reg_{user_id}` and `brain2fa_webauthn_auth_{hash}` (challenges, 5 min), `brain2fa_passkey_token_{hash}` (login tokens, 2 min), `brain2fa_passkey_opts_{ip hash}` (options rate limit).
+**Passkey user meta and transients:** `brain2fa_webauthn_user_handle` (base64url of 32 random bytes), `brain2fa_passkey_only` (password sign-in turned off), `brain2fa_webauthn_reg_{user_id}` and `brain2fa_webauthn_auth_{hash}` (challenges with the expected user ID, 5 min), `brain2fa_passkey_token_{hash}` (login tokens, 2 min), `brain2fa_passkey_opts_{ip hash}` (options rate limit).
 
 **Cookies:** `brain2fa_remember_{user_id}`: random 64-character token, `httponly`, `secure` on SSL, `SameSite=Lax`. `brain2fa_passkey_{COOKIEHASH}`: random passkey session value binding challenges and tokens to the browser, `httponly`, `SameSite=Lax`, cleared after sign-in.
 
