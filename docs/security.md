@@ -60,6 +60,7 @@ Brain 2FA runs inside the WordPress authentication path. This document lists wha
 | Security alerts can be turned off, per email | Some sites need that (for example during a bulk migration), but the alerts are what tells a user that a stolen session changed their sign-in settings. They are on by default, the list shows which ones are off, and the passkey clone warning says why it should stay on. |
 | Placeholders expose only account and site details | No placeholder gives a secret, recovery code, token or password; `{code}` exists only in the sign-in code email, and a test email uses the sample code `123456`. Values are substituted with `strtr()`, so a display name containing `{code}` is not expanded. |
 | Email settings need `manage_options` and their own nonce | The same rule as every other site setting. The sender address is validated as entered (`is_email()` and unchanged by `sanitize_email()`), so a typo is reported instead of silently falling back to the default. The sender filters apply at priority 999 to the plugin's own email only and are removed right after `wp_mail()`. |
+| Deleting the plugin removes all of its data | TOTP secrets, recovery-code hashes, trusted-device hashes and passkey public keys should not stay in the database once the plugin is gone. `uninstall.php` only runs on deletion, never on deactivation, so turning the plugin off temporarily loses nothing. Sites that delete and reinstall on purpose can define `BRAIN2FA_KEEP_DATA_ON_UNINSTALL`. |
 | Only customized fields are stored | Untouched defaults keep following translations and future wording fixes. |
 | TOTP steps checked explicitly instead of otphp's `verify()` | otphp 11's `verify()` takes a leeway in seconds (not periods) and keeps no record of used codes. `TotpMethod::verify_totp_code()` checks the current step ±1 and stores the last accepted step in user meta (not a transient, which an object cache could evict). |
 
@@ -88,7 +89,6 @@ These were observed in the code on 2026-10-16. Re-check them before relying on t
 
 - **Restricted mode is enforced by redirects** on `admin_init` and `template_redirect`, plus REST and AJAX refusals. Code from other plugins that acts earlier (for example form handlers on `init`) still runs for restricted users.
 - **Application passwords bypass 2FA.** WordPress core validates application passwords for REST requests without the `authenticate` filter, so Brain 2FA does not see them. This is core's intended design for API access; sites that do not need application passwords can disable them with the `wp_is_application_passwords_available` filter.
-- **Plugin data stays after uninstall.** The plugin has no uninstall routine yet, so the `brain2fa_passkeys` table, user meta and the `brain2fa_settings` and `brain2fa_emails` options remain if the plugin is deleted.
 - **Custom login forms** other than `wp-login.php`, the WooCommerce form and `wp_login_form()` get no code field, and users with 2FA cannot sign in through them (this fails closed).
 
 ## Reporting

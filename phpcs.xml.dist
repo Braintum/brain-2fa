@@ -6,6 +6,7 @@
 	<config name="testVersion" value="8.1-"/>
 
 	<file>brain-2fa.php</file>
+	<file>uninstall.php</file>
 	<file>includes</file>
 
 	<exclude-pattern>vendor/*</exclude-pattern>
@@ -14,4 +15,7 @@
 
 	<rule ref="WordPress-Extra"/>
 	<rule ref="WordPress-Docs"/>
+
+	<!-- PHP 8.1+ compatibility (uses testVersion above). -->
+	<rule ref="PHPCompatibilityWP"/>
 </ruleset>

@@ -7,10 +7,12 @@
     "php": "^8.1",
     "bacon/bacon-qr-code": "^3.1.1",
     "lbuchs/webauthn": "^2.2",
+    "psr/clock": "^1.0",
     "spomky-labs/otphp": "^11.4.3"
   },
   "require-dev": {
     "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
+    "phpcompatibility/phpcompatibility-wp": "^2.1",
     "squizlabs/php_codesniffer": "^3.13",
     "wp-coding-standards/wpcs": "^3.2"
   },

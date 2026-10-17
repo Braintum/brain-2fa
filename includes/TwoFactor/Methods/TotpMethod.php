@@ -5,6 +5,7 @@ declare( strict_types=1 );
 namespace Brain_2FA\TwoFactor\Methods;
 
 use Brain_2FA\Utils;
+use Brain_2FA\TwoFactor\SystemClock;
 use Brain_2FA\TwoFactor\Interfaces\TwoFactorMethodInterface;
 use WP_User;
 
@@ -104,7 +105,7 @@ class TotpMethod implements TwoFactorMethodInterface {
 		}
 		if ( ! $secret ) {
 			if ( class_exists( '\OTPHP\\TOTP' ) ) {
-				$t      = \OTPHP\TOTP::create();
+				$t      = \OTPHP\TOTP::generate( new SystemClock() );
 				$secret = $t->getSecret();
 			} else {
 				$secret = $this->random_base32( 26 );
@@ -283,7 +284,7 @@ class TotpMethod implements TwoFactorMethodInterface {
 	protected function code_for_step( string $secret, int $step ): string {
 		try {
 			if ( class_exists( '\OTPHP\\TOTP' ) ) {
-				return \OTPHP\TOTP::create( $secret, self::PERIOD )->at( $step * self::PERIOD );
+				return \OTPHP\TOTP::create( $secret, self::PERIOD, clock: new SystemClock() )->at( $step * self::PERIOD );
 			}
 
 			return $this->hotp( $secret, $step );

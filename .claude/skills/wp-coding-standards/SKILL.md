@@ -5,7 +5,7 @@ description: WordPress Coding Standards for Brain 2FA PHP and JavaScript. Use wh
 
 # WordPress Coding Standards (Brain 2FA)
 
-The PHP baseline is clean against `phpcs.xml.dist` (WordPress-Extra + WordPress-Docs, PHP 8.1+, WordPress 6.4+). The JavaScript baseline is clean against `eslint-config-wordpress`. Keep both clean: the PostToolUse hook runs `phpcbf`/`phpcs` and `eslint --fix`/`eslint` on every edited file and returns violations to you. **The hook only runs when the session was opened in the plugin directory** (see CLAUDE.md). If you got no hook feedback after an edit, assume it did not run: run `composer phpcs` and `npm run lint` yourself before reporting the work as done. CI runs the same checks on every push to `master`.
+The PHP baseline is clean against `phpcs.xml.dist` (WordPress-Extra + WordPress-Docs + PHPCompatibilityWP, PHP 8.1+, WordPress 6.4+). The JavaScript baseline is clean against `eslint-config-wordpress`. Keep both clean: the PostToolUse hook runs `phpcbf`/`phpcs` and `eslint --fix`/`eslint` on every edited file and returns violations to you. **The hook only runs when the session was opened in the plugin directory** (see CLAUDE.md). If you got no hook feedback after an edit, assume it did not run: run `composer phpcs` and `npm run lint` yourself before reporting the work as done. CI runs the same checks on every push to `master`.
 
 ## Commands
 

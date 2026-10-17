@@ -18,6 +18,7 @@ Keep production changes inside this plugin. Do not modify WordPress core or `ven
 - `includes/Admin/UserProfile.php` owns profile status, grace extensions, and Dashboard notices.
 - `includes/Admin/UserListColumns.php` shows 2FA, setup-deadline, and grace-expiry status in Users.
 - `includes/Emails/` holds every outgoing email: `EmailRegistry` (definitions, placeholders, default text, stored customizations in the `brain2fa_emails` option) and `Mailer` (renders and sends). Send plugin emails only through `Mailer::send( $id, $user, $context )` or, for alerts, `Utils::send_factor_change_notification()`; never call `wp_mail()` directly. A new email needs a definition in `EmailRegistry::get_definitions()` so admins can edit it.
+- `uninstall.php` removes all plugin data when the plugin is deleted: per-site options, transients and the passkeys table (every site on multisite), then the user meta. It lists the user meta keys explicitly, so add any new `brain2fa_*` user meta key there. `BRAIN2FA_KEEP_DATA_ON_UNINSTALL` in `wp-config.php` keeps the data.
 - `includes/Utils.php` is the shared policy layer for enablement, role enforcement, and grace deadlines.
 
 The AJAX request validates credentials before showing the 2FA field; it does not sign the user in. The browser then submits the normal WordPress login form with `brain2fa_code`. Both paths must apply the same policy because a user can bypass the AJAX preflight by submitting `wp-login.php` directly.
@@ -51,7 +52,7 @@ All user-visible strings use the `brain-2fa` text domain (PHP and `@wordpress/i1
 Use the narrowest applicable checks:
 
 ```sh
-composer phpcs                  # WordPress-Extra + WordPress-Docs, must stay clean
+composer phpcs                  # WordPress-Extra + WordPress-Docs + PHPCompatibilityWP (PHP 8.1+), must stay clean
 npm run lint                    # eslint-config-wordpress, must stay clean
 npm run build
 npm run make-pot                # after any string change; CI fails on a stale POT

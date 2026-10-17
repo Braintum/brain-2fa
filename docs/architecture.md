@@ -26,7 +26,7 @@ Brain 2FA is a WordPress plugin (PHP 8.1+, WordPress 6.4+) that adds a second au
 | `Auth\LoginAssets` | Enqueues `assets/js/login.js` on `wp-login.php` and on the WooCommerce My Account login form, with localized `Brain2FA` data. |
 | `TwoFactor\Manager` | Registry of methods keyed by ID (`totp`, `email`). |
 | `TwoFactor\Interfaces\TwoFactorMethodInterface` | Contract for a method: setup data, save/deactivate, send challenge, verify, recovery codes. |
-| `TwoFactor\Methods\TotpMethod` | TOTP secret generation (otphp, with an internal HOTP fallback), local QR rendering (bacon-qr-code + GD, logo in the centre), verification of the current time step ±1 with per-user replay protection, and hashed single-use recovery codes. |
+| `TwoFactor\Methods\TotpMethod` | TOTP secret generation (otphp with `TwoFactor\SystemClock`, a PSR-20 clock; internal HOTP fallback), local QR rendering (bacon-qr-code + GD, logo in the centre), verification of the current time step ±1 with per-user replay protection, and hashed single-use recovery codes. |
 | `TwoFactor\Methods\EmailMethod` | Six-digit email codes stored in a transient for the configured expiry. Sends them through `Emails\Mailer` (`sign_in_code`); sending is filterable. |
 | `Emails\EmailRegistry` | The catalogue of plugin emails (ID, group, label, placeholders, required placeholders, whether it can be turned off, default subject and body) and the stored customizations in `brain2fa_emails`: read, validate, save and reset templates and the sender. |
 | `Emails\Mailer` | Renders an email for a user (placeholder values, `strtr`) and sends it as plain text with `wp_mail()`, with the configured sender applied only to that one email. |
@@ -166,6 +166,8 @@ A save that carries `_tab` (`methods`, `requirements` or `trusted-devices`, see 
 
 **Cookies:** `brain2fa_remember_{user_id}`: random 64-character token, `httponly`, `secure` on SSL, `SameSite=Lax`. `brain2fa_passkey_{COOKIEHASH}`: random passkey session value binding challenges and tokens to the browser, `httponly`, `SameSite=Lax`, cleared after sign-in.
 
+**Uninstall:** deleting the plugin runs `uninstall.php`, which removes the options above, every `brain2fa_` transient and the passkeys table on each site, then the user meta listed above. Deactivating keeps everything. Define `BRAIN2FA_KEEP_DATA_ON_UNINSTALL` as `true` in `wp-config.php` to keep the data on deletion as well. Cookies expire on their own.
+
 ## Extension points
 
 | Hook | Type | Purpose |
@@ -194,4 +196,4 @@ A save that carries `_tab` (`methods`, `requirements` or `trusted-devices`, see 
 
 CI (`.github/workflows/ci.yml`) runs on every push to `master` and every pull request: PHP syntax on 8.1 to 8.4, `composer phpcs`, `npm run lint` and `npm run build`, `scripts/check-versions.sh`, POT freshness, and WordPress.org Plugin Check against `dist/brain-2fa` from `npm run package`.
 
-`npm run dist` runs: webpack production build, then POT generation (`wp i18n make-pot`), then `composer install --no-dev`, then `scripts/build-dist.php` (skips `vendor/lbuchs/webauthn/_test`, a demo server; copies `assets`, `includes`, `languages`, `vendor`, `brain-2fa.php`, `composer.json`, `composer.lock` and `readme.txt` into `dist/brain-2fa/` and zips it), then restores dev dependencies. `scripts/deploy.sh` publishes `dist/brain-2fa/` to SVN. See `docs/releasing.md`.
+`npm run dist` runs: webpack production build, then POT generation (`wp i18n make-pot`), then `composer install --no-dev`, then `scripts/build-dist.php` (skips `vendor/lbuchs/webauthn/_test`, a demo server; copies `assets`, `includes`, `languages`, `vendor`, `brain-2fa.php`, `uninstall.php`, `composer.json`, `composer.lock` and `readme.txt` into `dist/brain-2fa/` and zips it), then restores dev dependencies. `scripts/deploy.sh` publishes `dist/brain-2fa/` to SVN. See `docs/releasing.md`.

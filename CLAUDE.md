@@ -9,7 +9,7 @@
 
 - **PreToolUse `guard-generated-files.sh`** blocks edits to `vendor/`, `node_modules/`, `dist/`, compiled `assets/js` and `assets/css`, the POT file, and `.wordpress-org/source/`. The block message names the source file to edit instead.
 - **PostToolUse `lint-changed-file.sh`** runs after every edit:
-  - PHP in `brain-2fa.php` or `includes/` (views included): `php -l`, then `phpcbf` (auto-fix), then `phpcs`.
+  - PHP in `brain-2fa.php`, `uninstall.php` or `includes/` (views included): `php -l`, then `phpcbf` (auto-fix), then `phpcs`.
   - JS in `src/js/`: `eslint --fix`, then `eslint`.
   - SCSS in `src/scss/`: compiles `src/scss/admin.scss` with sass to catch errors (writes nothing; run `npm run build` afterwards).
   - `brain-2fa.php`, `readme.txt`, `package.json`: `scripts/check-versions.sh`. A version mismatch comes back as context, not an error, so a version bump can edit the files one at a time.

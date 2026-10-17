@@ -2,7 +2,7 @@
 #
 # PostToolUse hook: auto-fix and lint a file right after Claude edits it.
 #
-# - PHP in brain-2fa.php or includes/: php -l, phpcbf (auto-fix), then phpcs (WordPress-Extra + Docs).
+# - PHP in brain-2fa.php, uninstall.php or includes/: php -l, phpcbf (auto-fix), then phpcs (WordPress-Extra + Docs).
 # - JavaScript in src/js/: eslint --fix, then eslint.
 # - SCSS in src/scss/: compile src/scss/admin.scss with sass (no output written).
 # - brain-2fa.php, readme.txt, package.json: scripts/check-versions.sh. A mismatch is reported
@@ -42,7 +42,7 @@ version_note() {
 }
 
 case "$REL" in
-	brain-2fa.php | includes/*.php)
+	brain-2fa.php | uninstall.php | includes/*.php)
 		if ! LINT="$(php -l "$FILE" 2>&1)"; then
 			printf 'PHP syntax error in %s:\n%s\n' "$REL" "$LINT" >&2
 			exit 2

@@ -55,7 +55,7 @@ npm ci
 | `npm run dev` | Rebuild `assets/` from `src/` on every change |
 | `npm run build` | Production build of `src/js` and `src/scss` into `assets/` |
 | `npm run lint` / `npm run lint:fix` | ESLint (`eslint-config-wordpress`) |
-| `composer phpcs` / `composer phpcbf` | WordPress Coding Standards (WordPress-Extra + WordPress-Docs) |
+| `composer phpcs` / `composer phpcbf` | WordPress Coding Standards (WordPress-Extra + WordPress-Docs) and PHP 8.1+ compatibility |
 | `npm run make-pot` | Regenerate `languages/brain-2fa.pot` after changing strings |
 | `bash scripts/check-versions.sh` | Check that the version, requirements and changelog agree |
 | `npm run package` | Build the production plugin in `dist/brain-2fa` |

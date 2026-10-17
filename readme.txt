@@ -92,6 +92,10 @@ The sign-in code email cannot be turned off and must contain `{code}`, so users 
 
 Emails are sent as plain text. Under **Sender** you can set the From name and address; leave them empty to use your site's normal mail settings.
 
+= What happens to my data if I delete the plugin? =
+
+Deactivating the plugin keeps all settings and every user's setup. Deleting it from the Plugins screen removes everything Brain 2FA stored: settings, email templates, authenticator secrets, recovery codes, trusted devices and passkeys. Users then need to set up two-factor authentication again if you reinstall it. To keep the data when deleting the plugin, add `define( 'BRAIN2FA_KEEP_DATA_ON_UNINSTALL', true );` to `wp-config.php`.
+
 = Does Brain 2FA connect to external services? =
 
 No. Codes, QR codes and recovery codes are generated on your server, passkeys are verified on your server, and verification emails are sent through your site's normal WordPress mail setup.
@@ -134,6 +138,8 @@ The JavaScript files in `assets/js/` are generated from the source files in `src
 * Improvement: Passkey alerts now name the passkey that was added, removed or blocked.
 * Improvement: The settings page warns before you turn off the authenticator app or email codes while users rely on them, with the number of users who could no longer sign in with their password.
 * Improvement: The Login Security page starts with a summary of your sign-in protection, followed by separate sections for passkeys, two-factor codes, recovery codes and password sign-in. Errors appear next to the form that caused them.
+* Improvement: Deleting the plugin now removes all of its data (settings, email templates, user two-factor data and the passkeys table). Deactivating keeps everything; define `BRAIN2FA_KEEP_DATA_ON_UNINSTALL` to keep data on deletion.
+* Improvement: Compatibility with the next major version of the TOTP library (no more deprecation notice).
 * Fix: Entering a wrong code while setting up an authenticator app no longer replaces the QR code you already scanned.
 
 = 1.0.4 =

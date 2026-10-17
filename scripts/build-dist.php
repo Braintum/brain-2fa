@@ -13,7 +13,7 @@ $dist_dir    = $root . '/dist';
 $staging_dir = $dist_dir . '/' . $plugin_slug;
 $archive     = $dist_dir . '/' . $plugin_slug . '.zip';
 $directories = array( 'assets', 'includes', 'languages', 'vendor' );
-$files       = array( 'brain-2fa.php', 'composer.json', 'composer.lock', 'readme.txt' );
+$files       = array( 'brain-2fa.php', 'uninstall.php', 'composer.json', 'composer.lock', 'readme.txt' );
 
 // Paths never shipped: lbuchs/webauthn's _test folder contains a web-reachable demo server.
 $excluded    = array( 'vendor/lbuchs/webauthn/_test' );

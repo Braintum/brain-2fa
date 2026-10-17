@@ -48,7 +48,7 @@ jobs:
           tools: composer, cs2pr
       - name: Install Composer dependencies
         run: composer install --no-interaction --no-progress --prefer-dist
-      - name: PHPCS (WordPress-Extra + WordPress-Docs)
+      - name: PHPCS (WordPress-Extra + WordPress-Docs + PHPCompatibilityWP)
         run: vendor/bin/phpcs --standard=phpcs.xml.dist -q --report-full --report-checkstyle=./phpcs-report.xml
       - name: Annotate the pull request
         if: ${{ always() && hashFiles('phpcs-report.xml') != '' }}
