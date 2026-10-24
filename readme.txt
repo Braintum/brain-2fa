@@ -4,7 +4,7 @@ Tags: two-factor authentication, 2fa, security, authenticator, totp
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 1.1.0
+Stable tag: 1.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -110,9 +110,9 @@ Visit [https://www.braintum.com/support/](https://www.braintum.com/support/).
 
 1. Authentication Methods settings: turn on two-factor authentication, the authenticator app and email codes, with a status summary at the top.
 2. Passkey settings: passkey sign-in, passkeys as a second factor, optional passkey-only accounts and the default code method.
-3. Enrollment Requirements: choose the roles that must set up two-factor authentication and how many days they have to do it.
+3. Enrollment Requirements: choose the roles that must set up two-factor authentication, how many days they have to do it, and optional setup reminder emails.
 4. Trusted Devices: let users skip the code on a trusted browser for a set number of days.
-5. Emails: the sign-in code email and nine security alerts, each with editable text.
+5. Emails: the sign-in code, the setup reminder and nine security alerts, each with editable text.
 6. Editing an email: subject and text with placeholders, a live preview and a test email.
 7. The Login Security page: a summary of your sign-in protection and your passkeys.
 8. Authenticator app setup: scan the QR code or enter the key manually, then confirm with a code.
@@ -120,6 +120,9 @@ Visit [https://www.braintum.com/support/](https://www.braintum.com/support/).
 10. The WordPress login form with the "Sign in with a passkey" button.
 11. A passkey as the second step after the password.
 12. Authenticator app active, with one-time recovery codes to download and store safely.
+13. Overview: how many users are protected, have a setup deadline, missed it or have not started, for all roles or one role.
+14. The Users list filtered by 2FA status, with each user's setup deadline.
+15. Trusted devices on the Login Security page: each browser that skips the second step, when it was last used, and a way to forget one or all.
 
 == Development ==
 
@@ -129,6 +132,18 @@ https://github.com/Braintum/brain-2fa
 The JavaScript files in `assets/js/` are generated from the source files in `src/js/`.
 
 == Changelog ==
+
+= 1.2.0 =
+
+* New: Users see their trusted devices on the Login Security page: the browser and system, when it was trusted and last used, and when the trust expires. They can forget one device or all of them; the browser they are using is marked.
+* New: Brain 2FA > Overview shows how your users are protected: how many have a method, still have a setup deadline, missed it or have not started, and which methods they use, for all roles or one role. Every number opens the matching filtered Users list.
+* New: The Users list can be filtered by 2FA status.
+* New: Optional setup reminder emails before a user's setup deadline (7 and 1 days ahead by default), turned on under Enrollment Requirements and editable under Emails. Each user gets at most one reminder a day, and a late reminder never comes with a backlog. Off by default.
+* Security: An authenticator code or recovery code submitted several times at once is now accepted only once.
+* Security: Email sign-in codes are stored only as a keyed hash. A code emailed before the update no longer works; users simply request a new one.
+* Improvement: Viewing the Users list, the Overview or another user's profile no longer starts that user's setup deadline. It starts when they next sign in, and the Users list shows them as "Required, not started" until then.
+* Improvement: The verification step on the WooCommerce My Account login form now matches the WooCommerce login fields.
+* Improvement: Developers can react to passkey changes with the `brain2fa_passkeys_changed` action.
 
 = 1.1.0 =
 
@@ -185,6 +200,10 @@ The JavaScript files in `assets/js/` are generated from the source files in `src
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.2.0 =
+
+Adds trusted-device management, an enrollment overview with Users filters and optional setup reminder emails, and makes authenticator, recovery and email codes strictly single-use under simultaneous requests.
 
 = 1.1.0 =
 
