@@ -34,14 +34,16 @@ function brain2fa_uninstall_site(): void {
 		delete_option( $option );
 	}
 
-	// Transients have dynamic names (user IDs, hashed IPs and tokens), so they are matched by prefix.
+	// Transients and user locks have dynamic names (user IDs, hashed IPs and tokens), so they are matched by prefix.
+	// Locks live in the main site's table and are normally gone already; one is left only by a request that died.
 	// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange -- One-time cleanup on uninstall.
 	$wpdb->query(
 		$wpdb->prepare(
-			'DELETE FROM %i WHERE option_name LIKE %s OR option_name LIKE %s',
+			'DELETE FROM %i WHERE option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s',
 			$wpdb->options,
 			$wpdb->esc_like( '_transient_brain2fa_' ) . '%',
-			$wpdb->esc_like( '_transient_timeout_brain2fa_' ) . '%'
+			$wpdb->esc_like( '_transient_timeout_brain2fa_' ) . '%',
+			$wpdb->esc_like( 'brain2fa_lock_' ) . '%'
 		)
 	);
 

@@ -106,7 +106,7 @@ class EmailMethod implements TwoFactorMethodInterface {
 	 * @since 1.0.4
 	 */
 	public function has_pending_code( WP_User $user ): bool {
-		return false !== get_transient( 'brain2fa_backup_code_' . $user->ID );
+		return '' !== $this->get_pending_hash( $user );
 	}
 
 	/**
@@ -140,8 +140,8 @@ class EmailMethod implements TwoFactorMethodInterface {
 	 * Sends a two-factor authentication challenge code via email to the user.
 	 *
 	 * Generates a 6-digit backup code and sends it to the user's backup email address
-	 * or their primary email if no backup email is configured. The code is stored as
-	 * a transient with a 10-minute expiration time.
+	 * or their primary email if no backup email is configured. Only a keyed hash of the
+	 * code is stored, as a transient that expires after the configured code lifetime.
 	 *
 	 * @param WP_User $user The WordPress user object to send the challenge to.
 	 * @param array   $context Optional context array for additional parameters (unused).
@@ -155,8 +155,7 @@ class EmailMethod implements TwoFactorMethodInterface {
 		}
 
 		// Check if a challenge code already exists for this user.
-		$existing_code = get_transient( 'brain2fa_backup_code_' . $user->ID );
-		if ( $existing_code ) {
+		if ( $this->has_pending_code( $user ) ) {
 			return true; // Code already sent, don't send again.
 		}
 
@@ -185,16 +184,58 @@ class EmailMethod implements TwoFactorMethodInterface {
 		}
 
 		if ( $email_sent ) {
-			set_transient( 'brain2fa_backup_code_' . $user->ID, $code, $expiry_seconds );
+			set_transient( 'brain2fa_backup_code_' . $user->ID, array( 'hash' => $this->hash_code( $user, $code ) ), $expiry_seconds );
 		}
 
 		return $email_sent;
 	}
 
 	/**
+	 * Get the hash of the user's pending code.
+	 *
+	 * A plaintext code stored by version 1.1.0 or earlier is discarded, so the next
+	 * request sends a new code instead of keeping the plaintext one usable.
+	 *
+	 * @param WP_User $user User whose code is read.
+	 * @return string Hash, or an empty string when no code is pending.
+	 *
+	 * @since 1.2.0
+	 */
+	private function get_pending_hash( WP_User $user ): string {
+		$stored = get_transient( 'brain2fa_backup_code_' . $user->ID );
+		if ( false === $stored ) {
+			return '';
+		}
+
+		if ( ! is_array( $stored ) || empty( $stored['hash'] ) || ! is_string( $stored['hash'] ) ) {
+			$this->clear_pending_code( $user );
+			return '';
+		}
+
+		return $stored['hash'];
+	}
+
+	/**
+	 * Hash a code for storage.
+	 *
+	 * Six digits allow only a million codes, so a plain or password hash could be reversed
+	 * by trying them all. The HMAC key comes from the site's salts, which a database-only
+	 * leak does not include when they are defined in wp-config.php.
+	 *
+	 * @param WP_User $user User the code belongs to.
+	 * @param string  $code The code.
+	 * @return string Hex HMAC-SHA256.
+	 *
+	 * @since 1.2.0
+	 */
+	private function hash_code( WP_User $user, string $code ): string {
+		return hash_hmac( 'sha256', $user->ID . '|' . $code, wp_salt( 'auth' ) );
+	}
+
+	/**
 	 * Verifies the two-factor authentication token for the email method.
 	 *
-	 * Checks if the provided token matches the stored backup code for the user.
+	 * Checks if the provided token's hash matches the stored hash for the user.
 	 * Uses timing-safe comparison to prevent timing attacks. Deletes the stored
 	 * code upon successful verification to prevent reuse.
 	 *
@@ -205,11 +246,11 @@ class EmailMethod implements TwoFactorMethodInterface {
 	 * @return bool True if the token is valid and matches, false otherwise.
 	 */
 	public function verify( WP_User $user, string $token, array $context = array() ): bool {
-		$stored = get_transient( 'brain2fa_backup_code_' . $user->ID );
-		if ( ! $stored ) {
+		$stored = $this->get_pending_hash( $user );
+		if ( '' === $stored ) {
 			return false;
 		}
-		if ( hash_equals( (string) $stored, trim( $token ) ) ) {
+		if ( hash_equals( $stored, $this->hash_code( $user, trim( $token ) ) ) ) {
 			// Only the request that actually deletes the code may use it, so concurrent requests cannot both succeed.
 			return delete_transient( 'brain2fa_backup_code_' . $user->ID );
 		}

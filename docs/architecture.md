@@ -27,11 +27,12 @@ Brain 2FA is a WordPress plugin (PHP 8.1+, WordPress 6.4+) that adds a second au
 | `Passkeys\PasskeyLogin` | Passwordless sign-in: nopriv challenge and verify endpoints, single-use login tokens, and the `authenticate` filter at priority 15. |
 | `Auth\EnrollmentGuard` | Restricted setup mode for users who must enroll (login redirects, admin/front-end/REST/AJAX restriction), WooCommerce access to the setup page, and the My Account 2FA status line. |
 | `Auth\AccountEvents` | Revokes trusted devices when a password changes (`wp_set_password`, `profile_update`). |
+| `Auth\UserLock` | Per-user lock (`acquire()` / `release()`, reentrant) for read-modify-write changes to single-use credentials: the last TOTP step and the recovery codes. A row inserted with `INSERT IGNORE` into the main options table; abandoned locks are taken over after 30 seconds. |
 | `Auth\LoginAssets` | Enqueues `assets/js/login.js` on `wp-login.php` and on the WooCommerce My Account login form, with localized `Brain2FA` data. |
 | `TwoFactor\Manager` | Registry of methods keyed by ID (`totp`, `email`). |
 | `TwoFactor\Interfaces\TwoFactorMethodInterface` | Contract for a method: setup data, save/deactivate, send challenge, verify, recovery codes. |
 | `TwoFactor\Methods\TotpMethod` | TOTP secret generation (otphp with `TwoFactor\SystemClock`, a PSR-20 clock; internal HOTP fallback), local QR rendering (bacon-qr-code: styled SVG with rounded modules, rounded finder patterns `TwoFactor\QrRoundedEye` and the `assets/images/qr-logo.png` logo in a round centre badge; plain GD PNG fallback when XMLWriter is missing), verification of the current time step ±1 with per-user replay protection, and hashed single-use recovery codes. |
-| `TwoFactor\Methods\EmailMethod` | Six-digit email codes stored in a transient for the configured expiry. Sends them through `Emails\Mailer` (`sign_in_code`); sending is filterable. |
+| `TwoFactor\Methods\EmailMethod` | Six-digit email codes, stored only as an HMAC-SHA256 (keyed with `wp_salt( 'auth' )`) in a transient for the configured expiry. Sends them through `Emails\Mailer` (`sign_in_code`); sending is filterable. |
 | `Emails\EmailRegistry` | The catalogue of plugin emails (ID, group, label, placeholders, required placeholders, whether it can be turned off, default subject and body) and the stored customizations in `brain2fa_emails`: read, validate, save and reset templates and the sender. |
 | `Emails\Mailer` | Renders an email for a user (placeholder values, `strtr`) and sends it as plain text with `wp_mail()`, with the configured sender applied only to that one email. |
 | `Utils` | Shared policy: site-wide and per-method enablement, default method, role enforcement, grace-period deadlines, trusted devices, verification lockouts and change notifications (`send_factor_change_notification()` sends an `alerts` email through `Emails\Mailer`). |
@@ -162,7 +163,9 @@ A save that carries `_tab` (`methods`, `requirements` or `trusted-devices`, see 
 
 **User meta:** `brain2fa_enabled`, `brain2fa_method`, `brain2fa_secret` (TOTP, base32), `brain2fa_recovery_codes` (array of `wp_hash_password` hashes), `brain2fa_grace_expires_at` (Unix time, created lazily), `brain2fa_totp_last_step` (last accepted TOTP time step, for replay protection), `brain2fa_remembered_devices` (list of `{token: hash, expires_at}`, max 10), `brain2fa_failed_attempts` (`{count, last_failure, locked_until}`).
 
-**Transients:** `brain2fa_rate_{wp_hash(ip)}` (preflight attempt counter, 60 s), `brain2fa_backup_code_{user_id}` (pending email code), `brain2fa_ip_failures_{wp_hash(ip)}` (failed verifications per IP, `{count, expires_at}`).
+**Transients:** `brain2fa_rate_{wp_hash(ip)}` (preflight attempt counter, 60 s), `brain2fa_backup_code_{user_id}` (pending email code as `{hash}`; a plaintext value from 1.1.0 is discarded), `brain2fa_ip_failures_{wp_hash(ip)}` (failed verifications per IP, `{count, expires_at}`).
+
+**Lock rows:** `brain2fa_lock_{user_id}` in the main site's options table (`UserLock`), present only while a request holds the lock. `uninstall.php` removes any left by a request that died.
 
 **Table** `{prefix}brain2fa_passkeys`: `user_id`, `credential_hash` (SHA-256 of the credential ID, unique), `credential_id` (base64url), `public_key` (PEM), `sign_count`, `transports`, `aaguid`, `backup_eligible`, `backed_up`, `name`, `created_at`, `last_used_at` (GMT). Rows are deleted with the user (`deleted_user`). Option `brain2fa_db_version` tracks the schema.
 

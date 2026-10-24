@@ -4,6 +4,7 @@ declare( strict_types=1 );
 
 namespace Brain_2FA\TwoFactor\Methods;
 
+use Brain_2FA\Auth\UserLock;
 use Brain_2FA\Utils;
 use Brain_2FA\TwoFactor\QrRoundedEye;
 use Brain_2FA\TwoFactor\SystemClock;
@@ -157,10 +158,16 @@ class TotpMethod implements TwoFactorMethodInterface {
 	public function save_setup( WP_User $user, array $data ) {
 
 		if ( ! empty( $data['brain2fa_deactivate'] ) ) {
+			// Under the lock, so a recovery code being used at the same moment cannot write the codes back.
+			// The lock is only busy this long when its holder died, so deactivation goes ahead either way.
+			$locked = UserLock::acquire( $user->ID );
 			delete_user_meta( $user->ID, 'brain2fa_secret' );
 			delete_user_meta( $user->ID, 'brain2fa_enabled' );
 			delete_user_meta( $user->ID, 'brain2fa_recovery_codes' );
 			delete_user_meta( $user->ID, self::LAST_STEP_META_KEY );
+			if ( $locked ) {
+				UserLock::release( $user->ID );
+			}
 			Utils::forget_remembered_devices( $user->ID );
 			return true;
 		}
@@ -239,6 +246,9 @@ class TotpMethod implements TwoFactorMethodInterface {
 	 * successfully used, so an intercepted code cannot be replayed within its
 	 * validity window, and an older code cannot be used after a newer one.
 	 *
+	 * The last step is read and updated under the user's lock, so concurrent requests
+	 * carrying the same code cannot both pass, including on the first use.
+	 *
 	 * @param WP_User $user   User whose last accepted time step is checked and updated.
 	 * @param string  $secret The base32-encoded TOTP secret key.
 	 * @param string  $token  The submitted code.
@@ -253,21 +263,35 @@ class TotpMethod implements TwoFactorMethodInterface {
 			return false;
 		}
 
-		$current_step = intdiv( time(), self::PERIOD );
-		$last_step    = absint( get_user_meta( $user->ID, self::LAST_STEP_META_KEY, true ) );
+		$current_step  = intdiv( time(), self::PERIOD );
+		$matched_steps = array();
 
 		for ( $step = $current_step - self::DRIFT_STEPS; $step <= $current_step + self::DRIFT_STEPS; $step++ ) {
-			if ( $step <= $last_step ) {
-				continue;
-			}
-
 			if ( hash_equals( $this->code_for_step( $secret, $step ), $token ) ) {
-				update_user_meta( $user->ID, self::LAST_STEP_META_KEY, $step );
-				return true;
+				$matched_steps[] = $step;
 			}
 		}
 
-		return false;
+		if ( ! $matched_steps || ! UserLock::acquire( $user->ID ) ) {
+			return false;
+		}
+
+		try {
+			// Read the last step fresh, so a step another request just accepted is seen.
+			wp_cache_delete( $user->ID, 'user_meta' );
+			$last_step = absint( get_user_meta( $user->ID, self::LAST_STEP_META_KEY, true ) );
+
+			foreach ( $matched_steps as $step ) {
+				if ( $step > $last_step ) {
+					update_user_meta( $user->ID, self::LAST_STEP_META_KEY, $step );
+					return true;
+				}
+			}
+
+			return false;
+		} finally {
+			UserLock::release( $user->ID );
+		}
 	}
 
 	/**
@@ -548,7 +572,14 @@ class TotpMethod implements TwoFactorMethodInterface {
 
 		// Hash codes before storing.
 		$hashed_codes = array_map( 'wp_hash_password', $codes );
+
+		// Under the lock, so a recovery code being used at the same moment cannot write the old list back.
+		// The lock is only busy this long when its holder died, so the new codes are stored either way.
+		$locked = UserLock::acquire( $user->ID );
 		update_user_meta( $user->ID, 'brain2fa_recovery_codes', $hashed_codes );
+		if ( $locked ) {
+			UserLock::release( $user->ID );
+		}
 
 		return $codes;
 	}
@@ -601,20 +632,53 @@ class TotpMethod implements TwoFactorMethodInterface {
 		// Normalize the input code (remove spaces, dashes, convert to uppercase).
 		$code = strtoupper( str_replace( array( ' ', '-' ), '', $code ) );
 
-		// Check each stored code.
-		foreach ( $stored_codes as $index => $hashed_code ) {
-			// Try both with and without dash for comparison.
-			$code_with_dash = substr( $code, 0, 4 ) . '-' . substr( $code, 4 );
+		// Try both with and without dash for comparison.
+		$code_with_dash = substr( $code, 0, 4 ) . '-' . substr( $code, 4 );
 
-			if ( wp_check_password( $code, $hashed_code ) || wp_check_password( $code_with_dash, $hashed_code ) ) {
-				// Remove the used code.
-				unset( $stored_codes[ $index ] );
-				update_user_meta( $user->ID, 'brain2fa_recovery_codes', array_values( $stored_codes ) );
-				return true;
+		// Find the matching hash first: the hash checks are slow, so they stay outside the lock.
+		foreach ( $stored_codes as $hashed_code ) {
+			if ( is_string( $hashed_code ) && ( wp_check_password( $code, $hashed_code ) || wp_check_password( $code_with_dash, $hashed_code ) ) ) {
+				return $this->consume_recovery_code( $user, $hashed_code );
 			}
 		}
 
 		return false;
+	}
+
+	/**
+	 * Remove a matched recovery code, unless another request already used it.
+	 *
+	 * The codes are read fresh and written back under the user's lock, so concurrent
+	 * requests cannot both use one code, or write back a code another request removed.
+	 *
+	 * @param WP_User $user        User whose code is used.
+	 * @param string  $hashed_code Stored hash of the matched code.
+	 *
+	 * @return bool True when this request removed the code.
+	 *
+	 * @since 1.2.0
+	 */
+	protected function consume_recovery_code( WP_User $user, string $hashed_code ): bool {
+		if ( ! UserLock::acquire( $user->ID ) ) {
+			return false;
+		}
+
+		try {
+			wp_cache_delete( $user->ID, 'user_meta' );
+			$stored_codes = get_user_meta( $user->ID, 'brain2fa_recovery_codes', true );
+			$index        = is_array( $stored_codes ) ? array_search( $hashed_code, $stored_codes, true ) : false;
+
+			if ( false === $index ) {
+				return false;
+			}
+
+			unset( $stored_codes[ $index ] );
+			update_user_meta( $user->ID, 'brain2fa_recovery_codes', array_values( $stored_codes ) );
+
+			return true;
+		} finally {
+			UserLock::release( $user->ID );
+		}
 	}
 
 	/**

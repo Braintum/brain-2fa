@@ -50,9 +50,10 @@ try {
 	delete_transient( 'brain2fa_backup_code_' . $uid );
 	brain_2fa()->manager->get_method( 'email' )->send_challenge( $user );
 	$m    = b2_last();
-	$code = get_transient( 'brain2fa_backup_code_' . $uid );
+	$code = preg_match( '/\n\n(\d{6})\n\n/', $m['message'], $x ) ? $x[1] : '';
 	b2_check( 'code email: default subject', "[$site_name] Your two-factor authentication code" === $m['subject'] );
-	b2_check( 'code email: contains stored code and expiry', $code && false !== strpos( $m['message'], "\n\n$code\n\n" ) && false !== strpos( $m['message'], 'expires in ' . Brain_2FA\Utils::get_settings()['code_expiry'] . ' minutes' ) );
+	b2_check( 'code email: contains the code and expiry', $code && false !== strpos( $m['message'], 'expires in ' . Brain_2FA\Utils::get_settings()['code_expiry'] . ' minutes' ) );
+	b2_check( 'code email: emailed code is the pending one', brain_2fa()->manager->get_method( 'email' )->verify( $user, $code ) );
 	b2_check( 'code email: no unreplaced placeholders', ! preg_match( '/\{[a-z_]+\}/', $m['subject'] . $m['message'] ) );
 	b2_check( 'plain text forced during send, filter removed after', 'text/plain' === $m['content_type'] && 'text/html' === apply_filters( 'wp_mail_content_type', 'text/html' ) );
 
@@ -187,7 +188,7 @@ try {
 	b2_check( 'non-admin cannot change emails', 'Your code: {code}' === R::get_template( 'sign_in_code' )['body'] );
 } finally {
 	$_POST = $_REQUEST = $_GET = array();
-	if ( $uid ) { wp_delete_user( $uid ); }
+	if ( $uid ) { wp_delete_user( $uid ); delete_transient( 'brain2fa_backup_code_' . $uid ); }
 	foreach ( array( R::OPTION => $orig_e, 'brain2fa_settings' => $orig_s ) as $opt => $orig ) {
 		remove_all_filters( 'sanitize_option_' . $opt );
 		if ( $orig === $missing ) { delete_option( $opt ); } else { update_option( $opt, $orig ); }

@@ -178,6 +178,7 @@ try {
 	foreach ( $users as $id ) {
 		PasskeyRepository::delete_all_for_user( $id );
 		wp_delete_user( $id );
+		delete_transient( 'brain2fa_backup_code_' . $id );
 	}
 	remove_all_filters( 'sanitize_option_brain2fa_settings' );
 	if ( $original === $missing ) {

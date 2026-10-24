@@ -14,11 +14,11 @@ This plugin sits in the WordPress login path. A bug here either locks users out 
 3. **No terminating nonce check on the preflight.** Cached `wp-login.php` pages carry stale nonces. Brute force is limited by the per-IP transient rate limit (5 per minute) instead. Keep that limit before any credential work.
 4. **Generic credential errors.** Unknown user and wrong password both return the same "username or password you entered is incorrect" message. Never add messages that reveal whether an account exists or whether it has 2FA before the password is verified.
 5. **Secrets never leave the server.** The `otpauth://` URI contains the TOTP secret, so QR codes are rendered locally with bacon/bacon-qr-code. Never add a remote QR or API fallback, analytics or logging that includes secrets, codes or recovery codes.
-6. **Store only hashes of long-lived tokens.** Recovery codes and trusted-device tokens go through `wp_hash_password()` and are checked with `wp_check_password()`. A recovery code is single-use: remove it after a match. Compare short-lived codes with `hash_equals()`.
+6. **Store only hashes of long-lived tokens.** Recovery codes and trusted-device tokens go through `wp_hash_password()` and are checked with `wp_check_password()`. A recovery code is single-use: remove it after a match. Pending email codes are stored as an HMAC keyed with `wp_salt( 'auth' )`, never in plain text. Compare short-lived codes with `hash_equals()`.
 7. **Use cryptographic randomness:** `random_int()`, `wp_generate_password( 64, false, false )`, or otphp. Never `rand()`, `mt_rand()`, `uniqid()` or `md5( time() )`.
 8. **Deactivating 2FA clears everything:** secret, enabled flag, recovery codes, the last TOTP step and trusted devices (`Utils::forget_remembered_devices()`). Any new per-user credential must be cleared here too.
 9. **Trusted-device cookies** are `httponly`, `secure` on SSL, `SameSite=Lax`, bound to a user ID, expiring, and capped at 10 per user.
-10. **TOTP codes are single-use.** `TotpMethod::verify_totp_code()` accepts a code only for a time step later than `brain2fa_totp_last_step`. Do not replace it with otphp's `TOTP::verify()`: in otphp 11 its leeway is in seconds and it does not track used codes.
+10. **TOTP codes are single-use.** `TotpMethod::verify_totp_code()` accepts a code only for a time step later than `brain2fa_totp_last_step`. Do not replace it with otphp's `TOTP::verify()`: in otphp 11 its leeway is in seconds and it does not track used codes. The last step and the recovery codes are read and written only under `Auth\UserLock`, after `wp_cache_delete( $user_id, 'user_meta' )`; any new write to them must take the lock too.
 11. **Verification is rate limited.** `Utils::get_verification_lockout()` is checked before any code is evaluated or emailed, in both `handle_login()` and `verify_2fa()`. Every failed code or password confirmation calls `Utils::record_failed_verification()`, and only a successful login code calls `clear_failed_verifications()`. New verification paths must do the same.
 12. **Factor changes need the password.** Deactivating and regenerating recovery codes go through `Utils::confirm_password()` (as do adding and removing a passkey and passkey-only changes); activation is refused while a factor is active; each change calls `Utils::send_factor_change_notification()`.
 13. **Password changes revoke trusted devices** (`Auth\AccountEvents`).
@@ -61,6 +61,6 @@ Before you finish a change in this area, answer each one:
 
 ## Known hardening gaps (verify before relying on them)
 
-See the backlog in `docs/security.md`. In short: TOTP-step and recovery-code consumption are not atomic; email codes and TOTP secrets are stored in plain text; restricted mode is enforced by redirects (code running on `init` is not covered); application passwords bypass 2FA by core design.
+See the backlog in `docs/security.md`. In short: TOTP secrets are stored in plain text; restricted mode is enforced by redirects (code running on `init` is not covered); application passwords bypass 2FA by core design.
 
 If you change any of these, update this section and `docs/security.md`.

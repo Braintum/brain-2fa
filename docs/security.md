@@ -10,7 +10,8 @@ Brain 2FA runs inside the WordPress authentication path. This document lists wha
 - **Credential stuffing through the preflight endpoint.** `brain2fa_login` is rate limited to 5 attempts per minute per IP (hashed with `wp_hash()`).
 - **Factor takeover from a hijacked session.** Turning 2FA off and regenerating recovery codes require the account password. A new factor cannot be activated over an active one. The owner is emailed after every change.
 - **Secret leakage.** QR codes are rendered on the server. The `otpauth://` URI, which contains the secret, is never sent to a third party.
-- **Database disclosure of long-lived tokens.** Recovery codes and trusted-device tokens are stored only as `wp_hash_password()` hashes.
+- **Database disclosure of long-lived tokens.** Recovery codes and trusted-device tokens are stored only as `wp_hash_password()` hashes. Pending email codes are stored only as a keyed HMAC.
+- **Using one code twice at the same moment.** TOTP steps and recovery codes are consumed under a per-user lock, and email codes by `delete_transient()`, so concurrent requests carrying the same code cannot both pass.
 - **TOTP code replay.** Each TOTP time step is accepted once per user, and never after a later step (`brain2fa_totp_last_step`), so an intercepted code cannot be reused within its validity window.
 - **Stale trusted devices after account recovery.** Changing or resetting the password revokes all trusted devices.
 - **Phishing and stolen passwords, for passkey users.** A passkey only signs challenges for this site's exact origin, and nothing reusable is sent to the server.
@@ -39,6 +40,8 @@ Brain 2FA runs inside the WordPress authentication path. This document lists wha
 | Trusted devices revoked on password change, except an unchanged-password rehash | WordPress 6.8+ calls `wp_set_password()` to upgrade hashes at login; revoking devices then would be noise. `AccountEvents` compares the new password with the old hash (WordPress 6.7+ passes it) and also watches `profile_update`. |
 | Trusted devices capped at 10 per user, with expiry | Limits the impact of stale cookies; tokens are hashed at rest. |
 | `hash_equals()` for email and TOTP codes | Constant-time comparison. |
+| TOTP steps and recovery codes consumed under a per-user lock (`Auth\UserLock`) | The last-step check and the recovery-code removal are read-modify-write sequences, so without the lock two requests with the same code could both pass, and two different recovery codes used together could write each other back. The lock is a row inserted with `INSERT IGNORE` into the main options table (user meta is network-wide), the same approach as core's upgrader lock; it works on MySQL, MariaDB and SQLite. The slow work (TOTP HMACs, recovery-code hash checks) runs before the lock; inside it, the meta is re-read without the object cache and consumed. A busy lock fails verification closed. Deactivation and recovery-code regeneration take the lock too, but go ahead if it stays busy for 5 seconds, since that only happens when the holder died (an abandoned lock is taken over after 30 seconds). |
+| Email codes stored as HMAC-SHA256 keyed with `wp_salt( 'auth' )` | A six-digit code has only a million values, so an unkeyed or password hash could be reversed by trying them all. A keyed hash cannot be reversed from a database-only leak when the salts are defined in `wp-config.php`. A plaintext code left by 1.1.0 is discarded on the next read, so the next request sends a new code instead of keeping a plaintext path alive. |
 | Email code consumed by `delete_transient()` | Only the request whose delete succeeds may use the code, so concurrent submissions cannot both pass. |
 | Passkeys require user verification | A passkey sign-in then proves possession plus a biometric or PIN, so it satisfies 2FA without a code. |
 | Exact origin check before the library | lbuchs/webauthn accepts any origin whose host ends with the RP ID (for example `evilexample.com` for `example.com`). `WebAuthnServer::check_client_data()` compares origins exactly first. |
@@ -77,12 +80,10 @@ Brain 2FA runs inside the WordPress authentication path. This document lists wha
 
 ## Known gaps and hardening backlog
 
-These were observed in the code on 2026-10-16. Re-check them before relying on this list.
+These were observed in the code on 2026-10-16 and updated on 2026-10-24 (1.2.0 resolved concurrent code consumption and plaintext email codes). Re-check them before relying on this list.
 
 **Security**
 
-- **Concurrent TOTP and recovery-code submissions.** The TOTP last-step check and the recovery-code removal are read-modify-write sequences, so two requests carrying the same code at the same instant could both pass. Exploiting this needs the password plus the code within the same few milliseconds as the real user.
-- **Email codes are stored in plain text** in the `brain2fa_backup_code_{user_id}` transient for their lifetime (1–60 minutes, default 10).
 - **TOTP secrets are stored in plain text** in `brain2fa_secret` user meta. This is common practice for WordPress 2FA plugins, but encrypting at rest with a key from `wp-config.php` would protect against database-only leaks.
 
 **Policy and reliability**
