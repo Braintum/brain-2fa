@@ -16,6 +16,7 @@ import {
 	startAuthentication
 } from '@simplewebauthn/browser';
 import { showError, removeError } from './utils/notification';
+import { getButtonClassName } from './utils/dom';
 
 const config = window.Brain2FAPasskeys || {};
 
@@ -200,8 +201,10 @@ function addButton( form ) {
 
 	const button = document.createElement( 'button' );
 	button.type = 'button';
-	button.className = 'button button-secondary button-large';
-	button.style.width = '100%';
+	button.className = getButtonClassName( form, 'button button-secondary button-large' );
+	if ( ! form.classList.contains( 'woocommerce-form-login' ) ) {
+		button.style.width = '100%';
+	}
 	button.textContent = __( 'Sign in with a passkey', 'brain-2fa' );
 	button.addEventListener( 'click', () => signIn( form, false ) );
 

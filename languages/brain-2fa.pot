@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-17T20:59:55+00:00\n"
+"POT-Creation-Date: 2026-10-24T20:29:20+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.10.0\n"
 "X-Domain: brain-2fa\n"
@@ -1220,12 +1220,14 @@ msgstr ""
 msgid "This account signs in with a passkey only. Use \"Sign in with a passkey\" instead of your password."
 msgstr ""
 
-#: includes/Auth/LoginController.php:440
-#: src/js/utils/dom.js:71
+#: includes/Auth/LoginController.php:453
+#: includes/Auth/LoginController.php:460
+#: src/js/utils/dom.js:81
 msgid "Verification Code"
 msgstr ""
 
-#: includes/Auth/LoginController.php:441
+#: includes/Auth/LoginController.php:454
+#: includes/Auth/LoginController.php:461
 msgid "Only needed if two-factor authentication is enabled for your account. Email users: sign in once without a code to receive one."
 msgstr ""
 
@@ -1638,7 +1640,7 @@ msgid "Use your passkey to finish signing in. Passkeys are not available in this
 msgstr ""
 
 #: src/js/components/LoginForm.js:299
-#: src/js/passkey-login.js:83
+#: src/js/passkey-login.js:84
 msgid "Passkey sign-in is unavailable. Please try again."
 msgstr ""
 
@@ -1646,15 +1648,15 @@ msgstr ""
 msgid "Unable to send your email authentication code. Please try again or use your passkey."
 msgstr ""
 
-#: src/js/passkey-login.js:100
-#: src/js/passkey-login.js:117
-#: src/js/passkey-login.js:144
-#: src/js/passkey-login.js:157
-#: src/js/passkey-login.js:164
+#: src/js/passkey-login.js:101
+#: src/js/passkey-login.js:118
+#: src/js/passkey-login.js:145
+#: src/js/passkey-login.js:158
+#: src/js/passkey-login.js:165
 msgid "Passkey sign-in failed. Please try again."
 msgstr ""
 
-#: src/js/passkey-login.js:205
+#: src/js/passkey-login.js:208
 msgid "Sign in with a passkey"
 msgstr ""
 
@@ -1687,34 +1689,35 @@ msgstr ""
 msgid "Passkey setup was cancelled or failed. Please try again."
 msgstr ""
 
-#: src/js/utils/dom.js:84
+#: src/js/utils/dom.js:101
 msgid "Enter your verification code"
 msgstr ""
 
-#: src/js/utils/dom.js:85
+#: src/js/utils/dom.js:102
 msgid "Enter code"
 msgstr ""
 
-#: src/js/utils/dom.js:94
+#: src/js/utils/dom.js:117
 msgid "A verification code has been sent to your email address."
 msgstr ""
 
-#: src/js/utils/dom.js:105
+#: src/js/utils/dom.js:136
+#: src/js/utils/dom.js:141
 msgid "Remember this device"
 msgstr ""
 
-#: src/js/utils/dom.js:158
+#: src/js/utils/dom.js:228
 msgid "Confirm it's you with your passkey."
 msgstr ""
 
-#: src/js/utils/dom.js:166
+#: src/js/utils/dom.js:240
 msgid "Use a passkey instead"
 msgstr ""
 
-#: src/js/utils/dom.js:166
+#: src/js/utils/dom.js:240
 msgid "Use your passkey"
 msgstr ""
 
-#: src/js/utils/dom.js:176
+#: src/js/utils/dom.js:254
 msgid "Email me a code instead"
 msgstr ""

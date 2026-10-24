@@ -59,8 +59,18 @@ export function show2FAField( form, method = 'email', showRememberDevice = false
 		return;
 	}
 
-	// Create wrapper paragraph
-	const wrapper = document.createElement( 'p' );
+	const isWooCommerce = isWooCommerceForm( form );
+
+	// On WooCommerce, mirror its own field rows so the theme styles the code field like the password field.
+	const wrapper = document.createElement( isWooCommerce ? 'div' : 'p' );
+	wrapper.className = 'brain2fa-code-step';
+
+	let codeRow = wrapper;
+	if ( isWooCommerce ) {
+		codeRow = document.createElement( 'p' );
+		codeRow.className = 'woocommerce-form-row woocommerce-form-row--wide form-row form-row-wide';
+		wrapper.appendChild( codeRow );
+	}
 
 	// Create label
 	const label = document.createElement( 'label' );
@@ -71,28 +81,41 @@ export function show2FAField( form, method = 'email', showRememberDevice = false
 	labelText.textContent = __( 'Verification Code', 'brain-2fa' );
 	label.appendChild( labelText );
 
+	if ( isWooCommerce ) {
+		const required = document.createElement( 'span' );
+		required.className = 'required';
+		required.setAttribute( 'aria-hidden', 'true' );
+		required.textContent = '*';
+		label.append( ' ', required );
+	}
 
 	// Create input field
 	const input = document.createElement( 'input' );
 	input.type = 'text';
 	input.id = 'brain2fa_code';
 	input.name = 'brain2fa_code';
-	input.className = 'input';
+	input.className = isWooCommerce ? 'woocommerce-Input woocommerce-Input--text input-text' : 'input';
 	input.setAttribute( 'inputmode', 'numeric' );
 	input.setAttribute( 'autocomplete', 'one-time-code' );
 	input.required = true;
 	input.setAttribute( 'aria-label', __( 'Enter your verification code', 'brain-2fa' ) );
 	input.setAttribute( 'placeholder', __( 'Enter code', 'brain-2fa' ) );
 
-	label.appendChild( input );
-	wrapper.appendChild( label );
+	// WooCommerce places the input after its label; wp-login.php wraps it in the label.
+	codeRow.appendChild( label );
+	( isWooCommerce ? codeRow : label ).appendChild( input );
 
 	if ( 'email' === method ) {
-		const description = document.createElement( 'div' );
+		const description = document.createElement( isWooCommerce ? 'span' : 'div' );
 		description.className = 'description';
-		description.style.marginBottom = '8px';
+		if ( isWooCommerce ) {
+			description.style.display = 'block';
+			description.style.marginTop = '8px';
+		} else {
+			description.style.marginBottom = '8px';
+		}
 		description.textContent = __( 'A verification code has been sent to your email address.', 'brain-2fa' );
-		wrapper.appendChild( description );
+		codeRow.appendChild( description );
 	}
 
 	if ( showRememberDevice ) {
@@ -102,8 +125,22 @@ export function show2FAField( form, method = 'email', showRememberDevice = false
 		rememberInput.name = 'brain2fa_remember_device';
 		rememberInput.value = '1';
 		rememberLabel.appendChild( rememberInput );
-		rememberLabel.appendChild( document.createTextNode( ` ${__( 'Remember this device', 'brain-2fa' )}` ) );
-		wrapper.appendChild( rememberLabel );
+
+		if ( isWooCommerce ) {
+			const rememberRow = document.createElement( 'p' );
+			rememberRow.className = 'form-row';
+			rememberLabel.className = 'woocommerce-form__label woocommerce-form__label-for-checkbox';
+			rememberInput.className = 'woocommerce-form__input woocommerce-form__input-checkbox';
+
+			const rememberText = document.createElement( 'span' );
+			rememberText.textContent = __( 'Remember this device', 'brain-2fa' );
+			rememberLabel.append( ' ', rememberText );
+			rememberRow.appendChild( rememberLabel );
+			wrapper.appendChild( rememberRow );
+		} else {
+			rememberLabel.appendChild( document.createTextNode( ` ${__( 'Remember this device', 'brain-2fa' )}` ) );
+			wrapper.appendChild( rememberLabel );
+		}
 	}
 
 	// Keep the code field outside WooCommerce's submit row.
@@ -111,6 +148,37 @@ export function show2FAField( form, method = 'email', showRememberDevice = false
 
 	// Focus the input
 	input.focus();
+}
+
+/**
+ * Check whether a login form is the WooCommerce My Account form.
+ *
+ * @param {HTMLFormElement} form - The login form
+ * @return {boolean} True for the WooCommerce login form
+ */
+function isWooCommerceForm( form ) {
+	return form.classList.contains( 'woocommerce-form-login' );
+}
+
+/**
+ * Get the class names for a button added to the login form.
+ *
+ * On WooCommerce, the button copies the submit button's classes, so it picks
+ * up the theme's button styles (including block theme element classes).
+ *
+ * @param {HTMLFormElement} form          - The login form
+ * @param {string}          wpClassName   - Classes to use on wp-login.php
+ * @return {string} Class names
+ */
+export function getButtonClassName( form, wpClassName ) {
+	if ( ! isWooCommerceForm( form ) ) {
+		return wpClassName;
+	}
+
+	const submitButton = form.querySelector( 'button[type="submit"]' );
+	const classes = submitButton ? [ ...submitButton.classList ].filter( ( name ) => 'woocommerce-form-login__submit' !== name ) : [];
+
+	return classes.length ? classes.join( ' ' ) : 'woocommerce-button button';
 }
 
 /**
@@ -144,8 +212,10 @@ export function showPasskeyStep( form, { hasCodeField, onUsePasskey, onRequestEm
 		return;
 	}
 
+	const isWooCommerce = isWooCommerceForm( form );
+
 	const wrapper = document.createElement( 'p' );
-	wrapper.className = 'brain2fa-passkey-step';
+	wrapper.className = isWooCommerce ? 'brain2fa-passkey-step form-row' : 'brain2fa-passkey-step';
 
 	// Without a code field there is nothing to submit; the passkey completes sign-in.
 	submitRow.style.display = hasCodeField ? '' : 'none';
@@ -161,8 +231,12 @@ export function showPasskeyStep( form, { hasCodeField, onUsePasskey, onRequestEm
 
 	const button = document.createElement( 'button' );
 	button.type = 'button';
-	button.className = hasCodeField ? 'button button-secondary' : 'button button-primary button-large';
-	button.style.width = '100%';
+	button.className = getButtonClassName( form, hasCodeField ? 'button button-secondary' : 'button button-primary button-large' );
+
+	// WooCommerce buttons keep their natural width, like its Log in button.
+	if ( ! isWooCommerce ) {
+		button.style.width = '100%';
+	}
 	button.textContent = hasCodeField ? __( 'Use a passkey instead', 'brain-2fa' ) : __( 'Use your passkey', 'brain-2fa' );
 	button.addEventListener( 'click', onUsePasskey );
 	wrapper.appendChild( button );
@@ -170,9 +244,13 @@ export function showPasskeyStep( form, { hasCodeField, onUsePasskey, onRequestEm
 	if ( onRequestEmailCode ) {
 		const emailButton = document.createElement( 'button' );
 		emailButton.type = 'button';
-		emailButton.className = 'button button-secondary';
-		emailButton.style.width = '100%';
-		emailButton.style.marginTop = '8px';
+		emailButton.className = getButtonClassName( form, 'button button-secondary' );
+		if ( isWooCommerce ) {
+			emailButton.style.marginLeft = '8px';
+		} else {
+			emailButton.style.width = '100%';
+			emailButton.style.marginTop = '8px';
+		}
 		emailButton.textContent = __( 'Email me a code instead', 'brain-2fa' );
 		emailButton.addEventListener( 'click', onRequestEmailCode );
 		wrapper.appendChild( emailButton );
@@ -201,7 +279,7 @@ export function restoreFormFields( form ) {
 	});
 
 	form.querySelector( '.brain2fa-passkey-step' )?.remove();
-	document.getElementById( 'brain2fa_code' )?.closest( 'p' )?.remove();
+	form.querySelector( '.brain2fa-code-step' )?.remove();
 }
 
 /**

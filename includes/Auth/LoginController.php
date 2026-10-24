@@ -35,7 +35,7 @@ class LoginController {
 		add_action( 'wp_ajax_nopriv_brain2fa_login', array( __CLASS__, 'handle_login' ) );
 		add_filter( 'authenticate', array( __CLASS__, 'verify_2fa' ), 40, 3 );
 		add_action( 'login_form', array( __CLASS__, 'render_fallback_code_field' ) );
-		add_action( 'woocommerce_login_form', array( __CLASS__, 'render_fallback_code_field' ) );
+		add_action( 'woocommerce_login_form', array( __CLASS__, 'render_woocommerce_fallback_code_field' ) );
 		add_filter( 'login_form_middle', array( __CLASS__, 'append_fallback_code_field' ) );
 	}
 
@@ -416,6 +416,17 @@ class LoginController {
 	}
 
 	/**
+	 * Render the server-side verification code field on the WooCommerce login form.
+	 *
+	 * Uses WooCommerce's own field row markup, so the theme styles it like the password field.
+	 *
+	 * @return void
+	 */
+	public static function render_woocommerce_fallback_code_field(): void {
+		echo self::get_fallback_code_field( true ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in get_fallback_code_field().
+	}
+
+	/**
 	 * Append the fallback code field to wp_login_form() output.
 	 *
 	 * @param string $content HTML already in the login_form_middle slot.
@@ -428,11 +439,20 @@ class LoginController {
 	/**
 	 * Build the fallback verification code field.
 	 *
+	 * @param bool $woocommerce Whether to use WooCommerce form row markup.
 	 * @return string Escaped HTML, or an empty string when 2FA is off site-wide.
 	 */
-	private static function get_fallback_code_field(): string {
+	private static function get_fallback_code_field( bool $woocommerce = false ): string {
 		if ( ! Utils::is_2fa_enabled_sitewide() ) {
 			return '';
+		}
+
+		if ( $woocommerce ) {
+			return sprintf(
+				'<p class="brain2fa-fallback-field woocommerce-form-row woocommerce-form-row--wide form-row form-row-wide"><label for="brain2fa_code_fallback">%1$s</label><input type="text" name="brain2fa_code" id="brain2fa_code_fallback" class="woocommerce-Input woocommerce-Input--text input-text" inputmode="numeric" autocomplete="one-time-code"><span class="description" style="display:block;margin-top:8px">%2$s</span></p>',
+				esc_html__( 'Verification Code', 'brain-2fa' ),
+				esc_html__( 'Only needed if two-factor authentication is enabled for your account. Email users: sign in once without a code to receive one.', 'brain-2fa' )
+			);
 		}
 
 		return sprintf(
