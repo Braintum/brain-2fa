@@ -87,6 +87,15 @@ class Settings {
 			'brain-2fa-settings'
 		);
 
+		add_submenu_page(
+			'brain-2fa-settings',
+			__( 'Brain 2FA Overview', 'brain-2fa' ),
+			__( 'Overview', 'brain-2fa' ),
+			'manage_options',
+			OverviewPage::SLUG,
+			array( OverviewPage::class, 'render' )
+		);
+
 		$login_security_hook = add_submenu_page(
 			'brain-2fa-settings',
 			__( 'Two-Factor Authentication', 'brain-2fa' ),

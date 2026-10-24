@@ -10,6 +10,7 @@
 
 namespace Brain_2FA\Admin;
 
+use Brain_2FA\Enrollment\EnrollmentStatus;
 use Brain_2FA\Utils;
 
 defined( 'ABSPATH' ) || exit;
@@ -69,9 +70,14 @@ class UserProfile {
 
 		$is_enabled              = Utils::is_2fa_enabled_for_user( $user->ID );
 		$passkeys_only_factor    = $is_enabled && ! Utils::is_code_method_enabled_for_user( $user->ID );
-		$grace_period_expires_at = ! $is_enabled && Utils::is_2fa_required_for_user( $user ) ? Utils::get_grace_period_expiry( $user ) : 0;
+		$setup_required          = ! $is_enabled && Utils::is_2fa_required_for_user( $user );
+		$grace_period_expires_at = 0;
+		if ( $setup_required ) {
+			// A user's own profile is part of their session and starts their deadline; another user's profile only reads it.
+			$grace_period_expires_at = get_current_user_id() === $user->ID ? Utils::get_grace_period_expiry( $user ) : EnrollmentStatus::get_deadline( $user->ID );
+		}
 
-		if ( $grace_period_expires_at > 0 && current_user_can( 'manage_options' ) ) {
+		if ( $setup_required && current_user_can( 'manage_options' ) ) {
 			wp_nonce_field( 'brain2fa_extend_grace', 'brain2fa_grace_nonce' );
 		}
 		?>
@@ -110,13 +116,21 @@ class UserProfile {
 					</p>
 				</td>
 			</tr>
-			<?php if ( $grace_period_expires_at > 0 ) : ?>
+			<?php if ( $setup_required ) : ?>
 				<tr>
 					<th scope="row">
 						<?php esc_html_e( '2FA Setup Grace Period', 'brain-2fa' ); ?>
 					</th>
 					<td>
-						<?php if ( Utils::is_grace_period_expired( $user ) ) : ?>
+						<?php if ( 0 === $grace_period_expires_at ) : ?>
+							<span class="brain2fa-status brain2fa-status-disabled">
+								<span class="dashicons dashicons-clock"></span>
+								<?php esc_html_e( 'Not started', 'brain-2fa' ); ?>
+							</span>
+							<p class="description">
+								<?php esc_html_e( 'The grace period starts when this user next signs in.', 'brain-2fa' ); ?>
+							</p>
+						<?php elseif ( $grace_period_expires_at <= time() ) : ?>
 							<span class="brain2fa-status brain2fa-status-disabled">
 								<span class="dashicons dashicons-warning"></span>
 								<?php esc_html_e( 'Grace period expired', 'brain-2fa' ); ?>

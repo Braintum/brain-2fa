@@ -1,0 +1,103 @@
+/**
+ * Overview page
+ *
+ * @package Brain_2FA
+ * @since 1.2.0
+ */
+
+@use 'variables' as *;
+
+.brain2fa-overview {
+	max-width: 1100px;
+
+	.notice.inline {
+		margin: $spacing-base 0;
+	}
+
+	.brain2fa-card {
+		margin-top: $spacing-lg;
+	}
+}
+
+.brain2fa-overview-intro {
+	color: $gray-700;
+}
+
+.brain2fa-overview-filter {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: $spacing-sm;
+	margin: $spacing-lg 0 0;
+}
+
+.brain2fa-overview-total {
+	margin-left: auto;
+	color: $gray-700;
+}
+
+.brain2fa-overview-highlights {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+	gap: $spacing-base;
+	margin: $spacing-lg 0 0;
+	padding: 0;
+	list-style: none;
+
+	.brain2fa-card {
+		margin: 0;
+		padding: 0;
+	}
+
+	a {
+		display: block;
+		padding: $spacing-base $spacing-lg;
+		color: $gray-900;
+		text-decoration: none;
+		border-radius: $border-radius;
+
+		&:hover .brain2fa-overview-label,
+		&:focus .brain2fa-overview-label {
+			text-decoration: underline;
+		}
+
+		&:focus-visible {
+			outline: 2px solid $primary-color;
+			outline-offset: 2px;
+			box-shadow: none;
+		}
+	}
+}
+
+.brain2fa-overview-count {
+	display: block;
+	font-size: 28px;
+	font-weight: 600;
+	line-height: 1.2;
+}
+
+.brain2fa-overview-label {
+	display: block;
+	margin-top: $spacing-xs;
+	color: $primary-color;
+}
+
+.brain2fa-overview-stat-protected .brain2fa-overview-count {
+	color: $success-text;
+}
+
+.brain2fa-overview-stat-overdue .brain2fa-overview-count {
+	color: $danger-color;
+}
+
+.brain2fa-overview-table {
+	th.num,
+	td.num {
+		width: 80px;
+		text-align: right;
+	}
+
+	tbody th {
+		font-weight: 600;
+	}
+}

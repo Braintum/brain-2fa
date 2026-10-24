@@ -138,6 +138,36 @@ class PasskeyRepository {
 	}
 
 	/**
+	 * Load the passkey counts of many users with one query, for list screens and reports.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param int[] $user_ids User IDs.
+	 * @return void
+	 */
+	public static function prime_counts( array $user_ids ): void {
+		global $wpdb;
+
+		$user_ids = array_values( array_diff( array_unique( array_map( 'absint', $user_ids ) ), array_keys( self::$count_cache ), array( 0 ) ) );
+		if ( ! $user_ids ) {
+			return;
+		}
+
+		$placeholders = implode( ',', array_fill( 0, count( $user_ids ), '%d' ) );
+		$rows         = $wpdb->get_results(
+			// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- One %d placeholder per ID.
+			$wpdb->prepare( "SELECT user_id, COUNT(*) AS total FROM %i WHERE user_id IN ({$placeholders}) GROUP BY user_id", self::table_name(), ...$user_ids )
+		);
+
+		foreach ( $user_ids as $user_id ) {
+			self::$count_cache[ $user_id ] = 0;
+		}
+		foreach ( $rows as $row ) {
+			self::$count_cache[ (int) $row->user_id ] = (int) $row->total;
+		}
+	}
+
+	/**
 	 * Store a new passkey.
 	 *
 	 * @param int   $user_id User ID.
@@ -167,7 +197,14 @@ class PasskeyRepository {
 			array( '%d', '%s', '%s', '%s', '%d', '%s', '%s', '%d', '%d', '%s', '%s' )
 		);
 
-		return $inserted ? (int) $wpdb->insert_id : 0;
+		if ( ! $inserted ) {
+			return 0;
+		}
+
+		$id = (int) $wpdb->insert_id;
+		self::changed( $user_id );
+
+		return $id;
 	}
 
 	/**
@@ -288,7 +325,7 @@ class PasskeyRepository {
 
 		unset( self::$count_cache[ $user_id ] );
 
-		return (bool) $wpdb->delete(
+		$deleted = (bool) $wpdb->delete(
 			self::table_name(),
 			array(
 				'id'      => $id,
@@ -296,6 +333,12 @@ class PasskeyRepository {
 			),
 			array( '%d', '%d' )
 		);
+
+		if ( $deleted ) {
+			self::changed( $user_id );
+		}
+
+		return $deleted;
 	}
 
 	/**
@@ -309,6 +352,31 @@ class PasskeyRepository {
 
 		unset( self::$count_cache[ (int) $user_id ] );
 
-		return (int) $wpdb->delete( self::table_name(), array( 'user_id' => (int) $user_id ), array( '%d' ) );
+		$deleted = (int) $wpdb->delete( self::table_name(), array( 'user_id' => (int) $user_id ), array( '%d' ) );
+
+		if ( $deleted ) {
+			self::changed( (int) $user_id );
+		}
+
+		return $deleted;
+	}
+
+	/**
+	 * Announce that a user's set of passkeys changed.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param int $user_id User ID.
+	 * @return void
+	 */
+	private static function changed( int $user_id ): void {
+		/**
+		 * Fires after a passkey is added to or removed from a user's account.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param int $user_id User ID.
+		 */
+		do_action( 'brain2fa_passkeys_changed', $user_id );
 	}
 }

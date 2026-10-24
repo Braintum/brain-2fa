@@ -9,7 +9,7 @@ Brain 2FA is a WordPress plugin (PHP 8.1+, WordPress 6.4+) that adds a second au
 2. `App` hooks `on_plugins_loaded()` to `plugins_loaded` at `PHP_INT_MAX`. That method:
    - runs `Install::maybe_upgrade()`, which updates the passkeys table when `brain2fa_db_version` differs from `Install::DB_VERSION`;
    - registers `TotpMethod` and `EmailMethod` with `TwoFactor\Manager`;
-   - calls `LoginController::init()`, `LoginAssets::init()`, `AccountEvents::init()`, `EnrollmentGuard::init()` and `PasskeyRepository::init()` on every request;
+   - calls `LoginController::init()`, `LoginAssets::init()`, `AccountEvents::init()`, `EnrollmentGuard::init()`, `PasskeyRepository::init()`, `EnrollmentStatus::init()` and `EnrollmentReport::init()` on every request;
    - calls `PasskeyLogin::init()` and `PasskeyRegistration::init()` only while passkeys are turned on (`Utils::is_passkeys_enabled()`);
    - in wp-admin only, instantiates `Settings`, `UserProfile`, `Assets` and `UserListColumns`, and calls `EmailSettings::init()`;
    - fires the `brain_2fa_loaded` action.
@@ -40,8 +40,11 @@ Brain 2FA is a WordPress plugin (PHP 8.1+, WordPress 6.4+) that adds a second au
 | `Admin\Settings` | The Brain 2FA menu and the site settings page. It registers the Login Security page and hands it to `Admin\LoginSecurityPage`. The settings page saves `brain2fa_settings` through the Settings API. It has four server-rendered tabs (`?tab=methods`, `requirements`, `trusted-devices` and `emails`; unknown values fall back to `methods`). The first three are separate forms rendered from `views/settings/tab-*.php` and saved on its own. Dependent fields hide with CSS `:has()` while their parent box is off, and stay in the form so their values are kept. The Authentication Methods tab counts the users of each code method who have no usable passkey (`PasskeyRepository::count_code_method_users()`). A method turned off for the site fails closed at sign-in, so these users would be unable to sign in with their password. The count appears as a warning while the method is on, and as an error if it is already off. `src/js/admin.js` adds the unsaved-changes warning, a confirmation before turning off a method that has such users, and a confirmation when more roles are made to require 2FA. |
 | `Admin\EmailSettings` | The Emails tab. `handle_post()` runs on `load-toplevel_page_brain-2fa-settings` (before output) and handles saving a template, resetting it, sending a test to the current user and saving the sender, each behind `manage_options` and the `brain2fa_email_settings` nonce. Success redirects back with a notice; a validation error re-renders the editor with the submitted values and the error next to its field. `render_tab()` shows the email list (`views/settings/tab-emails.php`) or, with `?email=<id>`, the editor (`views/settings/email-edit.php`), where `src/js/admin.js` inserts placeholders at the cursor and updates a preview with sample values. |
 | `Admin\LoginSecurityPage` | The per-user Login Security page. `handle_post()` runs the submitted action for the current user (code setup, password-confirmed deactivation and recovery-code regeneration, passkey rename and removal, passkey-only changes). `handle_device_actions()` runs earlier, on the page's `load-` hook, for forgetting one or all trusted devices (nonce only), so it can also remove the trust cookie of the browser that forgets itself and records each result for the page section it belongs to. The page then reads its state fresh and renders a protection summary and the Passkeys, Two-factor codes, Recovery codes, Trusted devices and Password sign-in cards from `views/login-security/*.php`. A form that failed reopens its `<details>` disclosure with the error inside it. Newly generated recovery codes exist only in the POST response. After a wrong setup code, the authenticator secret that was already scanned is shown again (`TotpMethod::get_setup_data()` accepts it only if it is base32). |
-| `Admin\UserProfile` | 2FA status on profile screens, the admin-only grace-period extension, and the Dashboard deadline notice. |
-| `Admin\UserListColumns` | Sortable 2FA status column in Users, showing setup deadlines and expiry. |
+| `Enrollment\EnrollmentStatus` | Each user's enrollment status (see "Enrollment status"), computed in PHP (`get_status()`) and as an SQL condition (`get_where_sql()`, `get_method_where_sql()`) that the `brain2fa_status` and `brain2fa_method` `WP_User_Query` variables add on `pre_user_query`. Read-only: it never creates a deadline. |
+| `Enrollment\EnrollmentReport` | Overview snapshots: member counts per status and per configured method, for all roles or one role, one `WP_User_Query` count each. Cached in the `brain2fa_overview` transient and dropped when settings, roles, membership, the watched user meta or passkeys change. |
+| `Admin\OverviewPage` | **Brain 2FA > Overview** (`manage_options`): policy notices, a role filter, the status and method counts with their freshness and a Refresh link (nonce), each count linking to the filtered Users list. |
+| `Admin\UserProfile` | 2FA status on profile screens, the admin-only grace-period extension, and the Dashboard deadline notice. Another user's profile shows their stored deadline, or that it has not started, without creating one. |
+| `Admin\UserListColumns` | Sortable 2FA status column in Users (read-only; passkey counts for the listed users are loaded with one query), the 2FA status filter above the list (`?brain2fa_status=`, or `?brain2fa_method=` from the Overview) applied in SQL before pagination, and a notice naming the active filter. |
 | `Admin\Assets` | Admin CSS/JS for the plugin screens. |
 
 ## Login flow
@@ -73,6 +76,22 @@ submit the native login form  ──POST─▶ wp-login.php → authenticate fil
 The AJAX step never sets auth cookies. Without JavaScript, or with a direct POST, `verify_2fa()` still enforces the same policy. With the email method, it also sends the code and returns a "code sent" error so the user can retry with the code.
 
 **No-JavaScript fallback.** `LoginController` renders a `brain2fa_code` field (`.brain2fa-fallback-field`) on `wp-login.php` (`login_form`), the WooCommerce login form (`woocommerce_login_form`) and `wp_login_form()` (`login_form_middle`). `login.js` removes it on load, so it only remains when the script is unavailable; users then submit username, password and code together.
+
+## Enrollment status
+
+The Overview, the Users column and filter, and the profile screen share one status per user (`EnrollmentStatus`), evaluated in this order:
+
+| Status | Condition |
+| --- | --- |
+| `inactive` | 2FA is off for the site. |
+| `protected` | A code method that is enabled and offered by the site, or a stored passkey while passkeys are usable (on and HTTPS). |
+| `method_off` | A code method is enabled for the user, but the site turned it off, and no usable passkey. |
+| `optional` | Not in a required role. |
+| `setup_unavailable` | Required, but both code methods are off, so setup cannot be enforced. |
+| `not_started` | Required, and no deadline stored yet. |
+| `pending` / `overdue` | Required, with a deadline after / at or before now. |
+
+The PHP and SQL versions must stay in sync; `tests/wp-cli/enrollment.php` compares them across a settings matrix. Deadlines start only in the user's own session (`Utils::get_grace_period_expiry()` at sign-in, in `EnrollmentGuard` and in the Dashboard notice); admin views read the stored value. The status SQL reads the passkeys table, which WordPress's user query cache (keyed on the users' `last_changed`) does not track, so `brain2fa_passkeys_changed` also bumps `last_changed`.
 
 ## Restricted setup mode
 
@@ -164,7 +183,7 @@ A save that carries `_tab` (`methods`, `requirements` or `trusted-devices`, see 
 
 **User meta:** `brain2fa_enabled`, `brain2fa_method`, `brain2fa_secret` (TOTP, base32), `brain2fa_recovery_codes` (array of `wp_hash_password` hashes), `brain2fa_grace_expires_at` (Unix time, created lazily), `brain2fa_totp_last_step` (last accepted TOTP time step, for replay protection), `brain2fa_remembered_devices` (list of `{id, token: hash, created_at, last_used_at, expires_at, browser, os}`, max 10; dates are 0 when unknown), `brain2fa_failed_attempts` (`{count, last_failure, locked_until}`).
 
-**Transients:** `brain2fa_rate_{wp_hash(ip)}` (preflight attempt counter, 60 s), `brain2fa_backup_code_{user_id}` (pending email code as `{hash}`; a plaintext value from 1.1.0 is discarded), `brain2fa_ip_failures_{wp_hash(ip)}` (failed verifications per IP, `{count, expires_at}`).
+**Transients:** `brain2fa_overview` (Overview snapshots keyed by role, each with `generated_at` and `stale_at`: at most 15 minutes and never past the earliest pending deadline), `brain2fa_rate_{wp_hash(ip)}` (preflight attempt counter, 60 s), `brain2fa_backup_code_{user_id}` (pending email code as `{hash}`; a plaintext value from 1.1.0 is discarded), `brain2fa_ip_failures_{wp_hash(ip)}` (failed verifications per IP, `{count, expires_at}`).
 
 **Lock rows:** `brain2fa_lock_{user_id}` in the main site's options table (`UserLock`), present only while a request holds the lock. `uninstall.php` removes any left by a request that died.
 
@@ -192,6 +211,7 @@ A save that carries `_tab` (`methods`, `requirements` or `trusted-devices`, see 
 | `brain2fa_send_change_notification` | filter | Return `false` to skip a security alert email. Args: `true`, `WP_User`, `string $event` (the email ID, such as `activated` or `passkey_added`). An alert turned off on the Emails tab is not sent, whatever this filter returns. |
 | `brain2fa_email_placeholders` | filter | Placeholder values for an email, keyed by name without braces. Add a key to support a new placeholder. Args: `array $values`, `string $id`, `WP_User`, `array $context`. |
 | `brain2fa_email_content` | filter | The rendered email just before sending: `array( 'subject' => ..., 'body' => ... )`. Args: `array $email`, `string $id`, `WP_User`, `array $context`. The subject is made single-line afterwards. |
+| `brain2fa_passkeys_changed` | action | Fired after a passkey is added or deleted, or all of a user's passkeys are removed. Args: `int $user_id`. |
 | `login_errors` | filter (core) | Applied to preflight credential errors, as on `wp-login.php`. |
 
 ## Front-end build

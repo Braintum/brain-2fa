@@ -16,6 +16,8 @@ use Brain_2FA\Admin\EmailSettings;
 use Brain_2FA\Auth\AccountEvents;
 use Brain_2FA\Auth\EnrollmentGuard;
 use Brain_2FA\Auth\LoginController;
+use Brain_2FA\Enrollment\EnrollmentReport;
+use Brain_2FA\Enrollment\EnrollmentStatus;
 use Brain_2FA\TwoFactor\Manager;
 use Brain_2FA\TwoFactor\Methods\EmailMethod;
 use Brain_2FA\TwoFactor\Methods\TotpMethod;
@@ -183,6 +185,8 @@ final class App {
 		AccountEvents::init();
 		EnrollmentGuard::init();
 		PasskeyRepository::init();
+		EnrollmentStatus::init();
+		EnrollmentReport::init();
 
 		if ( Utils::is_passkeys_enabled() ) {
 			PasskeyLogin::init();
