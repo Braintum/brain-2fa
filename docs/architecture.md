@@ -5,11 +5,11 @@ Brain 2FA is a WordPress plugin (PHP 8.1+, WordPress 6.4+) that adds a second au
 ## Bootstrap
 
 1. `brain-2fa.php` defines `BRAIN_2FA_VERSION`, `BRAIN_2FA_PLUGIN_DIR` and `BRAIN_2FA_PLUGIN_URL`, loads Composer's autoloader and instantiates the `Brain_2FA\App` singleton through `brain_2fa()`.
-   It also registers `Install::activate()` as the activation hook, which creates the passkeys table.
+   It also registers `Install::activate()` as the activation hook, which creates the passkeys table, and `ReminderScheduler::deactivate()` as the deactivation hook, which removes the scheduled reminder scans (on every site when network-deactivated).
 2. `App` hooks `on_plugins_loaded()` to `plugins_loaded` at `PHP_INT_MAX`. That method:
    - runs `Install::maybe_upgrade()`, which updates the passkeys table when `brain2fa_db_version` differs from `Install::DB_VERSION`;
    - registers `TotpMethod` and `EmailMethod` with `TwoFactor\Manager`;
-   - calls `LoginController::init()`, `LoginAssets::init()`, `AccountEvents::init()`, `EnrollmentGuard::init()`, `PasskeyRepository::init()`, `EnrollmentStatus::init()` and `EnrollmentReport::init()` on every request;
+   - calls `LoginController::init()`, `LoginAssets::init()`, `AccountEvents::init()`, `EnrollmentGuard::init()`, `PasskeyRepository::init()`, `EnrollmentStatus::init()`, `EnrollmentReport::init()` and `ReminderScheduler::init()` on every request;
    - calls `PasskeyLogin::init()` and `PasskeyRegistration::init()` only while passkeys are turned on (`Utils::is_passkeys_enabled()`);
    - in wp-admin only, instantiates `Settings`, `UserProfile`, `Assets` and `UserListColumns`, and calls `EmailSettings::init()`;
    - fires the `brain_2fa_loaded` action.
@@ -42,6 +42,7 @@ Brain 2FA is a WordPress plugin (PHP 8.1+, WordPress 6.4+) that adds a second au
 | `Admin\LoginSecurityPage` | The per-user Login Security page. `handle_post()` runs the submitted action for the current user (code setup, password-confirmed deactivation and recovery-code regeneration, passkey rename and removal, passkey-only changes). `handle_device_actions()` runs earlier, on the page's `load-` hook, for forgetting one or all trusted devices (nonce only), so it can also remove the trust cookie of the browser that forgets itself and records each result for the page section it belongs to. The page then reads its state fresh and renders a protection summary and the Passkeys, Two-factor codes, Recovery codes, Trusted devices and Password sign-in cards from `views/login-security/*.php`. A form that failed reopens its `<details>` disclosure with the error inside it. Newly generated recovery codes exist only in the POST response. After a wrong setup code, the authenticator secret that was already scanned is shown again (`TotpMethod::get_setup_data()` accepts it only if it is base32). |
 | `Enrollment\EnrollmentStatus` | Each user's enrollment status (see "Enrollment status"), computed in PHP (`get_status()`) and as an SQL condition (`get_where_sql()`, `get_method_where_sql()`) that the `brain2fa_status` and `brain2fa_method` `WP_User_Query` variables add on `pre_user_query`. Read-only: it never creates a deadline. |
 | `Enrollment\EnrollmentReport` | Overview snapshots: member counts per status and per configured method, for all roles or one role, one `WP_User_Query` count each. Cached in the `brain2fa_overview` transient and dropped when settings, roles, membership, the watched user meta or passkeys change. |
+| `Enrollment\ReminderScheduler` | Setup reminder emails (see "Setup reminders"): the hourly WP-Cron scan, thresholds, per-site state, claims and retries. |
 | `Admin\OverviewPage` | **Brain 2FA > Overview** (`manage_options`): policy notices, a role filter, the status and method counts with their freshness and a Refresh link (nonce), each count linking to the filtered Users list. |
 | `Admin\UserProfile` | 2FA status on profile screens, the admin-only grace-period extension, and the Dashboard deadline notice. Another user's profile shows their stored deadline, or that it has not started, without creating one. |
 | `Admin\UserListColumns` | Sortable 2FA status column in Users (read-only; passkey counts for the listed users are loaded with one query), the 2FA status filter above the list (`?brain2fa_status=`, or `?brain2fa_method=` from the Overview) applied in SQL before pagination, and a notice naming the active filter. |
@@ -110,11 +111,12 @@ Email authentication is enabled only after the user enters a code sent to their 
 
 ## Emails
 
-The plugin sends ten emails, all plain text and all editable under **Brain 2FA > Settings > Emails**:
+The plugin sends eleven emails, all plain text and all editable under **Brain 2FA > Settings > Emails**:
 
 | ID | Group | When | Can be turned off |
 | --- | --- | --- | --- |
 | `sign_in_code` | Sign-in | An email code is requested at sign-in or during email setup. Must contain `{code}`. | No |
+| `enrollment_reminder` | Setup reminders | Before a required user's setup deadline (`ReminderScheduler`). Must contain `{login_security_url}`. | Only with the `enrollment_reminders` setting (a definition's `setting` key), not on the Emails tab |
 | `activated`, `deactivated` | Alerts | Two-factor authentication turned on or off. | Yes |
 | `recovery_codes_regenerated` | Alerts | New recovery codes generated. | Yes |
 | `passkey_added`, `passkey_removed` | Alerts | A passkey added or removed by the user. | Yes |
@@ -122,9 +124,19 @@ The plugin sends ten emails, all plain text and all editable under **Brain 2FA >
 | `passkey_only_enabled`, `passkey_only_disabled` | Alerts | Password sign-in turned off or back on. | Yes |
 | `passkey_clone_warning` | Alerts | A passkey sign-in was blocked because the passkey appears to have been copied. | Yes (the editor warns against it) |
 
-Every email gets the common placeholders `{user_display_name}`, `{user_first_name}` (falls back to the display name), `{user_login}`, `{user_email}`, `{site_name}`, `{site_url}`, `{login_url}`, `{login_security_url}` and `{date_time}` (site date and time formats). `sign_in_code` adds `{code}` and `{expiry_minutes}`; the passkey alerts that concern one passkey add `{passkey_name}`. Callers pass these extra values as `$context` to `Mailer::send( $id, $user, $context )`. Placeholders are replaced with `strtr()`, so a value is never scanned again for placeholders, and an unknown `{name}` is left as typed.
+Every email gets the common placeholders `{user_display_name}`, `{user_first_name}` (falls back to the display name), `{user_login}`, `{user_email}`, `{site_name}`, `{site_url}`, `{login_url}`, `{login_security_url}` and `{date_time}` (site date and time formats). `sign_in_code` adds `{code}` and `{expiry_minutes}`; the passkey alerts that concern one passkey add `{passkey_name}`; `enrollment_reminder` adds `{setup_deadline}` (site date and time formats) and `{days_remaining}` (whole days, at least 1). Callers pass these extra values as `$context` to `Mailer::send( $id, $user, $context )`. Placeholders are replaced with `strtr()`, so a value is never scanned again for placeholders, and an unknown `{name}` is left as typed.
 
 Only what differs from the default is stored, so an untouched subject or body keeps following the translation of the default. A template's subject is sanitized with `sanitize_text_field()` (single line, at most 255 characters) and its body with `sanitize_textarea_field()` (at most 10,000 characters), after normalizing line endings. A template that is missing a required placeholder is rejected. At send time the subject is forced onto one line again, after placeholders and the `brain2fa_email_content` filter, so a placeholder value or a filter cannot inject mail headers. The sender name and address apply through `wp_mail_from_name` / `wp_mail_from` at priority 999 and are removed after the email is sent; when empty, the site's mail settings apply.
+
+## Setup reminders
+
+Off by default (`enrollment_reminders`). While it and 2FA are on, `ReminderScheduler::sync_schedule()` (on settings changes and `admin_init`) keeps one hourly `brain2fa_enrollment_reminders` event per site, and removes it otherwise.
+
+- **Scan:** `run()` loads `pending` users (`EnrollmentStatus`) of the current site whose deadline is within the longest lead time, 100 at a time by ascending ID. After 5 batches or 20 seconds it saves the last ID in `brain2fa_reminder_cursor` and schedules a one-off `brain2fa_enrollment_reminders_continue` event a minute later.
+- **Thresholds:** `reminder_days` (default 7 and 1) are thresholds. A user is due for the closest one their remaining time has crossed, so a late scan or a short grace period sends one reminder, never a backlog. A zero-day grace period makes the deadline immediate (`overdue`), so it sends none. Users without a deadline (`not_started`) get none, and the scan never creates a deadline.
+- **Limits:** one reminder per threshold and deadline. At most one reminder a day per user and site, also across deadline extensions. A failed send (`wp_mail()` returned false) is retried by later scans after 1 and 2 hours, then given up for that threshold.
+- **State:** the user option `{blog prefix}brain2fa_reminder` (`deadline`, `threshold`, `last_sent`, `attempts`, `retry_at`, `claim`, `claim_expires`), so each site of a network keeps its own.
+- **Claims:** under `UserLock` (taken without waiting; a busy user is left for the next scan), the scan re-checks eligibility from fresh data (membership, status, deadline) and stores a claim valid for 10 minutes. It then sends outside the lock in the user's locale (`switch_to_user_locale()`), and settles the state under the lock. Another scan skips a user with a live claim; an expired claim (a crashed scan) is taken over.
 
 ## Passkeys (passwordless sign-in)
 
@@ -178,12 +190,16 @@ A save that carries `_tab` (`methods`, `requirements` or `trusted-devices`, see 
 | `code_expiry` | int 1–60 minutes | 10 | Email code lifetime. |
 | `remember_device` | bool | false | Trusted devices on or off. |
 | `remember_duration` | int 1–365 days | 30 | Trusted device lifetime. |
+| `enrollment_reminders` | bool | false | Setup reminder emails. |
+| `reminder_days` | int[] | `[7, 1]` | Reminder lead times in days: 1–365, unique, longest first, at most five; entered as a comma-separated list. |
 
 **Option** `brain2fa_emails` (not autoloaded, absent until something is customized): `from_name`, `from_address` and `templates`, keyed by email ID. Each template stores only `subject` and `body` when they differ from the default, and `enabled => false` when an alert is turned off. Read it through `EmailRegistry::get_stored()` and `EmailRegistry::get_template()`.
 
 **User meta:** `brain2fa_enabled`, `brain2fa_method`, `brain2fa_secret` (TOTP, base32), `brain2fa_recovery_codes` (array of `wp_hash_password` hashes), `brain2fa_grace_expires_at` (Unix time, created lazily), `brain2fa_totp_last_step` (last accepted TOTP time step, for replay protection), `brain2fa_remembered_devices` (list of `{id, token: hash, created_at, last_used_at, expires_at, browser, os}`, max 10; dates are 0 when unknown), `brain2fa_failed_attempts` (`{count, last_failure, locked_until}`).
 
 **Transients:** `brain2fa_overview` (Overview snapshots keyed by role, each with `generated_at` and `stale_at`: at most 15 minutes and never past the earliest pending deadline), `brain2fa_rate_{wp_hash(ip)}` (preflight attempt counter, 60 s), `brain2fa_backup_code_{user_id}` (pending email code as `{hash}`; a plaintext value from 1.1.0 is discarded), `brain2fa_ip_failures_{wp_hash(ip)}` (failed verifications per IP, `{count, expires_at}`).
+
+**Option** `brain2fa_reminder_cursor` (not autoloaded): the user ID a stopped reminder scan continues after.
 
 **Lock rows:** `brain2fa_lock_{user_id}` in the main site's options table (`UserLock`), present only while a request holds the lock. `uninstall.php` removes any left by a request that died.
 
@@ -193,7 +209,7 @@ A save that carries `_tab` (`methods`, `requirements` or `trusted-devices`, see 
 
 **Cookies:** `brain2fa_remember_{user_id}`: `{device id}.{random 64-character token}` (1.1.0 cookies hold the token alone and still work), `httponly`, `secure` on SSL, `SameSite=Lax`. `brain2fa_passkey_{COOKIEHASH}`: random passkey session value binding challenges and tokens to the browser, `httponly`, `SameSite=Lax`, cleared after sign-in.
 
-**Uninstall:** deleting the plugin runs `uninstall.php`, which removes the options above, every `brain2fa_` transient and the passkeys table on each site, then the user meta listed above. Deactivating keeps everything. Define `BRAIN2FA_KEEP_DATA_ON_UNINSTALL` as `true` in `wp-config.php` to keep the data on deletion as well. Cookies expire on their own.
+**Uninstall:** deleting the plugin runs `uninstall.php`, which first removes the scheduled reminder scans on each site (always, even when data is kept), then the options above, every `brain2fa_` transient, the site's reminder state and the passkeys table on each site, then the user meta listed above. Deactivating keeps everything except the scheduled scans. Define `BRAIN2FA_KEEP_DATA_ON_UNINSTALL` as `true` in `wp-config.php` to keep the data on deletion as well. Cookies expire on their own.
 
 ## Extension points
 

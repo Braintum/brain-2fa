@@ -235,6 +235,8 @@ class EmailSettings {
 			'code'           => '123456',
 			'expiry_minutes' => absint( Utils::get_settings()['code_expiry'] ),
 			'passkey_name'   => __( 'MacBook Touch ID', 'brain-2fa' ),
+			'setup_deadline' => wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), time() + 7 * DAY_IN_SECONDS ),
+			'days_remaining' => 7,
 		);
 	}
 

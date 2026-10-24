@@ -27,6 +27,7 @@ This plugin sits in the WordPress login path. A bug here either locks users out 
 
 16. **Emails** go through `Emails\Mailer` only, as plain text, using the templates in `Emails\EmailRegistry`:
     - **Sign-in code:** it cannot be turned off, and its body must contain `{code}`. `EmailRegistry::save_template()` enforces both, so never bypass it.
+    - **Setup reminder:** sent only from the WP-Cron scan in `Enrollment\ReminderScheduler`, never from a request handler. Keep its claims, the one-a-day limit and the eligibility re-check before sending; a scan must never create a deadline.
     - **Subjects:** they are single-line after placeholder replacement (header-injection guard).
     - **Content type and sender:** the `text/plain` and sender overrides are filters added just around `wp_mail()` and removed afterwards. Never set them site-wide.
     - **What may be sent:** never put recovery codes, TOTP secrets, passwords or tokens into an email or a placeholder. The 6-digit sign-in code is the only secret an email may carry. IP addresses are not offered as placeholders, because the plugin stores only hashes.

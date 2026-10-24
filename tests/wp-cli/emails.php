@@ -144,7 +144,8 @@ try {
 	R::save_template( 'activated', true, 'Custom subject', 'Custom body {user_login}' );
 	$_GET = array( 'tab' => 'emails' );
 	ob_start(); Brain_2FA\Admin\Settings::instance()->render_settings_page(); $h = ob_get_clean();
-	b2_check( 'list: all 10 emails with edit links', 10 === substr_count( $h, 'tab=emails&#038;email=' ) / 2 || 20 === substr_count( $h, 'email=' ) );
+	$n = count( R::get_definitions() );
+	b2_check( "list: all $n emails with edit links", 11 === $n && $n === substr_count( $h, 'tab=emails&#038;email=' ) / 2 );
 	b2_check( 'list: customized + always on + sender form', preg_match( '#<td data-colname="Text">\s*Customized\s*</td>#', $h ) && false !== strpos( $h, 'Always on' ) && false !== strpos( $h, 'name="brain2fa_from_address"' ) );
 	b2_check( 'list: Emails tab active, no options.php form', false !== strpos( $h, 'aria-current="page">' ) && false === strpos( $h, 'action="options.php"' ) );
 	$_GET = array( 'tab' => 'emails', 'email' => 'sign_in_code' );

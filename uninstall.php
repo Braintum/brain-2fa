@@ -18,21 +18,57 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 	exit;
 }
 
+/**
+ * Run a callback on every site of the network, or on the only site.
+ *
+ * @since 1.2.0
+ *
+ * @param callable $callback Callback; runs with the site switched in.
+ */
+function brain2fa_uninstall_each_site( callable $callback ): void {
+	if ( ! is_multisite() ) {
+		$callback();
+		return;
+	}
+
+	foreach ( get_sites(
+		array(
+			'fields' => 'ids',
+			'number' => 0,
+		)
+	) as $brain2fa_site_id ) {
+		switch_to_blog( (int) $brain2fa_site_id );
+		$callback();
+		restore_current_blog();
+	}
+}
+
+// Scheduled reminder scans would run code that is gone, so they are removed even when the data is kept.
+brain2fa_uninstall_each_site(
+	static function () {
+		wp_clear_scheduled_hook( 'brain2fa_enrollment_reminders' );
+		wp_clear_scheduled_hook( 'brain2fa_enrollment_reminders_continue' );
+	}
+);
+
 if ( defined( 'BRAIN2FA_KEEP_DATA_ON_UNINSTALL' ) && BRAIN2FA_KEEP_DATA_ON_UNINSTALL ) {
 	return;
 }
 
 /**
- * Remove the plugin's options, transients and passkeys table from the current site.
+ * Remove the plugin's options, transients, site-scoped user meta and passkeys table from the current site.
  *
  * @since 1.1.0
  */
 function brain2fa_uninstall_site(): void {
 	global $wpdb;
 
-	foreach ( array( 'brain2fa_settings', 'brain2fa_emails', 'brain2fa_db_version' ) as $option ) {
+	foreach ( array( 'brain2fa_settings', 'brain2fa_emails', 'brain2fa_db_version', 'brain2fa_reminder_cursor' ) as $option ) {
 		delete_option( $option );
 	}
+
+	// Setup reminder state is kept per site (user options), under the site's table prefix.
+	delete_metadata( 'user', 0, $wpdb->get_blog_prefix() . 'brain2fa_reminder', '', true );
 
 	// Transients and user locks have dynamic names (user IDs, hashed IPs and tokens), so they are matched by prefix.
 	// Locks live in the main site's table and are normally gone already; one is left only by a request that died.
@@ -51,20 +87,7 @@ function brain2fa_uninstall_site(): void {
 	// phpcs:enable
 }
 
-if ( is_multisite() ) {
-	foreach ( get_sites(
-		array(
-			'fields' => 'ids',
-			'number' => 0,
-		)
-	) as $brain2fa_site_id ) {
-		switch_to_blog( (int) $brain2fa_site_id );
-		brain2fa_uninstall_site();
-		restore_current_blog();
-	}
-} else {
-	brain2fa_uninstall_site();
-}
+brain2fa_uninstall_each_site( 'brain2fa_uninstall_site' );
 
 // User meta is shared by all sites of a network, so it is removed once. Keep this list in sync with the meta keys in includes/.
 $brain2fa_user_meta_keys = array(

@@ -39,6 +39,7 @@ function brain_2fa(): \Brain_2FA\App {
 
 // Create database tables on activation (updates are handled by Install::maybe_upgrade()).
 register_activation_hook( __FILE__, array( \Brain_2FA\Install::class, 'activate' ) );
+register_deactivation_hook( __FILE__, array( \Brain_2FA\Enrollment\ReminderScheduler::class, 'deactivate' ) );
 
 // Initialize the plugin.
 brain_2fa();

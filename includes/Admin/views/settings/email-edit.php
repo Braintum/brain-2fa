@@ -20,6 +20,7 @@
  */
 
 use Brain_2FA\Admin\EmailSettings;
+use Brain_2FA\Admin\Settings;
 
 defined( 'ABSPATH' ) || exit;
 ?>
@@ -36,7 +37,17 @@ defined( 'ABSPATH' ) || exit;
 			<form method="post" action="" class="brain2fa-email-form" id="brain2fa-email-form">
 				<?php EmailSettings::render_form_fields( 'save_template', $email_id ); ?>
 
-				<?php if ( $definition['can_disable'] ) : ?>
+				<?php if ( '' !== $definition['setting'] ) : ?>
+					<p class="brain2fa-method-status">
+						<?php if ( $current['enabled'] ) : ?>
+							<span class="brain2fa-pill brain2fa-status-on"><?php esc_html_e( 'On', 'brain-2fa' ); ?></span>
+						<?php else : ?>
+							<span class="brain2fa-pill brain2fa-status-off"><?php esc_html_e( 'Off', 'brain-2fa' ); ?></span>
+						<?php endif; ?>
+						<?php esc_html_e( 'Turn setup reminders on or off, and choose when they are sent, under Enrollment Requirements.', 'brain-2fa' ); ?>
+						<a href="<?php echo esc_url( Settings::get_tab_url( 'requirements' ) . '#brain2fa-card-reminders' ); ?>"><?php esc_html_e( 'Setup reminders', 'brain-2fa' ); ?></a>
+					</p>
+				<?php elseif ( $definition['can_disable'] ) : ?>
 					<div class="brain2fa-field">
 						<label for="brain2fa_email_enabled">
 							<input type="checkbox" id="brain2fa_email_enabled" name="brain2fa_email_enabled" value="1" <?php checked( $current['enabled'] ); ?>>

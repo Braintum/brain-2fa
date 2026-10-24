@@ -2,7 +2,7 @@
 /**
  * Settings tab: Enrollment Requirements.
  *
- * Owns force_2fa_roles and grace_period_days (see Settings::TAB_FIELDS).
+ * Owns force_2fa_roles, grace_period_days, enrollment_reminders and reminder_days (see Settings::TAB_FIELDS).
  *
  * @var array $settings             Stored settings with defaults filled in.
  * @var bool  $code_methods_enabled Whether the authenticator app or email codes are enabled.
@@ -12,7 +12,9 @@
  * @since 1.1.0
  */
 
+use Brain_2FA\Admin\EmailSettings;
 use Brain_2FA\Admin\Settings;
+use Brain_2FA\Enrollment\ReminderScheduler;
 
 defined( 'ABSPATH' ) || exit;
 ?>
@@ -59,6 +61,28 @@ defined( 'ABSPATH' ) || exit;
 		<div class="description" id="brain2fa_grace_period_description">
 			<p><?php esc_html_e( 'Users in required roles get this many days to set up a method, counted from when the requirement first applies to them. Set 0 to require setup at their next sign-in.', 'brain-2fa' ); ?></p>
 			<p><?php esc_html_e( 'After the deadline, they can still sign in, but they can only use the Login Security page until they finish setup. You can extend a user\'s deadline from their profile.', 'brain-2fa' ); ?></p>
+		</div>
+	</div>
+</section>
+
+<section class="brain2fa-card" id="brain2fa-card-reminders" aria-labelledby="brain2fa-card-reminders-title">
+	<h2 id="brain2fa-card-reminders-title" class="brain2fa-card-title"><?php esc_html_e( 'Setup reminders', 'brain-2fa' ); ?></h2>
+	<div class="brain2fa-field">
+		<label for="brain2fa_enrollment_reminders">
+			<input type="checkbox" id="brain2fa_enrollment_reminders" name="brain2fa_settings[enrollment_reminders]" value="1" aria-controls="brain2fa-reminder-options" <?php checked( ! empty( $settings['enrollment_reminders'] ) ); ?>>
+			<?php esc_html_e( 'Send setup reminder emails', 'brain-2fa' ); ?>
+		</label>
+		<p class="description"><?php esc_html_e( 'Email users in required roles before their setup deadline, until they finish setup. A user\'s deadline starts when they first sign in after the requirement applies, so users who have not signed in since get no reminder.', 'brain-2fa' ); ?></p>
+	</div>
+	<div class="brain2fa-field brain2fa-dependent" id="brain2fa-reminder-options">
+		<label for="brain2fa_reminder_days"><?php esc_html_e( 'Days before the deadline', 'brain-2fa' ); ?></label>
+		<input type="text" id="brain2fa_reminder_days" name="brain2fa_settings[reminder_days]" class="regular-text" inputmode="numeric" pattern="[0-9 ,]*" value="<?php echo esc_attr( implode( ', ', ReminderScheduler::sanitize_lead_days( $settings['reminder_days'] ) ) ); ?>" aria-describedby="brain2fa_reminder_days_description">
+		<div class="description" id="brain2fa_reminder_days_description">
+			<p><?php esc_html_e( 'Separate several values with commas, for example 7, 1. Each user gets at most one reminder a day. If a reminder is late, or the deadline is closer than a value, only the most recent reminder is sent.', 'brain-2fa' ); ?></p>
+			<p>
+				<?php esc_html_e( 'Reminders are sent by WordPress scheduled tasks (WP-Cron), which run when someone visits the site, so they can arrive later on quiet sites.', 'brain-2fa' ); ?>
+				<a href="<?php echo esc_url( EmailSettings::get_edit_url( ReminderScheduler::EMAIL_ID ) ); ?>"><?php esc_html_e( 'Edit the reminder email', 'brain-2fa' ); ?></a>
+			</p>
 		</div>
 	</div>
 </section>

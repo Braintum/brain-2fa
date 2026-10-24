@@ -14,9 +14,10 @@ Install it from the [WordPress.org plugin directory](https://wordpress.org/plugi
 - **Authenticator apps (TOTP):** any TOTP app, set up with a QR code or a secret key, with one-time recovery codes.
 - **Email codes:** a one-time code sent to the account address, with a configurable expiry.
 - **Role-based enforcement:** require 2FA for selected roles, with a setup grace period. After the deadline, users can sign in but only reach the setup page.
+- **Setup reminders:** optional emails before a user's setup deadline (7 and 1 days by default), sent by WP-Cron at most once a day per user.
 - **Enrollment overview:** see how many users are protected, have a setup deadline, are overdue or have not started, per role, and open the matching filtered Users list.
 - **Trusted devices:** optional, expiring, hashed "remember this device" tokens. Users see their trusted browsers on the Login Security page and can forget one or all of them.
-- **Editable emails:** every email the plugin sends (sign-in code and nine security alerts) can be edited with placeholders, previewed, test-sent and reset under **Brain 2FA > Settings > Emails**.
+- **Editable emails:** every email the plugin sends (sign-in code, setup reminder and nine security alerts) can be edited with placeholders, previewed, test-sent and reset under **Brain 2FA > Settings > Emails**.
 - **WooCommerce:** the My Account login form is protected, and customers manage 2FA from their dashboard.
 - **Works without JavaScript**, and is fully translatable.
 

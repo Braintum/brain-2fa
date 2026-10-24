@@ -13,6 +13,7 @@
  */
 
 use Brain_2FA\Admin\EmailSettings;
+use Brain_2FA\Admin\Settings;
 use Brain_2FA\Emails\EmailRegistry;
 
 defined( 'ABSPATH' ) || exit;
@@ -46,7 +47,14 @@ defined( 'ABSPATH' ) || exit;
 							<span class="description"><?php echo esc_html( $brain2fa_definition['description'] ); ?></span>
 						</td>
 						<td data-colname="<?php esc_attr_e( 'Status', 'brain-2fa' ); ?>">
-							<?php if ( ! $brain2fa_definition['can_disable'] ) : ?>
+							<?php if ( '' !== $brain2fa_definition['setting'] ) : ?>
+								<?php if ( $brain2fa_template['enabled'] ) : ?>
+									<span class="brain2fa-pill brain2fa-status-on"><?php esc_html_e( 'On', 'brain-2fa' ); ?></span>
+								<?php else : ?>
+									<span class="brain2fa-pill brain2fa-status-off"><?php esc_html_e( 'Off', 'brain-2fa' ); ?></span>
+								<?php endif; ?>
+								<a href="<?php echo esc_url( Settings::get_tab_url( 'requirements' ) . '#brain2fa-card-reminders' ); ?>" class="brain2fa-email-setting-link"><?php esc_html_e( 'Change in Enrollment Requirements', 'brain-2fa' ); ?></a>
+							<?php elseif ( ! $brain2fa_definition['can_disable'] ) : ?>
 								<span class="brain2fa-pill brain2fa-status-on"><?php esc_html_e( 'Always on', 'brain-2fa' ); ?></span>
 							<?php elseif ( $brain2fa_template['enabled'] ) : ?>
 								<span class="brain2fa-pill brain2fa-status-on"><?php esc_html_e( 'On', 'brain-2fa' ); ?></span>

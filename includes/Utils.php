@@ -58,17 +58,19 @@ class Utils {
 	 * @var array
 	 */
 	public const SETTINGS_DEFAULTS = array(
-		'enable_2fa'         => false,
-		'force_2fa_roles'    => array(),
-		'grace_period_days'  => 14,
-		'enable_totp'        => true,
-		'enable_email'       => true,
-		'enable_passkeys'    => false,
-		'allow_passkey_only' => false,
-		'default_method'     => 'totp',
-		'code_expiry'        => 10,
-		'remember_device'    => false,
-		'remember_duration'  => 30,
+		'enable_2fa'           => false,
+		'force_2fa_roles'      => array(),
+		'grace_period_days'    => 14,
+		'enable_totp'          => true,
+		'enable_email'         => true,
+		'enable_passkeys'      => false,
+		'allow_passkey_only'   => false,
+		'default_method'       => 'totp',
+		'code_expiry'          => 10,
+		'remember_device'      => false,
+		'remember_duration'    => 30,
+		'enrollment_reminders' => false,
+		'reminder_days'        => array( 7, 1 ),
 	);
 
 	/**

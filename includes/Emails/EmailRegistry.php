@@ -10,6 +10,7 @@
 
 namespace Brain_2FA\Emails;
 
+use Brain_2FA\Utils;
 use WP_Error;
 
 defined( 'ABSPATH' ) || exit;
@@ -49,21 +50,35 @@ class EmailRegistry {
 	/**
 	 * Get every email definition, keyed by email ID, in display order.
 	 *
-	 * @return array<string, array{group: string, label: string, description: string, can_disable: bool, placeholders: string[], required: string[], subject: string, body: string}>
+	 * An email with a `setting` is turned on and off by that key of the site settings instead of on the Emails tab.
+	 *
+	 * @return array<string, array{group: string, label: string, description: string, can_disable: bool, setting: string, placeholders: string[], required: string[], subject: string, body: string}>
 	 */
 	public static function get_definitions(): array {
 		$alert_subject = __( '[{site_name}] Your two-factor authentication settings changed', 'brain-2fa' );
 
 		$definitions = array(
-			'sign_in_code' => array(
+			'sign_in_code'        => array(
 				'group'        => 'sign_in',
 				'label'        => __( 'Sign-in code', 'brain-2fa' ),
 				'description'  => __( 'Sent when a user signs in with email codes, and when they confirm email code setup.', 'brain-2fa' ),
 				'can_disable'  => false,
+				'setting'      => '',
 				'placeholders' => array( 'code', 'expiry_minutes' ),
 				'required'     => array( 'code' ),
 				'subject'      => __( '[{site_name}] Your two-factor authentication code', 'brain-2fa' ),
 				'body'         => __( "Hi {user_display_name},\n\nYour two-factor authentication code is:\n\n{code}\n\nThis code expires in {expiry_minutes} minutes.\n\nIf you did not request this code, please ignore this email.\n\n-- {site_name}", 'brain-2fa' ),
+			),
+			'enrollment_reminder' => array(
+				'group'        => 'enrollment',
+				'label'        => __( 'Setup reminder', 'brain-2fa' ),
+				'description'  => __( 'Sent to users in required roles before their setup deadline.', 'brain-2fa' ),
+				'can_disable'  => false,
+				'setting'      => 'enrollment_reminders',
+				'placeholders' => array( 'setup_deadline', 'days_remaining' ),
+				'required'     => array( 'login_security_url' ),
+				'subject'      => __( '[{site_name}] Please set up two-factor authentication', 'brain-2fa' ),
+				'body'         => __( "Hi {user_display_name},\n\nYour account on {site_name} must be protected with two-factor authentication. Please set it up before {setup_deadline}:\n\n{login_security_url}\n\nAfter the deadline you can still sign in, but you can only use the setup page until you finish.\n\n-- {site_name}\n{site_url}", 'brain-2fa' ),
 			),
 		);
 
@@ -124,6 +139,7 @@ class EmailRegistry {
 				'label'        => $alert[0],
 				'description'  => $alert[1],
 				'can_disable'  => true,
+				'setting'      => '',
 				'placeholders' => $alert[3] ?? array(),
 				'required'     => array(),
 				'subject'      => 'passkey_clone_warning' === $id ? __( '[{site_name}] A passkey sign-in was blocked', 'brain-2fa' ) : $alert_subject,
@@ -145,11 +161,15 @@ class EmailRegistry {
 	 */
 	public static function get_groups(): array {
 		return array(
-			'sign_in' => array(
+			'sign_in'    => array(
 				'label'       => __( 'Sign-in', 'brain-2fa' ),
 				'description' => __( 'Needed to sign in, so it is always sent.', 'brain-2fa' ),
 			),
-			'alerts'  => array(
+			'enrollment' => array(
+				'label'       => __( 'Setup reminders', 'brain-2fa' ),
+				'description' => __( 'Remind users in required roles to set up two-factor authentication before their deadline.', 'brain-2fa' ),
+			),
+			'alerts'     => array(
 				'label'       => __( 'Security alerts', 'brain-2fa' ),
 				'description' => __( 'Tell users when the sign-in protection on their account changes, so they notice changes they did not make.', 'brain-2fa' ),
 			),
@@ -185,6 +205,8 @@ class EmailRegistry {
 			'code'           => __( 'The 6-digit sign-in code. Required in this email.', 'brain-2fa' ),
 			'expiry_minutes' => __( 'How many minutes the code stays valid.', 'brain-2fa' ),
 			'passkey_name'   => __( 'The name of the passkey.', 'brain-2fa' ),
+			'setup_deadline' => __( 'The date and time of the user\'s setup deadline, in the site\'s format.', 'brain-2fa' ),
+			'days_remaining' => __( 'Whole days left until the setup deadline (at least 1).', 'brain-2fa' ),
 		);
 	}
 
@@ -257,8 +279,14 @@ class EmailRegistry {
 			}
 		}
 
+		if ( '' !== $definition['setting'] ) {
+			$enabled = ! empty( Utils::get_settings()[ $definition['setting'] ] );
+		} else {
+			$enabled = ! $definition['can_disable'] || ! isset( $custom['enabled'] ) || ! empty( $custom['enabled'] );
+		}
+
 		return array(
-			'enabled'    => ! $definition['can_disable'] || ! isset( $custom['enabled'] ) || ! empty( $custom['enabled'] ),
+			'enabled'    => $enabled,
 			'subject'    => $subject,
 			'body'       => $body,
 			'customized' => $subject !== $definition['subject'] || $body !== $definition['body'],
@@ -314,8 +342,14 @@ class EmailRegistry {
 
 		foreach ( $definition['required'] as $placeholder ) {
 			if ( false === strpos( $body, '{' . $placeholder . '}' ) ) {
-				/* translators: %s: placeholder such as {code} */
-				$errors->add( 'body', sprintf( __( 'The email text must contain %s. Without it, users cannot sign in.', 'brain-2fa' ), '{' . $placeholder . '}' ) );
+				$errors->add(
+					'body',
+					'code' === $placeholder
+						/* translators: %s: placeholder such as {code} */
+						? sprintf( __( 'The email text must contain %s. Without it, users cannot sign in.', 'brain-2fa' ), '{' . $placeholder . '}' )
+						/* translators: %s: placeholder such as {login_security_url} */
+						: sprintf( __( 'The email text must contain %s. Without it, users cannot find the page this email is about.', 'brain-2fa' ), '{' . $placeholder . '}' )
+				);
 			}
 		}
 

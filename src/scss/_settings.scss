@@ -102,7 +102,8 @@ $settings-max-width: 860px;
 	// Dependent controls stay in the form (so their values are kept) but hide while their parent is off.
 	&:has(#brain2fa_enable_email:not(:checked)) #brain2fa-email-options,
 	&:has(#brain2fa_enable_passkeys:not(:checked)) #brain2fa-passkey-options,
-	&:has(#brain2fa_remember_device:not(:checked)) #brain2fa-card-duration-section {
+	&:has(#brain2fa_remember_device:not(:checked)) #brain2fa-card-duration-section,
+	&:has(#brain2fa_enrollment_reminders:not(:checked)) #brain2fa-reminder-options {
 		display: none;
 	}
 }

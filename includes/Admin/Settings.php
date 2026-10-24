@@ -10,6 +10,7 @@
 
 namespace Brain_2FA\Admin;
 
+use Brain_2FA\Enrollment\ReminderScheduler;
 use Brain_2FA\Passkeys\PasskeyRepository;
 use Brain_2FA\Passkeys\WebAuthnServer;
 use Brain_2FA\Utils;
@@ -39,7 +40,7 @@ class Settings {
 	 */
 	public const TAB_FIELDS = array(
 		'methods'         => array( 'enable_2fa', 'enable_totp', 'enable_email', 'code_expiry', 'enable_passkeys', 'allow_passkey_only', 'default_method' ),
-		'requirements'    => array( 'force_2fa_roles', 'grace_period_days' ),
+		'requirements'    => array( 'force_2fa_roles', 'grace_period_days', 'enrollment_reminders', 'reminder_days' ),
 		'trusted-devices' => array( 'remember_device', 'remember_duration' ),
 	);
 
@@ -171,10 +172,12 @@ class Settings {
 		if ( ! in_array( $default_method, array( 'totp', 'email' ), true ) || ( 'totp' === $default_method && ! $sanitized['enable_totp'] ) || ( 'email' === $default_method && ! $sanitized['enable_email'] ) ) {
 			$default_method = $sanitized['enable_totp'] ? 'totp' : 'email';
 		}
-		$sanitized['default_method']    = $default_method;
-		$sanitized['code_expiry']       = min( 60, max( 1, absint( $input['code_expiry'] ?? 10 ) ) );
-		$sanitized['remember_device']   = ! empty( $input['remember_device'] );
-		$sanitized['remember_duration'] = min( 365, max( 1, absint( $input['remember_duration'] ?? 30 ) ) );
+		$sanitized['default_method']       = $default_method;
+		$sanitized['code_expiry']          = min( 60, max( 1, absint( $input['code_expiry'] ?? 10 ) ) );
+		$sanitized['remember_device']      = ! empty( $input['remember_device'] );
+		$sanitized['remember_duration']    = min( 365, max( 1, absint( $input['remember_duration'] ?? 30 ) ) );
+		$sanitized['enrollment_reminders'] = ! empty( $input['enrollment_reminders'] );
+		$sanitized['reminder_days']        = ReminderScheduler::sanitize_lead_days( $input['reminder_days'] ?? array() );
 
 		return $sanitized;
 	}

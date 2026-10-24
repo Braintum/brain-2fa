@@ -18,6 +18,7 @@ use Brain_2FA\Auth\EnrollmentGuard;
 use Brain_2FA\Auth\LoginController;
 use Brain_2FA\Enrollment\EnrollmentReport;
 use Brain_2FA\Enrollment\EnrollmentStatus;
+use Brain_2FA\Enrollment\ReminderScheduler;
 use Brain_2FA\TwoFactor\Manager;
 use Brain_2FA\TwoFactor\Methods\EmailMethod;
 use Brain_2FA\TwoFactor\Methods\TotpMethod;
@@ -187,6 +188,7 @@ final class App {
 		PasskeyRepository::init();
 		EnrollmentStatus::init();
 		EnrollmentReport::init();
+		ReminderScheduler::init();
 
 		if ( Utils::is_passkeys_enabled() ) {
 			PasskeyLogin::init();
