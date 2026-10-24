@@ -7,6 +7,8 @@
 
 namespace Brain_2FA;
 
+use Brain_2FA\Auth\TrustedDeviceRepository;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -25,13 +27,6 @@ class Utils {
 	 * @var string
 	 */
 	private const GRACE_PERIOD_EXPIRY_META_KEY = 'brain2fa_grace_expires_at';
-
-	/**
-	 * User meta key storing trusted-device token hashes and expiration timestamps.
-	 *
-	 * @var string
-	 */
-	private const REMEMBERED_DEVICES_META_KEY = 'brain2fa_remembered_devices';
 
 	/**
 	 * User meta key storing the failed verification counter and lockout expiry.
@@ -229,38 +224,42 @@ class Utils {
 	/**
 	 * Check whether the browser has a valid trusted-device token for a user.
 	 *
-	 * @param \WP_User $user User to evaluate.
+	 * @param \WP_User $user       User to evaluate.
+	 * @param bool     $record_use Record a successful use on the device. Only the actual
+	 *                             sign-in does this, not the preflight check.
 	 * @return bool True when the device is trusted.
 	 */
-	public static function is_remembered_device( \WP_User $user ): bool {
+	public static function is_remembered_device( \WP_User $user, bool $record_use = false ): bool {
 		if ( ! self::is_remember_device_enabled() ) {
 			return false;
 		}
 
-		$cookie_name = self::get_remembered_device_cookie_name( $user->ID );
-		$token       = isset( $_COOKIE[ $cookie_name ] ) && is_string( $_COOKIE[ $cookie_name ] ) ? sanitize_text_field( wp_unslash( $_COOKIE[ $cookie_name ] ) ) : '';
-		$devices     = get_user_meta( $user->ID, self::REMEMBERED_DEVICES_META_KEY, true );
-		$devices     = is_array( $devices ) ? $devices : array();
-		$valid       = false;
-		$now         = time();
-		$active      = array();
-
-		foreach ( $devices as $device ) {
-			if ( ! is_array( $device ) || empty( $device['token'] ) || empty( $device['expires_at'] ) || $device['expires_at'] <= $now ) {
-				continue;
-			}
-
-			$active[] = $device;
-			if ( $token && wp_check_password( $token, $device['token'] ) ) {
-				$valid = true;
-			}
+		$device_id = self::get_current_device_id( $user->ID );
+		if ( '' === $device_id ) {
+			return false;
 		}
 
-		if ( $active !== $devices ) {
-			update_user_meta( $user->ID, self::REMEMBERED_DEVICES_META_KEY, $active );
+		if ( $record_use ) {
+			TrustedDeviceRepository::touch( $user->ID, $device_id );
 		}
 
-		return $valid;
+		return true;
+	}
+
+	/**
+	 * Get the ID of the trusted device this browser's cookie belongs to.
+	 *
+	 * Works while "Remember this device" is turned off, so the Login Security page can
+	 * still mark this browser in the list.
+	 *
+	 * @param int $user_id User ID.
+	 * @return string Device ID, or an empty string when the cookie is missing or matches no active device.
+	 */
+	public static function get_current_device_id( int $user_id ): string {
+		$cookie_name = self::get_remembered_device_cookie_name( $user_id );
+		$value       = isset( $_COOKIE[ $cookie_name ] ) && is_string( $_COOKIE[ $cookie_name ] ) ? sanitize_text_field( wp_unslash( $_COOKIE[ $cookie_name ] ) ) : '';
+
+		return '' === $value ? '' : TrustedDeviceRepository::find( $user_id, $value );
 	}
 
 	/**
@@ -275,34 +274,26 @@ class Utils {
 		}
 
 		$expires_at = time() + ( self::get_remember_device_duration() * DAY_IN_SECONDS );
-		$devices    = get_user_meta( $user->ID, self::REMEMBERED_DEVICES_META_KEY, true );
-		$devices    = is_array( $devices ) ? $devices : array();
-		$devices    = array_values(
-			array_filter(
-				$devices,
-				static fn( $device ) => is_array( $device ) && ! empty( $device['token'] ) && ! empty( $device['expires_at'] ) && $device['expires_at'] > time()
-			)
-		);
-		$token      = wp_generate_password( 64, false, false );
-		$devices[]  = array(
-			'token'      => wp_hash_password( $token ),
-			'expires_at' => $expires_at,
-		);
-		$devices    = array_slice( $devices, -10 );
+		$user_agent = isset( $_SERVER['HTTP_USER_AGENT'] ) && is_string( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '';
+		$value      = TrustedDeviceRepository::add( $user->ID, $expires_at, $user_agent );
 
-		update_user_meta( $user->ID, self::REMEMBERED_DEVICES_META_KEY, $devices );
-		setcookie(
-			self::get_remembered_device_cookie_name( $user->ID ),
-			$token,
-			array(
-				'expires'  => $expires_at,
-				'path'     => defined( 'COOKIEPATH' ) ? COOKIEPATH : '/',
-				'domain'   => defined( 'COOKIE_DOMAIN' ) ? COOKIE_DOMAIN : '',
-				'secure'   => is_ssl(),
-				'httponly' => true,
-				'samesite' => 'Lax',
-			)
-		);
+		if ( '' !== $value ) {
+			self::set_remembered_device_cookie( $user->ID, $value, $expires_at );
+		}
+	}
+
+	/**
+	 * Remove this browser's trusted-device cookie for a user.
+	 *
+	 * Revoking the stored entry is what stops the device from being trusted; this only
+	 * tidies up the browser that did the revoking.
+	 *
+	 * @param int $user_id User ID.
+	 * @return void
+	 */
+	public static function clear_remembered_device_cookie( int $user_id ): void {
+		self::set_remembered_device_cookie( $user_id, '', time() - YEAR_IN_SECONDS );
+		unset( $_COOKIE[ self::get_remembered_device_cookie_name( $user_id ) ] );
 	}
 
 	/**
@@ -312,7 +303,7 @@ class Utils {
 	 * @return void
 	 */
 	public static function forget_remembered_devices( int $user_id ): void {
-		delete_user_meta( $user_id, self::REMEMBERED_DEVICES_META_KEY );
+		TrustedDeviceRepository::remove_all( $user_id );
 	}
 
 	/**
@@ -546,6 +537,33 @@ class Utils {
 	 */
 	private static function get_remembered_device_cookie_name( int $user_id ): string {
 		return 'brain2fa_remember_' . $user_id;
+	}
+
+	/**
+	 * Set or expire the trusted-device cookie.
+	 *
+	 * @param int    $user_id    User ID.
+	 * @param string $value      Cookie value.
+	 * @param int    $expires_at Unix expiry time; a past time removes the cookie.
+	 * @return void
+	 */
+	private static function set_remembered_device_cookie( int $user_id, string $value, int $expires_at ): void {
+		if ( headers_sent() ) {
+			return;
+		}
+
+		setcookie(
+			self::get_remembered_device_cookie_name( $user_id ),
+			$value,
+			array(
+				'expires'  => $expires_at,
+				'path'     => defined( 'COOKIEPATH' ) ? COOKIEPATH : '/',
+				'domain'   => defined( 'COOKIE_DOMAIN' ) ? COOKIE_DOMAIN : '',
+				'secure'   => is_ssl(),
+				'httponly' => true,
+				'samesite' => 'Lax',
+			)
+		);
 	}
 
 	/**

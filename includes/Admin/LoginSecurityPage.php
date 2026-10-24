@@ -11,6 +11,7 @@
 
 namespace Brain_2FA\Admin;
 
+use Brain_2FA\Auth\TrustedDeviceRepository;
 use Brain_2FA\Passkeys\PasskeyLogin;
 use Brain_2FA\Passkeys\PasskeyRegistration;
 use Brain_2FA\Passkeys\PasskeyRepository;
@@ -32,7 +33,7 @@ class LoginSecurityPage {
 	/**
 	 * Feedback for this request, grouped by the page section it belongs to.
 	 *
-	 * Sections: codes, deactivate, recovery, regenerate, passkeys, passkey-{id}, password.
+	 * Sections: codes, deactivate, recovery, regenerate, passkeys, passkey-{id}, password, devices.
 	 *
 	 * @var array<string, array<int, array{type: string, message: string}>>
 	 */
@@ -94,7 +95,64 @@ class LoginSecurityPage {
 		$passkey_only_allowed = $passkeys_enabled && Utils::is_passkey_only_allowed();
 		$passkey_only         = Utils::is_passkey_only( $current_user );
 
+		// Trusted devices: listed while the feature is on, and while devices from before it was turned off remain.
+		$remember_enabled  = Utils::is_remember_device_enabled();
+		$trusted_devices   = array_reverse( TrustedDeviceRepository::get_all( $current_user->ID ) );
+		$current_device_id = $trusted_devices ? Utils::get_current_device_id( $current_user->ID ) : '';
+
 		include BRAIN_2FA_PLUGIN_DIR . 'includes/Admin/views/login-security-page.php';
+	}
+
+	/**
+	 * Handle the trusted-device actions before the page is sent.
+	 *
+	 * Runs on the page's load hook, before any output, so the trust cookie of the browser
+	 * doing the revoking can be removed. Forgetting a device only makes sign-in stricter,
+	 * so it needs the nonce but not the password. The result is shown when the page renders.
+	 *
+	 * @return void
+	 */
+	public static function handle_device_actions(): void {
+		if ( ! isset( $_POST['brain2fa_action'] ) ) {
+			return;
+		}
+
+		// Every action on this page uses this nonce, and handle_post() checks it the same way.
+		check_admin_referer( 'brain2fa_setup_action', 'brain2fa_setup_nonce' );
+
+		$action = is_string( $_POST['brain2fa_action'] ) ? sanitize_key( wp_unslash( $_POST['brain2fa_action'] ) ) : '';
+		if ( ! in_array( $action, array( 'forget_device', 'forget_all_devices' ), true ) ) {
+			return;
+		}
+
+		$user = wp_get_current_user();
+		if ( ! $user->exists() ) {
+			return;
+		}
+
+		$current_device_id = Utils::get_current_device_id( $user->ID );
+
+		if ( 'forget_all_devices' === $action ) {
+			Utils::forget_remembered_devices( $user->ID );
+			if ( '' !== $current_device_id ) {
+				Utils::clear_remembered_device_cookie( $user->ID );
+			}
+			self::add_notice( 'devices', 'success', __( 'All trusted devices were forgotten. Every browser asks for your second step at its next password sign-in.', 'brain-2fa' ) );
+			return;
+		}
+
+		$device_id = isset( $_POST['brain2fa_device_id'] ) && is_string( $_POST['brain2fa_device_id'] ) ? sanitize_key( wp_unslash( $_POST['brain2fa_device_id'] ) ) : '';
+
+		// Only the current user's list is searched, so another user's device ID matches nothing.
+		if ( '' === $device_id || ! TrustedDeviceRepository::remove( $user->ID, $device_id ) ) {
+			self::add_notice( 'devices', 'error', __( 'That device is not in your list. It may have expired or already been forgotten.', 'brain-2fa' ) );
+			return;
+		}
+
+		if ( $device_id === $current_device_id ) {
+			Utils::clear_remembered_device_cookie( $user->ID );
+		}
+		self::add_notice( 'devices', 'success', __( 'The device was forgotten. It asks for your second step at its next password sign-in.', 'brain-2fa' ) );
 	}
 
 	/**

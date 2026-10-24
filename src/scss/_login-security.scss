@@ -71,12 +71,14 @@
 }
 
 // Passkeys
-.brain2fa-passkey-list {
+.brain2fa-passkey-list,
+.brain2fa-device-list {
 	margin: 0;
 	border-top: 1px solid $gray-100;
 }
 
-.brain2fa-passkey {
+.brain2fa-passkey,
+.brain2fa-device {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: flex-start;
@@ -91,16 +93,26 @@
 	}
 }
 
-.brain2fa-passkey-details {
+.brain2fa-passkey-details,
+.brain2fa-device-details {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
 	gap: $spacing-xs $spacing-sm;
 }
 
-.brain2fa-passkey-meta {
+.brain2fa-passkey-meta,
+.brain2fa-device-meta {
 	flex-basis: 100%;
 	color: $gray-700;
+}
+
+.brain2fa-device {
+	align-items: center;
+}
+
+.brain2fa-device-note {
+	margin: $spacing-md 0;
 }
 
 // Disclosures (native <details>, no JavaScript)

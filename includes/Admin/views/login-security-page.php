@@ -45,6 +45,10 @@ $brain2fa_page_dir = __DIR__ . '/login-security/';
 		require $brain2fa_page_dir . 'recovery.php';
 	}
 
+	if ( $remember_enabled || $trusted_devices ) {
+		require $brain2fa_page_dir . 'devices.php';
+	}
+
 	if ( $passkey_only_allowed && ! empty( $passkeys ) ) {
 		require $brain2fa_page_dir . 'password.php';
 	}

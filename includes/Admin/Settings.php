@@ -87,7 +87,7 @@ class Settings {
 			'brain-2fa-settings'
 		);
 
-		add_submenu_page(
+		$login_security_hook = add_submenu_page(
 			'brain-2fa-settings',
 			__( 'Two-Factor Authentication', 'brain-2fa' ),
 			__( 'Login Security', 'brain-2fa' ),
@@ -95,6 +95,11 @@ class Settings {
 			'brain-2fa-login-security',
 			array( $this, 'render_login_security_page' )
 		);
+
+		// The hook name depends on the translated menu title, so it is taken from the registration.
+		if ( $login_security_hook ) {
+			add_action( 'load-' . $login_security_hook, array( LoginSecurityPage::class, 'handle_device_actions' ) );
+		}
 	}
 
 	/**

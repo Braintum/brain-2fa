@@ -248,7 +248,7 @@ class LoginController {
 			return $user;
 		}
 
-		if ( Utils::is_remembered_device( $user ) ) {
+		if ( Utils::is_remembered_device( $user, true ) ) {
 			return $user;
 		}
 

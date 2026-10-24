@@ -39,7 +39,7 @@ function b2_lock_rows( $user_id ) { global $wpdb; return (int) $wpdb->get_var( $
  */
 function b2_race( $user_id, $method, array $codes ) {
 	$wp_cli   = realpath( $_SERVER['argv'][0] );
-	$start_at = sprintf( '%.6F', microtime( true ) + 5 );
+	$start_at = sprintf( '%.6F', microtime( true ) + 8 );
 	$workers  = array();
 	foreach ( $codes as $code ) {
 		$cmd       = array( PHP_BINARY, $wp_cli, 'eval-file', __DIR__ . '/workers/verify-code.php', (string) $user_id, $method, $code, $start_at, '--path=' . ABSPATH );
@@ -60,7 +60,7 @@ function b2_race( $user_id, $method, array $codes ) {
 	wp_cache_flush();
 
 	if ( ! $valid ) {
-		echo "Worker failed or started late; raise the start delay in b2_race().\n";
+		echo "FAIL race not run: a worker failed or started late; raise the start delay in b2_race().\n";
 		return -1;
 	}
 	return $accepted;

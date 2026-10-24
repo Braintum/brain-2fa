@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-24T20:58:04+00:00\n"
+"POT-Creation-Date: 2026-10-24T21:31:03+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.10.0\n"
 "X-Domain: brain-2fa\n"
@@ -64,56 +64,68 @@ msgstr ""
 msgid "The changes were not saved. Correct the highlighted fields and try again."
 msgstr ""
 
-#: includes/Admin/LoginSecurityPage.php:182
+#: includes/Admin/LoginSecurityPage.php:140
+msgid "All trusted devices were forgotten. Every browser asks for your second step at its next password sign-in."
+msgstr ""
+
+#: includes/Admin/LoginSecurityPage.php:148
+msgid "That device is not in your list. It may have expired or already been forgotten."
+msgstr ""
+
+#: includes/Admin/LoginSecurityPage.php:155
+msgid "The device was forgotten. It asks for your second step at its next password sign-in."
+msgstr ""
+
+#: includes/Admin/LoginSecurityPage.php:240
 msgid "Two-factor codes are not active for your account."
 msgstr ""
 
-#: includes/Admin/LoginSecurityPage.php:196
+#: includes/Admin/LoginSecurityPage.php:254
 msgid "Recovery codes are only available while the authenticator app is active."
 msgstr ""
 
-#: includes/Admin/LoginSecurityPage.php:206
+#: includes/Admin/LoginSecurityPage.php:264
 msgid "New recovery codes were generated and your old codes no longer work. Save the new codes now."
 msgstr ""
 
-#: includes/Admin/LoginSecurityPage.php:218
+#: includes/Admin/LoginSecurityPage.php:276
 msgid "Password sign-in is now off. Sign in with your passkey from now on."
 msgstr ""
 
-#: includes/Admin/LoginSecurityPage.php:220
+#: includes/Admin/LoginSecurityPage.php:278
 msgid "Password sign-in is turned back on."
 msgstr ""
 
-#: includes/Admin/LoginSecurityPage.php:232
+#: includes/Admin/LoginSecurityPage.php:290
 msgid "The passkey was removed."
 msgstr ""
 
-#: includes/Admin/LoginSecurityPage.php:236
+#: includes/Admin/LoginSecurityPage.php:294
 msgid "The passkey was renamed."
 msgstr ""
 
-#: includes/Admin/LoginSecurityPage.php:248
+#: includes/Admin/LoginSecurityPage.php:306
 msgid "Two-factor authentication is already active. Turn off the current method before setting up a new one."
 msgstr ""
 
 #. translators: %s: account email address
-#: includes/Admin/LoginSecurityPage.php:279
+#: includes/Admin/LoginSecurityPage.php:337
 msgid "A verification code was sent to %s. Enter it below to finish setting up email codes."
 msgstr ""
 
-#: includes/Admin/LoginSecurityPage.php:290
+#: includes/Admin/LoginSecurityPage.php:348
 msgid "Two-factor authentication is active. Save your recovery codes below."
 msgstr ""
 
-#: includes/Admin/LoginSecurityPage.php:292
+#: includes/Admin/LoginSecurityPage.php:350
 msgid "Two-factor authentication is active."
 msgstr ""
 
-#: includes/Admin/LoginSecurityPage.php:320
+#: includes/Admin/LoginSecurityPage.php:378
 msgid "Two-factor codes are turned off. Your role requires two-factor authentication, so set up a new method to continue using the site."
 msgstr ""
 
-#: includes/Admin/LoginSecurityPage.php:322
+#: includes/Admin/LoginSecurityPage.php:380
 msgid "Two-factor codes are turned off."
 msgstr ""
 
@@ -138,69 +150,69 @@ msgstr ""
 msgid "Login Security"
 msgstr ""
 
-#: includes/Admin/Settings.php:135
+#: includes/Admin/Settings.php:140
 msgid "Settings were not saved because the settings section was not recognized."
 msgstr ""
 
-#: includes/Admin/Settings.php:187
+#: includes/Admin/Settings.php:192
 msgid "Settings saved."
 msgstr ""
 
 #. translators: %s: number of users
-#: includes/Admin/Settings.php:243
+#: includes/Admin/Settings.php:248
 msgid "%s user is set up with the authenticator app, which is turned off, and has no passkey to sign in with. They cannot sign in with their password until you turn it back on."
 msgid_plural "%s users are set up with the authenticator app, which is turned off, and have no passkey to sign in with. They cannot sign in with their password until you turn it back on."
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %s: number of users
-#: includes/Admin/Settings.php:245
+#: includes/Admin/Settings.php:250
 msgid "%s user is set up with email codes, which are turned off, and has no passkey to sign in with. They cannot sign in with their password until you turn email codes back on."
 msgid_plural "%s users are set up with email codes, which are turned off, and have no passkey to sign in with. They cannot sign in with their password until you turn email codes back on."
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %s: number of users
-#: includes/Admin/Settings.php:250
+#: includes/Admin/Settings.php:255
 msgid "%s user relies on the authenticator app and has no passkey. If you turn it off, they cannot sign in with their password until it is turned back on. Recovery codes do not help, because they belong to this method."
 msgid_plural "%s users rely on the authenticator app and have no passkey. If you turn it off, they cannot sign in with their password until it is turned back on. Recovery codes do not help, because they belong to this method."
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %s: number of users
-#: includes/Admin/Settings.php:252
+#: includes/Admin/Settings.php:257
 msgid "%s user relies on email codes and has no passkey. If you turn email codes off, they cannot sign in with their password until they are turned back on."
 msgid_plural "%s users rely on email codes and have no passkey. If you turn email codes off, they cannot sign in with their password until they are turned back on."
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %s: number of users
-#: includes/Admin/Settings.php:257
+#: includes/Admin/Settings.php:262
 msgid "%s user uses the authenticator app. They also have a passkey, so turning the app off leaves them signing in with their passkey."
 msgid_plural "%s users use the authenticator app. They all have a passkey, so turning the app off leaves them signing in with their passkeys."
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %s: number of users
-#: includes/Admin/Settings.php:259
+#: includes/Admin/Settings.php:264
 msgid "%s user uses email codes. They also have a passkey, so turning email codes off leaves them signing in with their passkey."
 msgid_plural "%s users use email codes. They all have a passkey, so turning email codes off leaves them signing in with their passkeys."
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/Admin/Settings.php:272
+#: includes/Admin/Settings.php:277
 msgid "Authentication Methods"
 msgstr ""
 
-#: includes/Admin/Settings.php:273
+#: includes/Admin/Settings.php:278
 msgid "Enrollment Requirements"
 msgstr ""
 
-#: includes/Admin/Settings.php:274
+#: includes/Admin/Settings.php:279
 msgid "Trusted Devices"
 msgstr ""
 
-#: includes/Admin/Settings.php:275
+#: includes/Admin/Settings.php:280
 msgid "Emails"
 msgstr ""
 
@@ -483,6 +495,52 @@ msgstr ""
 
 #: includes/Admin/views/login-security/codes.php:156
 msgid "Turn on authenticator app"
+msgstr ""
+
+#: includes/Admin/views/login-security/devices.php:20
+msgid "Trusted devices"
+msgstr ""
+
+#: includes/Admin/views/login-security/devices.php:21
+msgid "Browsers where you chose \"Remember this device\" skip the second step after your password until they expire."
+msgstr ""
+
+#: includes/Admin/views/login-security/devices.php:25
+msgid "This site no longer lets browsers skip the second step, so these devices are not trusted right now. You can still forget them; they also expire on their own."
+msgstr ""
+
+#: includes/Admin/views/login-security/devices.php:32
+msgid "No browsers are trusted for your account. To trust one, choose \"Remember this device\" when you enter a code at sign-in."
+msgstr ""
+
+#: includes/Admin/views/login-security/devices.php:40
+#: includes/Admin/views/login-security/devices.php:59
+msgid "unknown"
+msgstr ""
+
+#: includes/Admin/views/login-security/devices.php:44
+msgid "not yet"
+msgstr ""
+
+#: includes/Admin/views/login-security/devices.php:51
+msgid "This browser"
+msgstr ""
+
+#. translators: 1: date the device was trusted, or "unknown", 2: date and time of its last sign-in, "not yet" or "unknown", 3: expiry date
+#: includes/Admin/views/login-security/devices.php:58
+msgid "Trusted %1$s · Last used %2$s · Expires %3$s"
+msgstr ""
+
+#: includes/Admin/views/login-security/devices.php:72
+msgid "Forget"
+msgstr ""
+
+#: includes/Admin/views/login-security/devices.php:80
+msgid "A forgotten device asks for your second step at its next password sign-in. Forgetting does not sign that browser out or remove a passkey."
+msgstr ""
+
+#: includes/Admin/views/login-security/devices.php:86
+msgid "Forget all trusted devices"
 msgstr ""
 
 #: includes/Admin/views/login-security/passkeys.php:17
@@ -1231,6 +1289,20 @@ msgstr ""
 msgid "Only needed if two-factor authentication is enabled for your account. Email users: sign in once without a code to receive one."
 msgstr ""
 
+#. translators: 1: browser name, such as "Firefox", 2: operating system name, such as "Windows"
+#: includes/Auth/TrustedDeviceRepository.php:213
+msgid "%1$s on %2$s"
+msgstr ""
+
+#. translators: %s: operating system name, such as "Windows"
+#: includes/Auth/TrustedDeviceRepository.php:222
+msgid "Browser on %s"
+msgstr ""
+
+#: includes/Auth/TrustedDeviceRepository.php:225
+msgid "Trusted browser"
+msgstr ""
+
 #: includes/Emails/EmailRegistry.php:55
 msgid "[{site_name}] Your two-factor authentication settings changed"
 msgstr ""
@@ -1576,12 +1648,12 @@ msgstr ""
 msgid "Invalid or expired verification code."
 msgstr ""
 
-#: includes/Utils.php:448
+#: includes/Utils.php:439
 msgid "The password you entered is incorrect. No changes were made."
 msgstr ""
 
 #. translators: %d: number of minutes until the user may try again
-#: includes/Utils.php:477
+#: includes/Utils.php:468
 msgid "Too many failed verification attempts. Please try again in %d minute."
 msgid_plural "Too many failed verification attempts. Please try again in %d minutes."
 msgstr[0] ""
