@@ -62,7 +62,7 @@ defined( 'ABSPATH' ) || exit;
 									<div class="brain2fa-field">
 										<label for="brain2fa_passkey_name_<?php echo esc_attr( $brain2fa_passkey_id ); ?>"><?php esc_html_e( 'Name', 'brain-2fa' ); ?></label>
 										<input type="text" id="brain2fa_passkey_name_<?php echo esc_attr( $brain2fa_passkey_id ); ?>" name="brain2fa_passkey_name" class="regular-text" value="<?php echo esc_attr( $brain2fa_passkey->name ); ?>" maxlength="100" required>
-										<button type="submit" class="button"><?php esc_html_e( 'Rename', 'brain-2fa' ); ?></button>
+										<button type="submit" class="<?php echo esc_attr( LoginSecurityPage::button_class() ); ?>"><?php esc_html_e( 'Rename', 'brain-2fa' ); ?></button>
 									</div>
 								</form>
 								<form method="post" action="" class="brain2fa-inline-form">
@@ -72,7 +72,7 @@ defined( 'ABSPATH' ) || exit;
 									<div class="brain2fa-field">
 										<label for="brain2fa_passkey_remove_password_<?php echo esc_attr( $brain2fa_passkey_id ); ?>"><?php esc_html_e( 'Confirm your password to remove this passkey', 'brain-2fa' ); ?></label>
 										<input type="password" id="brain2fa_passkey_remove_password_<?php echo esc_attr( $brain2fa_passkey_id ); ?>" name="brain2fa_confirm_password" class="regular-text" autocomplete="current-password" required>
-										<button type="submit" class="button brain2fa-button-danger"><?php esc_html_e( 'Remove passkey', 'brain-2fa' ); ?></button>
+										<button type="submit" class="<?php echo esc_attr( LoginSecurityPage::button_class( 'danger' ) ); ?>"><?php esc_html_e( 'Remove passkey', 'brain-2fa' ); ?></button>
 									</div>
 									<p class="description"><?php esc_html_e( 'You will no longer be able to sign in with this passkey.', 'brain-2fa' ); ?></p>
 								</form>
@@ -94,7 +94,7 @@ defined( 'ABSPATH' ) || exit;
 				<input type="password" id="brain2fa_passkey_password" class="regular-text" autocomplete="current-password">
 			</div>
 			<p>
-				<button type="button" class="button button-primary" id="brain2fa-passkey-add"><?php esc_html_e( 'Add a passkey', 'brain-2fa' ); ?></button>
+				<button type="button" class="<?php echo esc_attr( LoginSecurityPage::button_class( 'primary' ) ); ?>" id="brain2fa-passkey-add"><?php esc_html_e( 'Add a passkey', 'brain-2fa' ); ?></button>
 			</p>
 			<div id="brain2fa-passkey-message" aria-live="polite"></div>
 			<noscript><p class="description"><?php esc_html_e( 'Adding a passkey requires JavaScript.', 'brain-2fa' ); ?></p></noscript>

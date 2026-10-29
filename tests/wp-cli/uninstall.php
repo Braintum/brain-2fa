@@ -19,7 +19,7 @@ function b2_check( $label, $cond ) { echo ( $cond ? 'PASS ' : 'FAIL ' ) . $label
 
 $keep    = in_array( 'keep', $args ?? array(), true );
 $table   = $wpdb->prefix . 'brain2fa_passkeys';
-$options = array( 'brain2fa_settings', 'brain2fa_emails', 'brain2fa_db_version', 'brain2fa_reminder_cursor' );
+$options = array( 'brain2fa_settings', 'brain2fa_emails', 'brain2fa_db_version', 'brain2fa_reminder_cursor', 'brain2fa_account_endpoint' );
 $state   = $wpdb->get_blog_prefix() . 'brain2fa_reminder';
 $hooks   = array( 'brain2fa_enrollment_reminders', 'brain2fa_enrollment_reminders_continue' );
 $bk_cron = array_filter( array_combine( $hooks, array_map( 'wp_get_scheduled_event', $hooks ) ) );
@@ -45,6 +45,7 @@ try {
 	wp_schedule_single_event( time() + MINUTE_IN_SECONDS, 'brain2fa_enrollment_reminders_continue' );
 	update_option( 'brain2fa_settings', array( 'enable_2fa' => true ) );
 	update_option( 'brain2fa_emails', array( 'from_name' => 'X' ), false );
+	update_option( 'brain2fa_account_endpoint', 'login-security' );
 	update_option( 'other_plugin_option', 'keep-me' );
 	update_option( 'brain2fa_lookalike_not_transient', 'keep-me' );
 	set_transient( 'brain2fa_backup_code_' . $uid, '123456', 600 );
@@ -78,7 +79,7 @@ try {
 	} else {
 		b2_check( 'passkeys table dropped', ! $table_exists );
 		b2_check( 'all brain2fa user meta removed', 0 === $meta_left );
-		b2_check( 'options removed', false === get_option( 'brain2fa_settings' ) && false === get_option( 'brain2fa_emails' ) && false === get_option( 'brain2fa_db_version' ) );
+		b2_check( 'options removed', false === get_option( 'brain2fa_settings' ) && false === get_option( 'brain2fa_emails' ) && false === get_option( 'brain2fa_db_version' ) && false === get_option( 'brain2fa_account_endpoint' ) );
 		b2_check( 'transients and timeouts removed', 0 === $trans_left );
 		b2_check( 'reminder state and cursor removed', 0 === $state_left && false === get_option( 'brain2fa_reminder_cursor' ) );
 		b2_check( 'user itself kept', (bool) get_userdata( $uid ) );

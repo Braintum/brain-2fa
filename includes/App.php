@@ -27,6 +27,7 @@ use Brain_2FA\Auth\LoginAssets;
 use Brain_2FA\Passkeys\PasskeyLogin;
 use Brain_2FA\Passkeys\PasskeyRegistration;
 use Brain_2FA\Passkeys\PasskeyRepository;
+use Brain_2FA\WooCommerce\LoginSecurityTab;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -191,6 +192,7 @@ final class App {
 		EnrollmentReport::init();
 		ReminderScheduler::init();
 		RecoveryCodeWarning::init();
+		LoginSecurityTab::init();
 
 		if ( Utils::is_passkeys_enabled() ) {
 			PasskeyLogin::init();

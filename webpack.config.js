@@ -13,6 +13,7 @@ module.exports = (env, argv) => {
 			'admin': ['./src/js/admin.js', './src/scss/admin.scss'],
 			'passkey-login': './src/js/passkey-login.js',
 			'passkey-manage': './src/js/passkey-manage.js',
+			'account': ['./src/js/account.js', './src/scss/account.scss'],
 		},
 		output: {
 			path: path.resolve(__dirname, 'assets'),

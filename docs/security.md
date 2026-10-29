@@ -29,6 +29,7 @@ Brain 2FA runs inside the WordPress authentication path. This document lists wha
 | No terminating nonce check on `brain2fa_login` | Full-page caches serve `wp-login.php` with expired nonces, and a hard check made valid sign-ins fail with HTTP 403. The endpoint does not change state; the rate limit plus WordPress's own authentication cover abuse. |
 | Lockout checks in both `handle_login()` and `verify_2fa()` | The first gives a clear message in the UI; the second is the actual enforcement. |
 | Restricted setup mode instead of blocking expired users | Blocking left users no way to enroll (and a 0-day grace period locked everyone out immediately). Restricted users can sign in but reach nothing except the setup page; admin, front-end, REST and AJAX requests are redirected or refused. XML-RPC and REST logins stay blocked because they cannot show a setup page. |
+| WooCommerce customers manage their protection in My Account | The tab runs the same `LoginSecurityPage` handlers as wp-admin (nonce, password confirmation, current user only), before any output. Customers are users WooCommerce keeps out of wp-admin, so for them the tab is the restricted-mode setup page, the login redirect target and the `{login_security_url}` in their emails. Restricted users may open only the tab and the My Account log out endpoint on the front end; the wp-admin page redirects customers to the tab. Passkey registration still goes through `admin-ajax.php`, which restricted mode already allows. |
 | Required users who deactivate are restricted immediately | Prevents gaining a fresh grace period by deactivating, while still allowing a method switch. |
 | Email 2FA enabled only after a code round-trip | Broken site mail would otherwise lock the user out at their next sign-in. |
 | Server-rendered code field, removed by JavaScript | Users can sign in when the login script fails or is blocked, without showing a redundant field when it works. |
@@ -81,7 +82,7 @@ Brain 2FA runs inside the WordPress authentication path. This document lists wha
 4. Passkey ceremonies require user verification, an exact origin match and a single-use, cookie-bound challenge; passkey login tokens are single-use, cookie-bound and only accepted on interactive form posts.
 5. No secret, code or recovery code is logged, sent to a remote service, or rendered anywhere except the owning user's Login Security page at setup time.
 6. Long-lived tokens are random (`random_int`, `wp_generate_password`) and hashed at rest.
-7. Every admin state change checks both a capability and a nonce. The Login Security page only acts on `wp_get_current_user()`. Disabling a factor, regenerating recovery codes, and adding or removing a passkey also require the account password.
+7. Every admin state change checks both a capability and a nonce. The Login Security page, in wp-admin and in the My Account tab, only acts on `wp_get_current_user()`. Disabling a factor, regenerating recovery codes, and adding or removing a passkey also require the account password.
 8. All output is escaped at the point of output, and all input is unslashed and sanitized.
 
 ## Known gaps and hardening backlog

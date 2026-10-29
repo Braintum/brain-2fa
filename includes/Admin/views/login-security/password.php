@@ -50,9 +50,9 @@ defined( 'ABSPATH' ) || exit;
 			<label for="brain2fa_passkey_only_password"><?php esc_html_e( 'Confirm your password', 'brain-2fa' ); ?></label>
 			<input type="password" id="brain2fa_passkey_only_password" name="brain2fa_confirm_password" class="regular-text" autocomplete="current-password" required>
 			<?php if ( $passkey_only ) : ?>
-				<button type="submit" class="button"><?php esc_html_e( 'Turn password sign-in back on', 'brain-2fa' ); ?></button>
+				<button type="submit" class="<?php echo esc_attr( LoginSecurityPage::button_class() ); ?>"><?php esc_html_e( 'Turn password sign-in back on', 'brain-2fa' ); ?></button>
 			<?php else : ?>
-				<button type="submit" class="button brain2fa-button-danger"><?php esc_html_e( 'Turn off password sign-in', 'brain-2fa' ); ?></button>
+				<button type="submit" class="<?php echo esc_attr( LoginSecurityPage::button_class( 'danger' ) ); ?>"><?php esc_html_e( 'Turn off password sign-in', 'brain-2fa' ); ?></button>
 			<?php endif; ?>
 		</div>
 	</form>

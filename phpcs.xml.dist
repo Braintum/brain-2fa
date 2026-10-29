@@ -16,6 +16,16 @@
 	<rule ref="WordPress-Extra"/>
 	<rule ref="WordPress-Docs"/>
 
+	<!-- WooCommerce capabilities that decide who uses the My Account Login Security tab. -->
+	<rule ref="WordPress.WP.Capabilities">
+		<properties>
+			<property name="custom_capabilities" type="array">
+				<element value="manage_woocommerce"/>
+				<element value="view_admin_dashboard"/>
+			</property>
+		</properties>
+	</rule>
+
 	<!-- PHP 8.1+ compatibility (uses testVersion above). -->
 	<rule ref="PHPCompatibilityWP"/>
 </ruleset>

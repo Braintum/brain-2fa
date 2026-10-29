@@ -35,7 +35,7 @@ defined( 'ABSPATH' ) || exit;
 			</ul>
 			<button type="button"
 				id="brain2fa-download-codes"
-				class="button"
+				class="<?php echo esc_attr( LoginSecurityPage::button_class() ); ?>"
 				data-codes="<?php echo esc_attr( wp_json_encode( $fresh_recovery_codes ) ); ?>"
 				data-site="<?php echo esc_attr( get_bloginfo( 'name' ) ); ?>"
 				data-user="<?php echo esc_attr( $current_user->user_login ); ?>"
@@ -71,7 +71,7 @@ defined( 'ABSPATH' ) || exit;
 				<div class="brain2fa-field">
 					<label for="brain2fa_confirm_password_regenerate"><?php esc_html_e( 'Confirm your password', 'brain-2fa' ); ?></label>
 					<input type="password" id="brain2fa_confirm_password_regenerate" name="brain2fa_confirm_password" class="regular-text" autocomplete="current-password" required>
-					<button type="submit" class="button"><?php esc_html_e( 'Generate new codes', 'brain-2fa' ); ?></button>
+					<button type="submit" class="<?php echo esc_attr( LoginSecurityPage::button_class() ); ?>"><?php esc_html_e( 'Generate new codes', 'brain-2fa' ); ?></button>
 				</div>
 			</form>
 		</div>

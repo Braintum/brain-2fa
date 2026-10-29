@@ -3,30 +3,35 @@
  * Login Security Page Template
  *
  * Rendered by LoginSecurityPage::render(), whose local variables are in scope here
- * and in the section templates under views/login-security/.
+ * and in the section templates under views/login-security/. In the WooCommerce
+ * My Account tab ($is_account), the theme supplies the page title.
  *
  * @package Brain_2FA\Admin
  * @since 1.0.0
  */
 
+use Brain_2FA\Admin\LoginSecurityPage;
+
 defined( 'ABSPATH' ) || exit;
 
 $brain2fa_page_dir = __DIR__ . '/login-security/';
 ?>
-<div class="wrap brain2fa-login-security">
-	<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
+<div class="<?php echo esc_attr( $is_account ? 'brain2fa-login-security brain2fa-account-security' : 'wrap brain2fa-login-security' ); ?>">
+	<?php if ( ! $is_account ) : ?>
+		<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
 
-	<?php settings_errors( 'brain2fa_messages' ); ?>
+		<?php settings_errors( 'brain2fa_messages' ); ?>
+	<?php endif; ?>
 
 	<?php if ( $must_enroll ) : ?>
 		<div class="notice notice-warning inline brain2fa-enroll-notice">
 			<p><strong><?php echo esc_html( \Brain_2FA\Auth\EnrollmentGuard::get_restriction_message() ); ?></strong></p>
 			<p>
 				<?php if ( $passkeys_enabled ) : ?>
-					<a class="button button-primary" href="#brain2fa-passkeys"><?php esc_html_e( 'Add a passkey', 'brain-2fa' ); ?></a>
+					<a class="<?php echo esc_attr( LoginSecurityPage::button_class( 'primary' ) ); ?>" href="#brain2fa-passkeys"><?php esc_html_e( 'Add a passkey', 'brain-2fa' ); ?></a>
 				<?php endif; ?>
 				<?php if ( $code_setup_available ) : ?>
-					<a class="button<?php echo $passkeys_enabled ? '' : ' button-primary'; ?>" href="#brain2fa-codes"><?php esc_html_e( 'Set up two-factor codes', 'brain-2fa' ); ?></a>
+					<a class="<?php echo esc_attr( LoginSecurityPage::button_class( $passkeys_enabled ? '' : 'primary' ) ); ?>" href="#brain2fa-codes"><?php esc_html_e( 'Set up two-factor codes', 'brain-2fa' ); ?></a>
 				<?php endif; ?>
 			</p>
 		</div>

@@ -25,10 +25,39 @@ defined( 'ABSPATH' ) || exit;
  * Handles the Login Security page actions and renders its sections.
  *
  * Every action works on the current user only; no user ID is taken from the request.
+ * The same sections render in wp-admin and in the WooCommerce My Account tab.
  *
  * @since 1.1.0
  */
 class LoginSecurityPage {
+
+	/**
+	 * Rendered as the wp-admin page.
+	 *
+	 * @var string
+	 */
+	public const CONTEXT_ADMIN = 'admin';
+
+	/**
+	 * Rendered in the WooCommerce My Account tab.
+	 *
+	 * @var string
+	 */
+	public const CONTEXT_ACCOUNT = 'account';
+
+	/**
+	 * Where the page is rendered.
+	 *
+	 * @var string
+	 */
+	private static $context = self::CONTEXT_ADMIN;
+
+	/**
+	 * Result of an action handled before rendering, or null when none was handled yet.
+	 *
+	 * @var array{recovery_codes: string[], totp_secret: string}|null
+	 */
+	private static $outcome = null;
 
 	/**
 	 * Feedback for this request, grouped by the page section it belongs to.
@@ -49,15 +78,19 @@ class LoginSecurityPage {
 	/**
 	 * Render the page.
 	 *
+	 * @param string $context Where it is rendered: CONTEXT_ADMIN or CONTEXT_ACCOUNT.
 	 * @return void
 	 */
-	public static function render(): void {
+	public static function render( string $context = self::CONTEXT_ADMIN ): void {
 		if ( ! current_user_can( 'read' ) ) {
 			return;
 		}
 
+		self::$context = self::CONTEXT_ACCOUNT === $context ? self::CONTEXT_ACCOUNT : self::CONTEXT_ADMIN;
+
 		$current_user = wp_get_current_user();
-		$outcome      = self::handle_post( $current_user );
+		$outcome      = self::$outcome ?? self::handle_post( $current_user );
+		$is_account   = self::CONTEXT_ACCOUNT === self::$context;
 
 		// Read state after handling, so the page shows the result of the action.
 		$is_2fa_enabled       = (bool) get_user_meta( $current_user->ID, 'brain2fa_enabled', true );
@@ -101,6 +134,53 @@ class LoginSecurityPage {
 		$current_device_id = $trusted_devices ? Utils::get_current_device_id( $current_user->ID ) : '';
 
 		include BRAIN_2FA_PLUGIN_DIR . 'includes/Admin/views/login-security-page.php';
+	}
+
+	/**
+	 * Handle any submitted action before the page is sent.
+	 *
+	 * Used where the page is rendered inside other output (the My Account tab), so every
+	 * action runs before headers are sent. render() then shows the result.
+	 *
+	 * @return void
+	 */
+	public static function handle_request(): void {
+		if ( ! current_user_can( 'read' ) ) {
+			return;
+		}
+
+		self::handle_device_actions();
+		self::$outcome = self::handle_post( wp_get_current_user() );
+	}
+
+	/**
+	 * Get the CSS classes for a button in the current context.
+	 *
+	 * In My Account, buttons use the theme's WooCommerce button styles.
+	 *
+	 * @param string $variant Empty for a regular button, "primary" or "danger".
+	 * @return string Space-separated classes.
+	 */
+	public static function button_class( string $variant = '' ): string {
+		$classes = array( 'button' );
+
+		if ( self::CONTEXT_ACCOUNT === self::$context ) {
+			$element = function_exists( 'wc_wp_theme_get_element_class_name' ) ? wc_wp_theme_get_element_class_name( 'button' ) : '';
+			if ( '' !== $element ) {
+				$classes[] = $element;
+			}
+			if ( 'primary' === $variant ) {
+				$classes[] = 'alt';
+			}
+		} elseif ( 'primary' === $variant ) {
+			$classes[] = 'button-primary';
+		}
+
+		if ( 'danger' === $variant ) {
+			$classes[] = 'brain2fa-button-danger';
+		}
+
+		return implode( ' ', $classes );
 	}
 
 	/**

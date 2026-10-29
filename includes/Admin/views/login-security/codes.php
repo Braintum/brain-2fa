@@ -70,7 +70,7 @@ $brain2fa_is_totp = 'totp' === $current_method;
 					<div class="brain2fa-field">
 						<label for="brain2fa_confirm_password_deactivate"><?php esc_html_e( 'Confirm your password', 'brain-2fa' ); ?></label>
 						<input type="password" id="brain2fa_confirm_password_deactivate" name="brain2fa_confirm_password" class="regular-text" autocomplete="current-password" required>
-						<button type="submit" class="button brain2fa-button-danger"><?php esc_html_e( 'Turn off', 'brain-2fa' ); ?></button>
+						<button type="submit" class="<?php echo esc_attr( LoginSecurityPage::button_class( 'danger' ) ); ?>"><?php esc_html_e( 'Turn off', 'brain-2fa' ); ?></button>
 					</div>
 				</form>
 			</div>
@@ -104,7 +104,7 @@ $brain2fa_is_totp = 'totp' === $current_method;
 					<form method="post" action="">
 						<?php wp_nonce_field( 'brain2fa_setup_action', 'brain2fa_setup_nonce' ); ?>
 						<input type="hidden" name="brain2fa_action" value="activate">
-						<p><button type="submit" class="button button-primary"><?php esc_html_e( 'Send verification code', 'brain-2fa' ); ?></button></p>
+						<p><button type="submit" class="<?php echo esc_attr( LoginSecurityPage::button_class( 'primary' ) ); ?>"><?php esc_html_e( 'Send verification code', 'brain-2fa' ); ?></button></p>
 					</form>
 				<?php endif; ?>
 			</li>
@@ -118,7 +118,7 @@ $brain2fa_is_totp = 'totp' === $current_method;
 							<label for="brain2fa_email_setup_code"><?php esc_html_e( 'Verification code', 'brain-2fa' ); ?></label>
 							<input type="text" id="brain2fa_email_setup_code" name="brain2fa_code" class="brain2fa-verification-input" placeholder="000000" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" autocomplete="one-time-code" required>
 						</div>
-						<p><button type="submit" class="button button-primary"><?php esc_html_e( 'Turn on email codes', 'brain-2fa' ); ?></button></p>
+						<p><button type="submit" class="<?php echo esc_attr( LoginSecurityPage::button_class( 'primary' ) ); ?>"><?php esc_html_e( 'Turn on email codes', 'brain-2fa' ); ?></button></p>
 					</form>
 				<?php endif; ?>
 			</li>
@@ -153,7 +153,7 @@ $brain2fa_is_totp = 'totp' === $current_method;
 				</li>
 				<li class="brain2fa-step-current">
 					<span class="brain2fa-step-title"><?php esc_html_e( 'Turn it on', 'brain-2fa' ); ?></span>
-					<p><button type="submit" class="button button-primary"><?php esc_html_e( 'Turn on authenticator app', 'brain-2fa' ); ?></button></p>
+					<p><button type="submit" class="<?php echo esc_attr( LoginSecurityPage::button_class( 'primary' ) ); ?>"><?php esc_html_e( 'Turn on authenticator app', 'brain-2fa' ); ?></button></p>
 				</li>
 			</ol>
 		</form>

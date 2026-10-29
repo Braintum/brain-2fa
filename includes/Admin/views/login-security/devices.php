@@ -68,7 +68,7 @@ $brain2fa_date_format = get_option( 'date_format' );
 						<?php wp_nonce_field( 'brain2fa_setup_action', 'brain2fa_setup_nonce' ); ?>
 						<input type="hidden" name="brain2fa_action" value="forget_device">
 						<input type="hidden" name="brain2fa_device_id" value="<?php echo esc_attr( $brain2fa_device['id'] ); ?>">
-						<button type="submit" class="button">
+						<button type="submit" class="<?php echo esc_attr( LoginSecurityPage::button_class() ); ?>">
 							<?php esc_html_e( 'Forget', 'brain-2fa' ); ?>
 							<span class="screen-reader-text"><?php echo esc_html( $brain2fa_device_label ); ?></span>
 						</button>
@@ -83,7 +83,7 @@ $brain2fa_date_format = get_option( 'date_format' );
 			<form method="post" action="">
 				<?php wp_nonce_field( 'brain2fa_setup_action', 'brain2fa_setup_nonce' ); ?>
 				<input type="hidden" name="brain2fa_action" value="forget_all_devices">
-				<button type="submit" class="button brain2fa-button-danger"><?php esc_html_e( 'Forget all trusted devices', 'brain-2fa' ); ?></button>
+				<button type="submit" class="<?php echo esc_attr( LoginSecurityPage::button_class( 'danger' ) ); ?>"><?php esc_html_e( 'Forget all trusted devices', 'brain-2fa' ); ?></button>
 			</form>
 		<?php endif; ?>
 	<?php endif; ?>

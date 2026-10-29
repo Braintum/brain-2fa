@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-29T19:01:37+00:00\n"
+"POT-Creation-Date: 2026-10-29T19:35:24+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.10.0\n"
 "X-Domain: brain-2fa\n"
@@ -64,68 +64,68 @@ msgstr ""
 msgid "The changes were not saved. Correct the highlighted fields and try again."
 msgstr ""
 
-#: includes/Admin/LoginSecurityPage.php:140
+#: includes/Admin/LoginSecurityPage.php:220
 msgid "All trusted devices were forgotten. Every browser asks for your second step at its next password sign-in."
 msgstr ""
 
-#: includes/Admin/LoginSecurityPage.php:148
+#: includes/Admin/LoginSecurityPage.php:228
 msgid "That device is not in your list. It may have expired or already been forgotten."
 msgstr ""
 
-#: includes/Admin/LoginSecurityPage.php:155
+#: includes/Admin/LoginSecurityPage.php:235
 msgid "The device was forgotten. It asks for your second step at its next password sign-in."
 msgstr ""
 
-#: includes/Admin/LoginSecurityPage.php:240
+#: includes/Admin/LoginSecurityPage.php:320
 msgid "Two-factor codes are not active for your account."
 msgstr ""
 
-#: includes/Admin/LoginSecurityPage.php:254
+#: includes/Admin/LoginSecurityPage.php:334
 msgid "Recovery codes are only available while the authenticator app is active."
 msgstr ""
 
-#: includes/Admin/LoginSecurityPage.php:264
+#: includes/Admin/LoginSecurityPage.php:344
 msgid "New recovery codes were generated and your old codes no longer work. Save the new codes now."
 msgstr ""
 
-#: includes/Admin/LoginSecurityPage.php:276
+#: includes/Admin/LoginSecurityPage.php:356
 msgid "Password sign-in is now off. Sign in with your passkey from now on."
 msgstr ""
 
-#: includes/Admin/LoginSecurityPage.php:278
+#: includes/Admin/LoginSecurityPage.php:358
 msgid "Password sign-in is turned back on."
 msgstr ""
 
-#: includes/Admin/LoginSecurityPage.php:290
+#: includes/Admin/LoginSecurityPage.php:370
 msgid "The passkey was removed."
 msgstr ""
 
-#: includes/Admin/LoginSecurityPage.php:294
+#: includes/Admin/LoginSecurityPage.php:374
 msgid "The passkey was renamed."
 msgstr ""
 
-#: includes/Admin/LoginSecurityPage.php:306
+#: includes/Admin/LoginSecurityPage.php:386
 msgid "Two-factor authentication is already active. Turn off the current method before setting up a new one."
 msgstr ""
 
 #. translators: %s: account email address
-#: includes/Admin/LoginSecurityPage.php:337
+#: includes/Admin/LoginSecurityPage.php:417
 msgid "A verification code was sent to %s. Enter it below to finish setting up email codes."
 msgstr ""
 
-#: includes/Admin/LoginSecurityPage.php:348
+#: includes/Admin/LoginSecurityPage.php:428
 msgid "Two-factor authentication is active. Save your recovery codes below."
 msgstr ""
 
-#: includes/Admin/LoginSecurityPage.php:350
+#: includes/Admin/LoginSecurityPage.php:430
 msgid "Two-factor authentication is active."
 msgstr ""
 
-#: includes/Admin/LoginSecurityPage.php:378
+#: includes/Admin/LoginSecurityPage.php:458
 msgid "Two-factor codes are turned off. Your role requires two-factor authentication, so set up a new method to continue using the site."
 msgstr ""
 
-#: includes/Admin/LoginSecurityPage.php:380
+#: includes/Admin/LoginSecurityPage.php:460
 msgid "Two-factor codes are turned off."
 msgstr ""
 
@@ -188,6 +188,7 @@ msgid "Two-Factor Authentication"
 msgstr ""
 
 #: includes/Admin/Settings.php:103
+#: includes/WooCommerce/LoginSecurityTab.php:205
 msgid "Login Security"
 msgstr ""
 
@@ -422,13 +423,13 @@ msgstr ""
 msgid "Use these if a device was lost or the account may be compromised. Removing all passkeys also turns password sign-in back on. The user is notified by email."
 msgstr ""
 
-#: includes/Admin/views/login-security-page.php:26
+#: includes/Admin/views/login-security-page.php:31
 #: includes/Admin/views/login-security/passkeys.php:86
 #: includes/Admin/views/login-security/passkeys.php:97
 msgid "Add a passkey"
 msgstr ""
 
-#: includes/Admin/views/login-security-page.php:29
+#: includes/Admin/views/login-security-page.php:34
 msgid "Set up two-factor codes"
 msgstr ""
 
@@ -1397,39 +1398,39 @@ msgstr ""
 msgid "A code is needed again after this many days, after the user changes or resets their password, after they turn off their code method, and on any other browser."
 msgstr ""
 
-#: includes/App.php:229
+#: includes/App.php:231
 msgid "Cloning is forbidden."
 msgstr ""
 
-#: includes/App.php:238
+#: includes/App.php:240
 msgid "Unserializing instances of this class is forbidden."
 msgstr ""
 
-#: includes/Auth/EnrollmentGuard.php:213
+#: includes/Auth/EnrollmentGuard.php:258
 msgid "Two-factor authentication is active for your account."
 msgstr ""
 
-#: includes/Auth/EnrollmentGuard.php:214
+#: includes/Auth/EnrollmentGuard.php:259
 msgid "Manage two-factor authentication"
 msgstr ""
 
 #. translators: %d: number of days left to set up two-factor authentication
-#: includes/Auth/EnrollmentGuard.php:220
+#: includes/Auth/EnrollmentGuard.php:265
 msgid "Your account requires two-factor authentication. You have %d day left to set it up."
 msgid_plural "Your account requires two-factor authentication. You have %d days left to set it up."
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/Auth/EnrollmentGuard.php:223
-#: includes/Auth/EnrollmentGuard.php:226
+#: includes/Auth/EnrollmentGuard.php:268
+#: includes/Auth/EnrollmentGuard.php:271
 msgid "Set up two-factor authentication"
 msgstr ""
 
-#: includes/Auth/EnrollmentGuard.php:225
+#: includes/Auth/EnrollmentGuard.php:270
 msgid "Protect your account with two-factor authentication."
 msgstr ""
 
-#: includes/Auth/EnrollmentGuard.php:243
+#: includes/Auth/EnrollmentGuard.php:288
 msgid "Your account must use two-factor authentication. Set it up to continue using this site."
 msgstr ""
 
@@ -1493,19 +1494,19 @@ msgstr ""
 msgid "Only needed if two-factor authentication is enabled for your account. Email users: sign in once without a code to receive one."
 msgstr ""
 
-#: includes/Auth/RecoveryCodeWarning.php:92
+#: includes/Auth/RecoveryCodeWarning.php:93
 msgid "You have no recovery codes left. Generate new codes while you can still access your account."
 msgstr ""
 
 #. translators: %s: number of unused recovery codes
-#: includes/Auth/RecoveryCodeWarning.php:97
+#: includes/Auth/RecoveryCodeWarning.php:98
 msgid "You have %s recovery code left. Generate new codes before you run out."
 msgid_plural "You have %s recovery codes left. Generate new codes before you run out."
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/Auth/RecoveryCodeWarning.php:131
-#: includes/Auth/RecoveryCodeWarning.php:156
+#: includes/Auth/RecoveryCodeWarning.php:132
+#: includes/Auth/RecoveryCodeWarning.php:157
 msgid "Manage recovery codes"
 msgstr ""
 
@@ -1955,38 +1956,14 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of users
-#: src/js/admin.js:77
+#: src/js/admin.js:78
 msgid "%d user will not be able to sign in with their password, because the code method they use is being turned off and they have no passkey. Continue?"
 msgid_plural "%d users will not be able to sign in with their password, because the code method they use is being turned off and they have no passkey. Continue?"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/js/admin.js:95
+#: src/js/admin.js:96
 msgid "Users in the newly selected roles must set up two-factor authentication. Make sure your own account has a method set up first. Continue?"
-msgstr ""
-
-#: src/js/admin.js:187
-msgid "Two-Factor Authentication Recovery Codes"
-msgstr ""
-
-#: src/js/admin.js:189
-msgid "Generated:"
-msgstr ""
-
-#: src/js/admin.js:191
-msgid "IMPORTANT: Store these codes in a safe place."
-msgstr ""
-
-#: src/js/admin.js:192
-msgid "Each code can only be used once."
-msgstr ""
-
-#: src/js/admin.js:196
-msgid "User:"
-msgstr ""
-
-#: src/js/admin.js:197
-msgid "Email:"
 msgstr ""
 
 #: src/js/components/LoginForm.js:84
@@ -2087,4 +2064,28 @@ msgstr ""
 
 #: src/js/utils/dom.js:254
 msgid "Email me a code instead"
+msgstr ""
+
+#: src/js/utils/recovery-codes.js:33
+msgid "Two-Factor Authentication Recovery Codes"
+msgstr ""
+
+#: src/js/utils/recovery-codes.js:35
+msgid "Generated:"
+msgstr ""
+
+#: src/js/utils/recovery-codes.js:37
+msgid "IMPORTANT: Store these codes in a safe place."
+msgstr ""
+
+#: src/js/utils/recovery-codes.js:38
+msgid "Each code can only be used once."
+msgstr ""
+
+#: src/js/utils/recovery-codes.js:42
+msgid "User:"
+msgstr ""
+
+#: src/js/utils/recovery-codes.js:43
+msgid "Email:"
 msgstr ""

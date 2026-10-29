@@ -26,7 +26,7 @@ else
 fi
 
 # name:arguments. The uninstall check runs twice: keeping data, then removing it.
-checks=(tab-save: login-security: method-impact: emails: hardening: trusted-devices: enrollment: reminders: recovery-warning: uninstall:keep uninstall:)
+checks=(tab-save: login-security: method-impact: emails: hardening: trusted-devices: enrollment: reminders: recovery-warning: account-tab: uninstall:keep uninstall:)
 if [ "$#" -gt 0 ]; then
 	checks=()
 	for name in "$@"; do

@@ -19,8 +19,9 @@ defined( 'ABSPATH' ) || exit;
  *
  * Shown on site admin screens (except Login Security, whose recovery card already says it)
  * and on the WooCommerce My Account dashboard, with a link to the recovery codes on the
- * Login Security page. Read-only: it changes no state, and it disappears once the user has
- * more codes than the threshold or stops being eligible.
+ * user's Login Security page (the My Account tab for customers). Read-only: it changes no
+ * state, and it disappears once the user has more codes than the threshold or stops being
+ * eligible.
  *
  * @since 1.3.0
  */

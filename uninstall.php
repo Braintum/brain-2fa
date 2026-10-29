@@ -63,7 +63,7 @@ if ( defined( 'BRAIN2FA_KEEP_DATA_ON_UNINSTALL' ) && BRAIN2FA_KEEP_DATA_ON_UNINS
 function brain2fa_uninstall_site(): void {
 	global $wpdb;
 
-	foreach ( array( 'brain2fa_settings', 'brain2fa_emails', 'brain2fa_db_version', 'brain2fa_reminder_cursor' ) as $option ) {
+	foreach ( array( 'brain2fa_settings', 'brain2fa_emails', 'brain2fa_db_version', 'brain2fa_reminder_cursor', 'brain2fa_account_endpoint' ) as $option ) {
 		delete_option( $option );
 	}
 

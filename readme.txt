@@ -29,7 +29,7 @@ Codes are generated and passkeys are verified on your own server. Brain 2FA does
 * **Enrollment overview:** See at a glance how many users are protected, still have to set up two-factor authentication, or missed their deadline, for all roles or one role. Every number opens the matching filtered Users list, and the Users list can be filtered by 2FA status.
 * **Trusted devices:** Users can optionally skip the code on devices they trust, using expiring, password-hashed tokens. They see each trusted browser, when it was last used and when it expires on their Login Security page, and can forget one or all of them.
 * **Consistent enforcement:** The 2FA policy applies to every sign-in, including direct submissions of the login form, not only the JavaScript-assisted flow. The credential check before the code step is rate limited per IP address.
-* **WooCommerce support:** Works with the default WordPress login form and the WooCommerce My Account login form. Customers can set up and manage 2FA from a link on their My Account dashboard.
+* **WooCommerce support:** Works with the default WordPress login form and the WooCommerce My Account login form. Customers manage all their sign-in protection in a Login Security tab in My Account (passkeys, authenticator app or email codes, recovery codes, trusted devices and password sign-in), without visiting the WordPress dashboard.
 * **Works without JavaScript:** If the login script cannot run, a verification code field is shown on the login form instead.
 * **Translation ready:** All user-facing text can be translated.
 
@@ -64,7 +64,7 @@ Yes. In **Brain 2FA > Settings**, select the roles that must use 2FA and set a g
 
 = Does the plugin support WooCommerce login? =
 
-Yes. The plugin supports the standard WooCommerce My Account login form. Customers can set up two-factor authentication from the link on their My Account dashboard.
+Yes. The plugin supports the standard WooCommerce My Account login form. Customers set up and manage two-factor authentication in the Login Security tab of My Account. Customers who must set up 2FA are taken to that tab after signing in, and links in emails point there too. Staff keep using **Brain 2FA > Login Security** in the dashboard.
 
 = Can users sign in without a password? =
 
@@ -135,6 +135,7 @@ The JavaScript files in `assets/js/` are generated from the source files in `src
 
 = 1.3.0 =
 
+* New: WooCommerce customers get a Login Security tab in My Account with everything from the dashboard Login Security page: their protection summary, passkeys, authenticator app or email code setup, recovery codes, trusted devices and password sign-in. Customers are sent there for setup, in restricted setup mode, from email links and from the old dashboard address. Staff keep the dashboard page. Developers can change the tab's URL slug with `brain2fa_account_security_tab_slug`, turn it off with `brain2fa_account_security_tab`, or choose who uses it with `brain2fa_use_account_security_tab`.
 * New: Brain 2FA now warns you in WordPress and on your WooCommerce account dashboard when you have only a few recovery codes left (2 or fewer), with a direct link to generate a fresh set. Developers can change the threshold with the `brain2fa_recovery_codes_warning_threshold` filter.
 
 = 1.2.0 =
@@ -207,7 +208,7 @@ The JavaScript files in `assets/js/` are generated from the source files in `src
 
 = 1.3.0 =
 
-Warns authenticator app users when they are running out of recovery codes.
+Adds a Login Security tab to WooCommerce My Account so customers manage their sign-in protection in the store, and warns authenticator app users when they are running out of recovery codes.
 
 = 1.2.0 =
 

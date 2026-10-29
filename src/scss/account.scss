@@ -1,0 +1,282 @@
+/**
+ * Brain 2FA My Account Styles
+ *
+ * The Login Security tab in WooCommerce My Account. Everything is scoped to the tab,
+ * and colors, fonts and buttons come from the theme where possible, so the cards fit
+ * light and dark storefronts.
+ *
+ * @package Brain_2FA
+ * @since 1.3.0
+ */
+
+@use 'sass:meta';
+@use 'variables' as *;
+
+$account-line: rgba(127, 127, 127, 0.35);
+$account-tint: rgba(127, 127, 127, 0.08);
+
+.brain2fa-account-security {
+	// Layout of the shared sections: summary, lists, disclosures, steps, recovery codes.
+	@include meta.load-css('login-security');
+
+	// Cards
+	.brain2fa-card {
+		margin: 0 0 1.5em;
+		padding: 1.25em 1.5em;
+		border: 1px solid $account-line;
+		border-radius: $border-radius;
+	}
+
+	.brain2fa-card-title {
+		margin: 0 0 0.5em;
+		font-size: 1.15em;
+		line-height: 1.4;
+
+		.brain2fa-pill {
+			margin-left: $spacing-sm;
+		}
+	}
+
+	.brain2fa-card-intro,
+	.brain2fa-empty-state,
+	.brain2fa-passkey-meta,
+	.brain2fa-device-meta,
+	.brain2fa-summary-list dt,
+	.description {
+		color: inherit;
+		opacity: 0.8;
+	}
+
+	.brain2fa-summary-list dt {
+		font-size: 0.85em;
+	}
+
+	.brain2fa-summary-list dd {
+		color: inherit;
+	}
+
+	.brain2fa-card-intro {
+		margin: 0 0 1em;
+	}
+
+	.brain2fa-subheading {
+		font-size: 1em;
+	}
+
+	// Status pills: text plus color, never color alone.
+	.brain2fa-pill {
+		display: inline-block;
+		padding: 2px $spacing-sm;
+		border-radius: 999px;
+		font-size: 0.75rem;
+		font-weight: 600;
+		line-height: 1.6;
+		vertical-align: middle;
+	}
+
+	.brain2fa-status-on {
+		background: $success-bg;
+		color: $success-text;
+	}
+
+	.brain2fa-status-off {
+		background: $gray-100;
+		color: $gray-900;
+	}
+
+	.brain2fa-status-warning {
+		background: $warning-bg;
+		color: #6e4e00;
+		box-shadow: inset 0 0 0 1px $warning-color;
+	}
+
+	// Fields
+	.brain2fa-field {
+		margin: 0;
+
+		+ .brain2fa-field {
+			margin-top: 1em;
+		}
+
+		> label {
+			display: block;
+			margin-bottom: $spacing-xs;
+			font-weight: 600;
+		}
+
+		> input[type="text"],
+		> input[type="password"] {
+			width: 100%;
+			max-width: 22em;
+			box-sizing: border-box;
+		}
+
+		> input + .button {
+			margin: $spacing-sm 0 0;
+		}
+	}
+
+	.brain2fa-verification-input {
+		max-width: 10em;
+		font-family: $font-family-mono;
+		font-size: 1.2em;
+		letter-spacing: 2px;
+		text-align: center;
+	}
+
+	// Notices, also those passkey-manage.js adds.
+	.notice {
+		margin: 1em 0;
+		padding: 0.75em 1em;
+		border-left: 4px solid $info-border;
+		background: $account-tint;
+
+		p {
+			margin: 0;
+		}
+	}
+
+	.notice-success {
+		border-left-color: #00a32a;
+	}
+
+	.notice-warning {
+		border-left-color: $warning-color;
+	}
+
+	.notice-error {
+		border-left-color: $danger-color;
+	}
+
+	> .notice {
+		margin-top: 0;
+	}
+
+	// Buttons take the theme's WooCommerce styles; only the danger variant is ours.
+	.button.brain2fa-button-danger {
+		background: $danger-color;
+		border-color: $danger-color;
+		color: $white;
+
+		&:hover,
+		&:focus {
+			background: $danger-hover;
+			border-color: $danger-hover;
+			color: $white;
+		}
+	}
+
+	.brain2fa-enroll-notice {
+		p + p {
+			margin-top: 0.75em;
+		}
+
+		.button {
+			display: inline-block;
+			margin: 0 $spacing-sm $spacing-xs 0;
+		}
+	}
+
+	.button-link {
+		padding: 0;
+		border: 0;
+		background: none;
+		color: inherit;
+		font: inherit;
+		text-decoration: underline;
+		cursor: pointer;
+	}
+
+	// Disclosures and code panels follow the theme's link and text colors.
+	.brain2fa-disclosure > summary {
+		color: inherit;
+
+		&:hover {
+			color: inherit;
+		}
+
+		&:focus-visible {
+			outline-color: currentColor;
+		}
+	}
+
+	.brain2fa-disclosure-body,
+	.brain2fa-recovery-codes-display {
+		background: $account-tint;
+		border-color: $account-line;
+	}
+
+	.brain2fa-passkey-list,
+	.brain2fa-device-list {
+		padding: 0;
+		list-style: none;
+		border-top-color: $account-line;
+	}
+
+	.brain2fa-passkey,
+	.brain2fa-device {
+		border-bottom-color: $account-line;
+	}
+
+	.brain2fa-qr-container {
+		display: inline-block;
+		padding: $spacing-base;
+		background: $white;
+		border: 1px solid $gray-200;
+		border-radius: $border-radius;
+
+		img {
+			display: block;
+			max-width: 100%;
+			height: auto;
+		}
+	}
+
+	.brain2fa-secret-code {
+		padding: $spacing-md $spacing-base;
+		background: $account-tint;
+		border: 1px solid $account-line;
+		border-radius: $border-radius;
+		font-family: $font-family-mono;
+		letter-spacing: 2px;
+
+		code {
+			background: none;
+			padding: 0;
+			font-weight: 600;
+		}
+	}
+
+	.brain2fa-recovery-codes-list {
+		list-style: none;
+		background: transparent;
+		border-color: $account-line;
+	}
+
+	.screen-reader-text {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		margin: -1px;
+		padding: 0;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
+	}
+
+	@media screen and (max-width: $breakpoint-mobile) {
+		.brain2fa-card {
+			padding: 1em;
+		}
+
+		.brain2fa-summary-list,
+		.brain2fa-recovery-codes-list {
+			grid-template-columns: 1fr;
+		}
+
+		.brain2fa-passkey {
+			flex-direction: column;
+		}
+	}
+}

@@ -18,7 +18,7 @@ Install it from the [WordPress.org plugin directory](https://wordpress.org/plugi
 - **Enrollment overview:** see how many users are protected, have a setup deadline, are overdue or have not started, per role, and open the matching filtered Users list.
 - **Trusted devices:** optional, expiring, hashed "remember this device" tokens. Users see their trusted browsers on the Login Security page and can forget one or all of them.
 - **Editable emails:** every email the plugin sends (sign-in code, setup reminder and nine security alerts) can be edited with placeholders, previewed, test-sent and reset under **Brain 2FA > Settings > Emails**.
-- **WooCommerce:** the My Account login form is protected, and customers manage 2FA from their dashboard.
+- **WooCommerce:** the My Account login form is protected, and customers manage all their sign-in protection in a **Login Security** tab in My Account, never in wp-admin.
 - **Works without JavaScript**, and is fully translatable.
 
 ## Requirements
@@ -35,7 +35,7 @@ Install it from the [WordPress.org plugin directory](https://wordpress.org/plugi
 4. **Trusted Devices:** allow "remember this device" and set how long it lasts.
 5. **Emails:** adjust the wording of the emails and the sender, if you like.
 
-Each user sets up their own sign-in protection under **Brain 2FA > Login Security** (WooCommerce customers use the link on their My Account dashboard). Administrators can extend setup deadlines, remove a user's passkeys and turn password sign-in back on from the user's profile.
+Each user sets up their own sign-in protection under **Brain 2FA > Login Security** (WooCommerce customers use **My Account > Login Security**). Administrators can extend setup deadlines, remove a user's passkeys and turn password sign-in back on from the user's profile.
 
 ### Email placeholders
 

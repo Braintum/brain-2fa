@@ -85,16 +85,18 @@ class Assets {
 			BRAIN_2FA_PLUGIN_DIR . 'languages'
 		);
 		if ( false !== strpos( $hook, \Brain_2FA\Auth\EnrollmentGuard::SETUP_PAGE ) && \Brain_2FA\Passkeys\PasskeyLogin::is_enabled() ) {
-			$this->enqueue_passkey_manager();
+			self::enqueue_passkey_manager();
 		}
 	}
 
 	/**
 	 * Enqueue the passkey registration script on the Login Security page.
 	 *
+	 * Also used by the WooCommerce My Account tab.
+	 *
 	 * @return void
 	 */
-	private function enqueue_passkey_manager(): void {
+	public static function enqueue_passkey_manager(): void {
 		$asset_file = BRAIN_2FA_PLUGIN_DIR . 'assets/js/passkey-manage.asset.php';
 		$asset_data = file_exists( $asset_file ) ? require $asset_file : array(
 			'dependencies' => array(),

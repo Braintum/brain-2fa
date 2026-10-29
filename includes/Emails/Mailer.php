@@ -132,7 +132,7 @@ class Mailer {
 			'site_name'          => wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES ),
 			'site_url'           => home_url( '/' ),
 			'login_url'          => wp_login_url(),
-			'login_security_url' => EnrollmentGuard::get_setup_url(),
+			'login_security_url' => EnrollmentGuard::get_setup_url( $user ),
 			'date_time'          => wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) ),
 		);
 

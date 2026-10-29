@@ -9,6 +9,7 @@
 namespace Brain_2FA\Auth;
 
 use Brain_2FA\Utils;
+use Brain_2FA\WooCommerce\LoginSecurityTab;
 use WP_Error;
 use WP_User;
 
@@ -21,8 +22,9 @@ defined( 'ABSPATH' ) || exit;
  * expired, not enrolled) to the Login Security page until they enroll. This
  * replaces blocking their login, which left them no way to enroll.
  *
- * Also lets WooCommerce customers reach the setup page, which WooCommerce
- * otherwise blocks, and links to it from the My Account dashboard.
+ * WooCommerce customers set up in the My Account Login Security tab instead
+ * (LoginSecurityTab); the wp-admin page sends them there. The My Account dashboard
+ * links to the user's setup page.
  *
  * @since 1.0.4
  */
@@ -43,6 +45,7 @@ class EnrollmentGuard {
 	public static function init(): void {
 		add_filter( 'login_redirect', array( __CLASS__, 'filter_login_redirect' ), 100, 3 );
 		add_filter( 'woocommerce_login_redirect', array( __CLASS__, 'filter_woocommerce_login_redirect' ), 100, 2 );
+		add_action( 'admin_init', array( __CLASS__, 'redirect_to_account_tab' ), 0 );
 		add_action( 'admin_init', array( __CLASS__, 'restrict_admin' ), 1 );
 		add_action( 'template_redirect', array( __CLASS__, 'restrict_front_end' ), 1 );
 		add_filter( 'rest_authentication_errors', array( __CLASS__, 'restrict_rest' ), 101 );
@@ -51,11 +54,22 @@ class EnrollmentGuard {
 	}
 
 	/**
-	 * Get the setup page URL.
+	 * Get a user's setup page URL.
 	 *
-	 * @return string Admin URL of the Login Security page.
+	 * Customers use the WooCommerce My Account tab; everyone else the wp-admin page.
+	 *
+	 * @param WP_User|null $user User. Default: the signed-in user, if any.
+	 * @return string URL of the user's Login Security page.
 	 */
-	public static function get_setup_url(): string {
+	public static function get_setup_url( ?WP_User $user = null ): string {
+		if ( null === $user && is_user_logged_in() ) {
+			$user = wp_get_current_user();
+		}
+
+		if ( $user instanceof WP_User && LoginSecurityTab::is_users_page( $user ) ) {
+			return LoginSecurityTab::get_url();
+		}
+
 		return admin_url( 'admin.php?page=' . self::SETUP_PAGE );
 	}
 
@@ -96,7 +110,7 @@ class EnrollmentGuard {
 	 */
 	public static function filter_login_redirect( $redirect_to, $requested_redirect_to, $user ) {
 		if ( $user instanceof WP_User && Utils::is_enrollment_required( $user ) ) {
-			return self::get_setup_url();
+			return self::get_setup_url( $user );
 		}
 
 		return $redirect_to;
@@ -111,10 +125,31 @@ class EnrollmentGuard {
 	 */
 	public static function filter_woocommerce_login_redirect( $redirect, $user ) {
 		if ( $user instanceof WP_User && Utils::is_enrollment_required( $user ) ) {
-			return self::get_setup_url();
+			return self::get_setup_url( $user );
 		}
 
 		return $redirect;
+	}
+
+	/**
+	 * Send customers from the wp-admin Login Security page to the My Account tab.
+	 *
+	 * Keeps old links and bookmarks working. Runs before restrict_admin(), which would
+	 * otherwise keep a restricted customer on the wp-admin page.
+	 *
+	 * @return void
+	 */
+	public static function redirect_to_account_tab(): void {
+		if ( wp_doing_ajax() || ! is_user_logged_in() || ! self::is_setup_page_request() ) {
+			return;
+		}
+
+		if ( ! LoginSecurityTab::is_users_page( wp_get_current_user() ) ) {
+			return;
+		}
+
+		wp_safe_redirect( LoginSecurityTab::get_url() );
+		exit;
 	}
 
 	/**
@@ -162,10 +197,17 @@ class EnrollmentGuard {
 	/**
 	 * Send users who must enroll from front-end pages to the setup page.
 	 *
+	 * The My Account Login Security tab is a setup page, and the My Account
+	 * log out link keeps working.
+	 *
 	 * @return void
 	 */
 	public static function restrict_front_end(): void {
 		if ( ! self::current_user_must_enroll() ) {
+			return;
+		}
+
+		if ( LoginSecurityTab::is_tab_request() || ( function_exists( 'is_wc_endpoint_url' ) && is_wc_endpoint_url( 'customer-logout' ) ) ) {
 			return;
 		}
 
@@ -189,6 +231,9 @@ class EnrollmentGuard {
 
 	/**
 	 * Let WooCommerce customers open the setup page, which WooCommerce otherwise blocks.
+	 *
+	 * Only needed when the My Account tab is turned off; otherwise customers are sent
+	 * to the tab before WooCommerce checks access.
 	 *
 	 * @param bool $prevent_access Whether WooCommerce will redirect the user away from wp-admin.
 	 * @return bool False on the setup page, otherwise unchanged.
