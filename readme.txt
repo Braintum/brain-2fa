@@ -4,7 +4,7 @@ Tags: two-factor authentication, 2fa, security, authenticator, totp
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 1.2.0
+Stable tag: 1.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -19,7 +19,7 @@ Codes are generated and passkeys are verified on your own server. Brain 2FA does
 = Features =
 
 * **Passkeys:** Sign in without a password using Face ID, Touch ID, Windows Hello, a phone or a security key. Passkeys are offered right in the username field, and a passkey sign-in counts as two-factor authentication. A passkey can also be the second step after a password, counts toward required two-factor setup, and users can optionally turn off password sign-in entirely. Requires HTTPS; turn it on under **Brain 2FA > Settings**.
-* **Authenticator apps (TOTP):** Works with Google Authenticator, Microsoft Authenticator, Authy, 1Password, Bitwarden and any other TOTP-compatible app. Users set it up by scanning a QR code or entering the secret key manually.
+* **Authenticator apps (TOTP):** Works with Google Authenticator, Microsoft Authenticator, Authy, 1Password, Bitwarden and any other TOTP-compatible app. Users set it up by scanning a QR code or entering the secret key manually. One-time recovery codes cover a lost phone, and users are warned in WordPress and on their WooCommerce account dashboard when only a few are left.
 * **Email verification codes:** Sends a one-time code to the account email address, with a configurable expiry time.
 * **Recovery codes:** TOTP users receive one-time recovery codes they can download and regenerate in case they lose their phone.
 * **Role-based enforcement:** Require two-factor authentication for selected user roles, such as Administrator, Editor or Shop manager.
@@ -133,6 +133,10 @@ The JavaScript files in `assets/js/` are generated from the source files in `src
 
 == Changelog ==
 
+= 1.3.0 =
+
+* New: Brain 2FA now warns you in WordPress and on your WooCommerce account dashboard when you have only a few recovery codes left (2 or fewer), with a direct link to generate a fresh set. Developers can change the threshold with the `brain2fa_recovery_codes_warning_threshold` filter.
+
 = 1.2.0 =
 
 * New: Users see their trusted devices on the Login Security page: the browser and system, when it was trusted and last used, and when the trust expires. They can forget one device or all of them; the browser they are using is marked.
@@ -200,6 +204,10 @@ The JavaScript files in `assets/js/` are generated from the source files in `src
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.3.0 =
+
+Warns authenticator app users when they are running out of recovery codes.
 
 = 1.2.0 =
 

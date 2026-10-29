@@ -9,7 +9,7 @@ Brain 2FA is a WordPress plugin (PHP 8.1+, WordPress 6.4+) that adds a second au
 2. `App` hooks `on_plugins_loaded()` to `plugins_loaded` at `PHP_INT_MAX`. That method:
    - runs `Install::maybe_upgrade()`, which updates the passkeys table when `brain2fa_db_version` differs from `Install::DB_VERSION`;
    - registers `TotpMethod` and `EmailMethod` with `TwoFactor\Manager`;
-   - calls `LoginController::init()`, `LoginAssets::init()`, `AccountEvents::init()`, `EnrollmentGuard::init()`, `PasskeyRepository::init()`, `EnrollmentStatus::init()`, `EnrollmentReport::init()` and `ReminderScheduler::init()` on every request;
+   - calls `LoginController::init()`, `LoginAssets::init()`, `AccountEvents::init()`, `EnrollmentGuard::init()`, `PasskeyRepository::init()`, `EnrollmentStatus::init()`, `EnrollmentReport::init()` and `ReminderScheduler::init()` and `RecoveryCodeWarning::init()` on every request;
    - calls `PasskeyLogin::init()` and `PasskeyRegistration::init()` only while passkeys are turned on (`Utils::is_passkeys_enabled()`);
    - in wp-admin only, instantiates `Settings`, `UserProfile`, `Assets` and `UserListColumns`, and calls `EmailSettings::init()`;
    - fires the `brain_2fa_loaded` action.
@@ -29,6 +29,7 @@ Brain 2FA is a WordPress plugin (PHP 8.1+, WordPress 6.4+) that adds a second au
 | `Auth\AccountEvents` | Revokes trusted devices when a password changes (`wp_set_password`, `profile_update`). |
 | `Auth\TrustedDeviceRepository` | Reads and writes trusted devices (`brain2fa_remembered_devices`): lookup by cookie, add, last-use update, revoke one or all. Every write re-reads the list under `UserLock`. Upgrades 1.1.0 entries (token hash and expiry only) by giving them an ID; their dates stay unknown (0). Names devices by browser and system from a fixed list; the raw user agent is not stored. |
 | `Auth\UserLock` | Per-user lock (`acquire()` / `release()`, reentrant) for read-modify-write changes to single-use credentials: the last TOTP step and the recovery codes. A row inserted with `INSERT IGNORE` into the main options table; abandoned locks are taken over after 30 seconds. |
+| `Auth\RecoveryCodeWarning` | Warns the signed-in user who uses the authenticator app, while password sign-in works for them (not passkey-only), when they have 2 recovery codes or fewer: an `admin_notices` warning (an error at zero) on site admin screens except Login Security, and a notice on the WooCommerce My Account dashboard after the 2FA status line. Both link to `#brain2fa-recovery` on Login Security. Read-only and condition-based: no dismissal, no stored state; it goes away once new codes are generated. |
 | `Auth\LoginAssets` | Enqueues `assets/js/login.js` on `wp-login.php` and on the WooCommerce My Account login form, with localized `Brain2FA` data. |
 | `TwoFactor\Manager` | Registry of methods keyed by ID (`totp`, `email`). |
 | `TwoFactor\Interfaces\TwoFactorMethodInterface` | Contract for a method: setup data, save/deactivate, send challenge, verify, recovery codes. |
@@ -218,6 +219,7 @@ A save that carries `_tab` (`methods`, `requirements` or `trusted-devices`, see 
 | `brain_2fa_loaded` | action | Fired after methods and controllers are registered. |
 | `brain2fa_send_backup_code` | filter | Return `true` to send the email code yourself. Args: `false`, `WP_User`, `string $code`. |
 | `brain2fa_recovery_codes_count` | filter | Number of recovery codes to generate (default 10). |
+| `brain2fa_recovery_codes_warning_threshold` | filter | Warn about running out of recovery codes at this many or fewer (default 2; negative turns the warning off). Args: `int $threshold`, `WP_User`. |
 | `brain2fa_qr_code_generation_failed` | action | Receives the `Throwable` when QR rendering fails. |
 | `brain2fa_max_failed_attempts` | filter | Failed codes or passwords before a user is locked out (default 5). |
 | `brain2fa_max_failed_attempts_per_ip` | filter | Failed verifications per IP before that IP is locked out (default 20, `0` disables). |

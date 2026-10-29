@@ -11,7 +11,7 @@ Install it from the [WordPress.org plugin directory](https://wordpress.org/plugi
 ## Features
 
 - **Passkeys:** passwordless sign-in with Face ID, Touch ID, Windows Hello, a phone or a security key; also usable as the second step after a password, and optionally as the only way into an account. Requires HTTPS; off by default.
-- **Authenticator apps (TOTP):** any TOTP app, set up with a QR code or a secret key, with one-time recovery codes.
+- **Authenticator apps (TOTP):** any TOTP app, set up with a QR code or a secret key, with one-time recovery codes and a warning in wp-admin and on the WooCommerce account dashboard when only a few are left.
 - **Email codes:** a one-time code sent to the account address, with a configurable expiry.
 - **Role-based enforcement:** require 2FA for selected roles, with a setup grace period. After the deadline, users can sign in but only reach the setup page.
 - **Setup reminders:** optional emails before a user's setup deadline (7 and 1 days by default), sent by WP-Cron at most once a day per user.
